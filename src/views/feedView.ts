@@ -256,13 +256,15 @@ export class FeedView extends ItemView {
             .setIcon('folder-plus')
             .setTooltip('Create new folder')
             .onClick(() => {
-                new FolderModal(this.app, async (name, color) => {
-                    const id = `folder-${Date.now()}`;
-                    this.plugin.settings.feedFolders.push({ id, name, color, isCollapsed: false });
-                    await this.plugin.saveSettings();
-                    this.renderSavedFeeds();
-                    
-                    this.onOpen(); 
+                new FolderModal(this.app, (name, color) => {
+                    void (async () => {
+                        const id = `folder-${Date.now()}`;
+                        this.plugin.settings.feedFolders.push({ id, name, color, isCollapsed: false });
+                        await this.plugin.saveSettings();
+                        this.renderSavedFeeds();
+                        
+                        this.onOpen(); 
+                    })();
                 }).open();
             });
 
@@ -298,12 +300,13 @@ export class FeedView extends ItemView {
                     item.setTitle('Rename/Recolor Folder')
                         .setIcon('pencil')
                         .onClick(() => {
-                            new FolderModal(this.app, async (newName, newColor) => {
+                            new FolderModal(this.app, (newName, newColor) => {
                                 folder.name = newName;
                                 folder.color = newColor;
-                                await this.plugin.saveSettings();
-                                this.renderSavedFeeds();
-                                this.onOpen(); 
+                                void this.plugin.saveSettings().then(() => {
+                                    this.renderSavedFeeds();
+                                    this.onOpen(); 
+                                });
                             }, folder.name, folder.color).open();
                         });
                 });
@@ -324,10 +327,11 @@ export class FeedView extends ItemView {
             });
 
             
-            folderHeader.addEventListener('click', async () => {
+            folderHeader.addEventListener('click', () => {
                 folder.isCollapsed = !folder.isCollapsed;
-                await this.plugin.saveSettings();
-                this.renderSavedFeeds();
+                void this.plugin.saveSettings().then(() => {
+                    this.renderSavedFeeds();
+                });
             });
 
             if (!folder.isCollapsed) {
@@ -352,13 +356,15 @@ export class FeedView extends ItemView {
 
                         
                         const link = feedItem.createEl('a', { text: feed.name, cls: 'feed-text-link' });
-                        link.addEventListener('click', async (e) => {
-                            e.preventDefault();
-                            new Notice(`Loading feed "${feed.name}"...`);
-                            const feedData = await parseFeed(feed.url, feed.name);
-                            if (feedData) {
-                                await this.plugin.activateView('feed-entries', undefined, feedData);
-                            }
+                        link.addEventListener('click', (e) => {
+                            void (async () => {
+                                e.preventDefault();
+                                new Notice(`Loading feed "${feed.name}"...`);
+                                const feedData = await parseFeed(feed.url, feed.name);
+                                if (feedData) {
+                                    await this.plugin.activateView('feed-entries', undefined, feedData);
+                                }
+                            })();
                         });
 
                         
@@ -369,10 +375,11 @@ export class FeedView extends ItemView {
                                 item.setTitle('Rename Feed')
                                     .setIcon('pencil')
                                     .onClick(() => {
-                                        new RenameModal(this.app, feed.name, async (newName) => {
+                                        new RenameModal(this.app, feed.name, (newName) => {
                                             feed.name = newName;
-                                            await this.plugin.saveSettings();
-                                            this.renderSavedFeeds();
+                                            void this.plugin.saveSettings().then(() => {
+                                                this.renderSavedFeeds();
+                                            });
                                         }).open();
                                     });
                             });

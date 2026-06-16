@@ -831,7 +831,7 @@ export class QuizRenderer {
         setIcon(copyBtn, 'check');
         copyBtn.createEl('span', { text: 'Copied!' });
         copyBtn.addClass('copied');
-        setTimeout(() => {
+        window.setTimeout(() => {
           copyBtn.empty();
           setIcon(copyBtn, 'copy');
           copyBtn.createEl('span', { text: 'Copy' });

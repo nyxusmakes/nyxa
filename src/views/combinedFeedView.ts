@@ -29,13 +29,13 @@ export class CombinedFeedView extends ItemView {
     }
 
     
-    async setState(state: SafeAny, result: SafeAny): Promise<void> {
+    async setState(state: Record<string, unknown>, result: import('obsidian').ViewStateResult): Promise<void> {
         
         await super.setState(state, result);
         
     }
 
-    getState(): SafeAny {
+    getState(): Record<string, unknown> {
         
         return super.getState();
     }
