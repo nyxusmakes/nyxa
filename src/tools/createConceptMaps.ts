@@ -1,4 +1,4 @@
-import { Notice, Modal, Setting, TFile, ButtonComponent, MarkdownRenderer, normalizePath, setIcon, Component, requestUrl } from 'obsidian';
+import { Notice, Modal, Setting, TFile, ButtonComponent, MarkdownRenderer, normalizePath, setIcon, Component, requestUrl, App } from 'obsidian';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AISettings, getModelTemperature, getModelTopP } from '../settings';
 import { GroqService, ChatMessage } from '../services/groqService';
@@ -29,20 +29,27 @@ export interface SavedConceptMap {
   timestamp: number;
 }
 
+const highlightOverlayMap = new WeakMap<HTMLElement, HTMLElement>();
+
 export class ConceptMapManager {
+  private get doc(): Document {
+    const view = this.app.workspace.activeLeaf?.view;
+    return (view && 'document' in view ? (view as { document: Document }).document : document);
+  }
+
   private settings: AISettings;
-  private app: any;
+  private app: App;
   private clickedNodeId: string | null = null;
   private clickedThemeIdx: number | null = null;
   private themeNodeOverlay: HTMLElement | null = null;
-  private holdTimer: any = null;
+  private holdTimer: number | null = null;
   private isHolding: boolean = false;
   private firedThemeNode: SVGElement | null = null;
   private zoomAnchorX: number | null = null;
   private zoomAnchorY: number | null = null;
-  private mouseMoveTimeout: any = null;
+  private mouseMoveTimeout: number | null = null;
 
-  constructor(app: any, settings: AISettings) {
+  constructor(app: App, settings: AISettings) {
     this.app = app;
     this.settings = settings;
   }
@@ -246,7 +253,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
         const model = genAI.getGenerativeModel({ model: modelId });
         
         // Build message parts with multimodal inputs
-        const messageParts: any[] = [{ text: prompt }];
+        const messageParts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: prompt }];
         
         // Add multimodal inputs (images, PDFs, audio, video) for inline data
         const inlineInputs = multimodalInputs.filter(input => input.type === 'inline' && input.data);
@@ -996,14 +1003,14 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     const defaultNodeColor = '#7c3aed';
 
     // Create SVG element
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const svg = this.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', width.toString());
     svg.setAttribute('height', height.toString());
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.setCssStyles({ 'background': 'var(--background-primary)' });
+    svg.addClass('nl-background-var--background-primary');
 
     // Add styles
-    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    const style = this.doc.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.textContent = `
       .concept-circle { fill: none; stroke: rgba(100, 100, 100, 0.5); stroke-width: 2.5; transition: opacity 0.3s; }
       .concept-node { cursor: pointer; transition: opacity 0.3s; }
@@ -1029,7 +1036,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     svg.appendChild(style);
 
     // Add defs
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const defs = this.doc.createElementNS('http://www.w3.org/2000/svg', 'defs');
     svg.appendChild(defs);
 
     // Build theme map (node ID -> theme index)
@@ -1057,7 +1064,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     );
 
     // Draw inner circle
-    const innerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    const innerCircle = this.doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
     innerCircle.setAttribute('class', 'concept-circle');
     innerCircle.setAttribute('cx', centerX.toString());
     innerCircle.setAttribute('cy', centerY.toString());
@@ -1065,7 +1072,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     svg.appendChild(innerCircle);
 
     // Draw outer circle
-    const outerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    const outerCircle = this.doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
     outerCircle.setAttribute('class', 'concept-circle');
     outerCircle.setAttribute('cx', centerX.toString());
     outerCircle.setAttribute('cy', centerY.toString());
@@ -1105,7 +1112,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
         const controlX = midX + (centerToMidX / centerDist) * curveFactor;
         const controlY = midY + (centerToMidY / centerDist) * curveFactor;
         
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const path = this.doc.createElementNS('http://www.w3.org/2000/svg', 'path');
         const d = `M ${fromNode.x} ${fromNode.y} Q ${controlX} ${controlY} ${toNode.x} ${toNode.y}`;
         path.setAttribute('class', 'concept-relation-line');
         path.setAttribute('d', d);
@@ -1122,7 +1129,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
         relationNodePositions.push({ x: curveX, y: curveY });
         
         // Draw relation node on the curve
-        const relNode = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        const relNode = this.doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
         relNode.setAttribute('class', 'concept-relation-node');
         relNode.setAttribute('cx', curveX.toString());
         relNode.setAttribute('cy', curveY.toString());
@@ -1350,11 +1357,11 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     centerX: number,
     centerY: number
   ) {
-    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const group = this.doc.createElementNS('http://www.w3.org/2000/svg', 'g');
     group.setAttribute('class', 'concept-node');
     
     // Draw circle with themed color
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    const circle = this.doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('class', 'concept-node-circle');
     circle.setAttribute('cx', x.toString());
     circle.setAttribute('cy', y.toString());
@@ -1406,7 +1413,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     textPositions.push({ x: textX, y: textY, width: textWidth, height: textHeight, label });
     
     // Create text element
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    const text = this.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('class', 'concept-node-text');
     text.setAttribute('x', textX.toString());
     text.setAttribute('y', textY.toString());
@@ -1423,16 +1430,18 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   private showTooltip(event: MouseEvent, text: string, svg: SVGElement) {
     this.hideTooltip();
     
-    const tooltip = document.createElement('div');
+    const tooltip = this.doc.createElement('div');
     tooltip.className = 'concept-tooltip';
     tooltip.textContent = text;
-    document.body.appendChild(tooltip);
+    this.doc.body.appendChild(tooltip);
     this.tooltipEl = tooltip;
     
     // Position tooltip
     const rect = (event.target as Element).getBoundingClientRect();
-    tooltip.setCssStyles({ 'left': `${rect.left + window.scrollX}px` });
-    tooltip.setCssStyles({ 'top': `${rect.bottom + window.scrollY + 5}px` });
+    tooltip.setCssProps({
+      '--tooltip-left': `${rect.left + window.scrollX}px`,
+      '--tooltip-top': `${rect.bottom + window.scrollY + 5}px`
+    });
   }
 
   private hideTooltip() {
@@ -1472,7 +1481,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     type: 'inner' | 'outer',
     color: string,
     themeIdx: number,
-    themeColor: any,
+    themeColor: { glow: string; label: string } | null,
     textPositions: Array<{ x: number; y: number; width: number; height: number; label: string }>,
     relationNodePositions: Array<{ x: number; y: number }>,
     allNodePositions: Array<{ x: number; y: number }>,
@@ -1480,15 +1489,15 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     centerY: number,
     themes: Array<{ nodes: string[]; reason: string }>,
     nodeThemeMap: Map<string, number>,
-    themeColors: Array<any>,
+    themeColors: Array<{ glow: string; label: string }>,
     relations: Array<{ from: string; to: string; reason: string }>
   ) {
-    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const group = this.doc.createElementNS('http://www.w3.org/2000/svg', 'g');
     group.setAttribute('class', 'concept-node');
     group.setAttribute('data-node-id', nodeId);
     
     // Draw circle with default color
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    const circle = this.doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('class', 'concept-node-circle');
     circle.setAttribute('cx', x.toString());
     circle.setAttribute('cy', y.toString());
@@ -1500,7 +1509,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
       const nodeColor = themeColor ? themeColor.glow : color;
       circle.setAttribute('fill', nodeColor);
       circle.setAttribute('data-theme-idx', themeIdx.toString());
-      circle.setAttribute('data-theme-color', themeColor.glow);
+      circle.setAttribute('data-theme-color', themeColor?.glow ?? '');
     } else {
       // Hollow style for nodes without themes
       circle.setAttribute('fill', 'none');
@@ -1580,7 +1589,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     textPositions.push({ x: textX, y: textY, width: textWidth, height: textHeight, label });
     
     // Create text element
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    const text = this.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('class', 'concept-node-text');
     text.setAttribute('x', textX.toString());
     text.setAttribute('y', textY.toString());
@@ -1594,7 +1603,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     group.addEventListener('mouseenter', (e: MouseEvent) => {
       // Only highlight theme if no node is clicked
       if (!this.clickedNodeId && themeIdx >= 0) {
-        this.highlightTheme(svg, themeIdx, themes[themeIdx].reason, themeColor.glow, nodeThemeMap, e.clientX, e.clientY);
+        this.highlightTheme(svg, themeIdx, themes[themeIdx].reason, themeColor?.glow ?? '', nodeThemeMap, e.clientX, e.clientY);
       }
     });
     
@@ -1607,12 +1616,12 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
         // Visual feedback: start pulsing/scaling immediately
         const circle = group.querySelector('.concept-node-circle') as SVGElement;
         if (circle) {
-          circle.setCssStyles({ 'transform': 'scale(1.1)' });
-          circle.setCssStyles({ 'transition': 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' });
-          circle.setCssStyles({ 'filter': `drop-shadow(0 0 12px ${themeColor.glow}) brightness(1.4)` });
+          circle.addClass('nl-transform-scale11');
+          circle.addClass('nl-transition-remaining-1');
+          circle.setCssProps({ '--glow-filter': `drop-shadow(0 0 12px ${themeColor?.glow ?? ''}) brightness(1.4)` });
         }
         
-        this.holdTimer = setTimeout(() => {
+        this.holdTimer = window.setTimeout(() => {
           this.isHolding = true;
           // Store the fired node for later restoration
           this.firedThemeNode = circle;
@@ -1621,17 +1630,17 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
           const preventNextClick = (clickEvent: Event) => {
             clickEvent.stopPropagation();
             clickEvent.preventDefault();
-            document.removeEventListener('click', preventNextClick, true);
+            this.doc.removeEventListener('click', preventNextClick, true);
           };
-          document.addEventListener('click', preventNextClick, true);
+          this.doc.addEventListener('click', preventNextClick, true);
           
           // Show theme overlay after holding for 500ms
           this.clickedThemeIdx = themeIdx;
-          this.showThemeNodeOverlay(svg, themeIdx, themes[themeIdx].reason, themeColor.glow, nodeThemeMap);
+          this.showThemeNodeOverlay(svg, themeIdx, themes[themeIdx].reason, themeColor?.glow ?? '', nodeThemeMap);
           
           // Extra scale on trigger
           if (circle) {
-            circle.setCssStyles({ 'transform': 'scale(1.2)' });
+            circle.addClass('nl-transform-scale12');
           }
         }, 500);
       }
@@ -1640,7 +1649,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     // Add MOUSEUP to clear hold timer
     group.addEventListener('mouseup', (e) => {
       if (this.holdTimer) {
-        clearTimeout(this.holdTimer);
+        window.clearTimeout(this.holdTimer);
         this.holdTimer = null;
       }
       
@@ -1648,25 +1657,25 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
       // If overlay is showing (isHolding = true), keep the node fired until overlay closes
       const circle = group.querySelector('.concept-node-circle') as SVGElement;
       if (circle && !this.isHolding) {
-        circle.setCssStyles({ 'transform': '' });
-        circle.setCssStyles({ 'filter': '' });
-        circle.setCssStyles({ 'transition': 'transform 0.2s ease, filter 0.2s ease' });
+        circle.addClass('nl-transform-');
+        circle.addClass('nl-filter-');
+        circle.addClass('nl-transition-rem-1');
       }
     });
     
     // Add MOUSELEAVE to cancel hold
     group.addEventListener('mouseleave', (e) => {
       if (this.holdTimer) {
-        clearTimeout(this.holdTimer);
+        window.clearTimeout(this.holdTimer);
         this.holdTimer = null;
       }
       
       // Reset scale and filter
       const circle = group.querySelector('.concept-node-circle') as SVGElement;
       if (circle && !this.isHolding) {
-        circle.setCssStyles({ 'transform': '' });
-        circle.setCssStyles({ 'filter': '' });
-        circle.setCssStyles({ 'transition': 'transform 0.2s ease, filter 0.2s ease' });
+        circle.addClass('nl-transform-');
+        circle.addClass('nl-filter-');
+        circle.addClass('nl-transition-rem-2');
       }
       
       // Only clear if no node or theme is clicked
@@ -1681,7 +1690,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
       
       // Clear hold timer if it's running
       if (this.holdTimer) {
-        clearTimeout(this.holdTimer);
+        window.clearTimeout(this.holdTimer);
         this.holdTimer = null;
       }
       
@@ -1727,7 +1736,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     allRelations.forEach(rel => rel.classList.add('faded'));
     allRelationNodes.forEach(node => node.classList.add('faded'));
     if (centerText) centerText.classList.add('faded');
-    circles.forEach(circle => (circle as SVGElement).setCssStyles({ 'opacity': '0.3' }));
+    circles.forEach(circle => (circle as SVGElement).addClass('nl-opacity-03'));
 
     // Highlight nodes in the same theme
     allNodes.forEach(node => {
@@ -1736,7 +1745,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
         node.classList.remove('faded');
         node.classList.add('highlighted');
         // Apply glow color
-        (node as SVGElement).setCssStyles({ 'color': glowColor });
+        (node as SVGElement).setCssProps({ '--node-color': glowColor });
         
         // Also highlight the text
         const nodeId = node.getAttribute('data-node-id');
@@ -1774,7 +1783,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     allRelations.forEach(rel => rel.classList.add('faded'));
     allRelationNodes.forEach(node => node.classList.add('faded'));
     if (centerText) centerText.classList.add('faded');
-    circles.forEach(circle => (circle as SVGElement).setCssStyles({ 'opacity': '0.3' }));
+    circles.forEach(circle => (circle as SVGElement).addClass('nl-opacity-03'));
 
     // Highlight only the connected nodes
     [fromId, toId].forEach(nodeId => {
@@ -1822,13 +1831,13 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
 
     allNodes.forEach(node => {
       node.classList.remove('faded', 'highlighted', 'clicked');
-      (node as SVGElement).setCssStyles({ 'color': '' });
+      (node as SVGElement).addClass('nl-color-');
     });
     allTexts.forEach(text => text.classList.remove('faded'));
     allRelations.forEach(rel => rel.classList.remove('faded', 'highlighted'));
     allRelationNodes.forEach(node => node.classList.remove('faded', 'highlighted'));
     if (centerText) centerText.classList.remove('faded');
-    circles.forEach(circle => (circle as SVGElement).setCssStyles({ 'opacity': '' }));
+    circles.forEach(circle => (circle as SVGElement).addClass('nl-opacity-'));
 
     // Hide theme info
     this.hideThemeInfo();
@@ -1839,18 +1848,18 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   private showThemeInfo(text: string, borderColor: string, mouseX?: number, mouseY?: number, svg?: SVGElement) {
     this.hideThemeInfo();
     
-    const infoBox = document.createElement('div');
+    const infoBox = this.doc.createElement('div');
     infoBox.className = 'concept-theme-info';
     
     // Render markdown content
     this.renderMarkdownTooltip(text, infoBox);
     
-    infoBox.setCssStyles({ 'borderColor': borderColor });
+    infoBox.setCssProps({ '--info-border-color': borderColor });
     
     // Find the SVG container (modal body)
-    const container = this.svgContainerEl || document.querySelector('.concept-map-svg-wrapper') as HTMLElement;
+    const container = this.svgContainerEl || this.doc.querySelector('.concept-map-svg-wrapper') as HTMLElement;
     if (!container) {
-      document.body.appendChild(infoBox);
+      this.doc.body.appendChild(infoBox);
       this.themeInfoEl = infoBox;
       return;
     }
@@ -1903,9 +1912,11 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     }
     
     // Apply position
-    infoBox.setCssStyles({ 'position': 'absolute' });
-    infoBox.setCssStyles({ 'left': `${left}px` });
-    infoBox.setCssStyles({ 'top': `${top}px` });
+    infoBox.addClass('nl-position-absolute');
+    infoBox.setCssProps({
+      '--info-left': `${left}px`,
+      '--info-top': `${top}px`
+    });
   }
 
   private hideThemeInfo() {
@@ -1918,7 +1929,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   private renderMarkdownTooltip(text: string, container: HTMLElement) {
     container.empty();
     // Use Obsidian's MarkdownRenderer for safe rendering
-    MarkdownRenderer.render(this.app, text, container, '', null as any);
+    MarkdownRenderer.render(this.app, text, container, '', null as unknown as Component);
   }
 
   private checkTooltipNodeOverlap(
@@ -2044,7 +2055,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     nodeThemeMap: Map<string, number>
   ): boolean {
     // Find the modal instance to access zoom methods
-    const modal = document.querySelector('.concept-map-modal');
+    const modal = this.doc.querySelector('.concept-map-modal');
     if (!modal) return false;
 
     // Get all nodes belonging to this theme
@@ -2058,7 +2069,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     if (themeNodeIds.length === 0) return false;
 
     // Get container and current viewport
-    const container = document.querySelector('.concept-map-svg-wrapper') as HTMLElement;
+    const container = this.doc.querySelector('.concept-map-svg-wrapper') as HTMLElement;
     if (!container) return false;
 
     const containerRect = container.getBoundingClientRect();
@@ -2122,8 +2133,8 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
 
       // Find the modal instance through the DOM
       const modalEl = modal.closest('.modal') as HTMLElement;
-      const modalInstance = (modalEl as any)?._modalInstance || 
-                           (window as any).activeConceptMapModal;
+      const modalInstance = (modalEl as unknown as { _modalInstance?: ConceptMapVisualizationModal })?._modalInstance || 
+                            window.activeConceptMapModal as ConceptMapVisualizationModal | undefined;
       
       if (modalInstance && modalInstance.zoomLevel > targetZoom) {
         // Smoothly zoom out to fit theme
@@ -2159,7 +2170,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     this.clearThemeOverlay();
     
     // Get container
-    const container = document.querySelector('.concept-map-svg-wrapper') as HTMLElement;
+    const container = this.doc.querySelector('.concept-map-svg-wrapper') as HTMLElement;
     if (!container) return;
     
     const containerRect = container.getBoundingClientRect();
@@ -2187,82 +2198,37 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     });
     
     // Create overlay container
-    const overlay = document.createElement('div');
+    const overlay = this.doc.createElement('div');
     overlay.className = 'theme-overlay-container';
-    overlay.setCssStyles({ 'cssText': `
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      gap: 40px;
-      align-items: center;
-      z-index: 2000;
-      pointer-events: auto;
-      animation: themeOverlayFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    ` });
+    overlay.addClass('theme-overlay-container-style');
     
     // Create theme box (left side)
-    const themeBox = document.createElement('div');
+    const themeBox = this.doc.createElement('div');
     themeBox.className = 'theme-overlay-box';
-    themeBox.setCssStyles({ 'cssText': `
-      background: var(--background-secondary);
-      border: 3px solid ${glowColor};
-      border-radius: 16px;
-      padding: 24px 32px;
-      min-width: 300px;
-      max-width: 450px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-      animation: themeBoxSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    ` });
+    themeBox.addClass('theme-overlay-box-style');
+    themeBox.setCssProps({ '--theme-glow': glowColor });
     
     // Render markdown in theme box
     this.renderMarkdownTooltip(themeReason, themeBox);
     
     // Create nodes column (right side)
-    const nodesColumn = document.createElement('div');
+    const nodesColumn = this.doc.createElement('div');
     nodesColumn.className = 'theme-overlay-nodes';
-    nodesColumn.setCssStyles({ 'cssText': `
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      animation: themeNodesSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-      animation-delay: 0.1s;
-      opacity: 0;
-      animation-fill-mode: forwards;
-    ` });
+    nodesColumn.addClass('theme-overlay-nodes-style');
     
     themeNodeLabels.forEach((node, index) => {
-      const nodeItem = document.createElement('div');
-      nodeItem.setCssStyles({ 'cssText': `
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--text-normal);
-        padding: 12px 20px;
-        background: var(--background-primary);
-        border-radius: 8px;
-        border: 2px solid ${glowColor};
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: nodeItemPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        animation-delay: ${0.15 + index * 0.05}s;
-        opacity: 0;
-        animation-fill-mode: forwards;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      ` });
+      const nodeItem = this.doc.createElement('div');
+      nodeItem.addClass('theme-overlay-node-item');
+      nodeItem.setCssProps({
+        '--theme-glow': glowColor,
+        '--animation-delay': `${0.15 + index * 0.05}s`
+      });
       
-      const bullet = document.createElement('div');
-      bullet.setCssStyles({ 'cssText': `
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: ${glowColor};
-        flex-shrink: 0;
-      ` });
+      const bullet = this.doc.createElement('div');
+      bullet.addClass('theme-overlay-bullet');
+      bullet.setCssProps({ '--theme-glow': glowColor });
       
-      const label = document.createElement('span');
+      const label = this.doc.createElement('span');
       label.textContent = node.label;
       
       nodeItem.appendChild(bullet);
@@ -2271,12 +2237,12 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
       
       // Add hover effect
       nodeItem.addEventListener('mouseenter', () => {
-        nodeItem.setCssStyles({ 'transform': 'translateX(5px)' });
-        nodeItem.setCssStyles({ 'boxShadow': '0 6px 16px rgba(0,0,0,0.25)' });
+        nodeItem.addClass('nl-transform-translateX5px');
+        nodeItem.addClass('nl-box-shadow-rem-3');
       });
       nodeItem.addEventListener('mouseleave', () => {
-        nodeItem.setCssStyles({ 'transform': 'translateX(0)' });
-        nodeItem.setCssStyles({ 'boxShadow': '0 4px 12px rgba(0,0,0,0.15)' });
+        nodeItem.addClass('nl-transform-translateX0');
+        nodeItem.addClass('nl-box-shadow-rem-4');
       });
     });
     
@@ -2291,9 +2257,9 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     });
     
     // Fade everything else in the SVG
-    svg.setCssStyles({ 'opacity': '0.1' });
-    svg.setCssStyles({ 'filter': 'blur(3px)' });
-    svg.setCssStyles({ 'transition': 'opacity 0.4s ease, filter 0.4s ease' });
+    svg.addClass('nl-opacity-01');
+    svg.addClass('nl-filter-blur3px');
+    svg.addClass('nl-transition-rem-5');
   }
 
   // Public method to check if theme overlay is active
@@ -2311,25 +2277,25 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
 
   private clearThemeOverlay() {
     if (this.themeNodeOverlay) {
-      this.themeNodeOverlay.setCssStyles({ 'animation': 'themeOverlayFadeOut 0.3s ease' });
-      setTimeout(() => {
+      this.themeNodeOverlay.addClass('nl-animation-themeOverlayFadeOut03sease');
+      window.setTimeout(() => {
         this.themeNodeOverlay?.remove();
         this.themeNodeOverlay = null;
       }, 300);
     }
     
     // Restore SVG visibility
-    const svg = document.querySelector('.concept-map-svg-wrapper svg') as SVGElement;
+    const svg = this.doc.querySelector('.concept-map-svg-wrapper svg') as SVGElement;
     if (svg) {
-      svg.setCssStyles({ 'opacity': '1' });
-      svg.setCssStyles({ 'filter': 'none' });
+      svg.addClass('nl-opacity-1');
+      svg.addClass('nl-filter-none');
     }
     
     // Reset the fired theme node back to its original state
     if (this.firedThemeNode) {
-      this.firedThemeNode.setCssStyles({ 'transform': '' });
-      this.firedThemeNode.setCssStyles({ 'filter': '' });
-      this.firedThemeNode.setCssStyles({ 'transition': 'transform 0.3s ease, filter 0.3s ease' });
+      this.firedThemeNode.addClass('nl-transform-');
+      this.firedThemeNode.addClass('nl-filter-');
+      this.firedThemeNode.addClass('nl-transition-rem-6');
       this.firedThemeNode = null;
     }
     
@@ -2346,17 +2312,17 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   ) {
     this.hideThemeInfo();
     
-    const infoBox = document.createElement('div');
+    const infoBox = this.doc.createElement('div');
     infoBox.className = 'concept-theme-info';
     
     // Render markdown content
     this.renderMarkdownTooltip(text, infoBox);
-    infoBox.setCssStyles({ 'borderColor': borderColor });
+    infoBox.setCssProps({ '--info-border-color': borderColor });
     
     // Find the SVG container
-    const container = document.querySelector('.concept-map-svg-wrapper') as HTMLElement;
+    const container = this.doc.querySelector('.concept-map-svg-wrapper') as HTMLElement;
     if (!container) {
-      document.body.appendChild(infoBox);
+      this.doc.body.appendChild(infoBox);
       this.themeInfoEl = infoBox;
       return;
     }
@@ -2434,10 +2400,12 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     }
     
     // Apply the best position
-    infoBox.setCssStyles({ 'position': 'absolute' });
-    infoBox.setCssStyles({ 'left': `${bestPosition.x}px` });
-    infoBox.setCssStyles({ 'top': `${bestPosition.y}px` });
-    infoBox.setCssStyles({ 'zIndex': '1000' });
+    infoBox.addClass('nl-position-absolute');
+    infoBox.setCssProps({
+      '--info-left': `${bestPosition.x}px`,
+      '--info-top': `${bestPosition.y}px`
+    });
+    infoBox.addClass('nl-z-index-1000');
   }
 
   private showRelationTooltip(
@@ -2451,17 +2419,17 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   ) {
     this.hideThemeInfo();
     
-    const infoBox = document.createElement('div');
+    const infoBox = this.doc.createElement('div');
     infoBox.className = 'concept-theme-info';
     
     // Render markdown content
     this.renderMarkdownTooltip(text, infoBox);
-    infoBox.setCssStyles({ 'borderColor': borderColor });
+    infoBox.setCssProps({ '--info-border-color': borderColor });
     
     // Find the SVG container
-    const container = document.querySelector('.concept-map-svg-wrapper') as HTMLElement;
+    const container = this.doc.querySelector('.concept-map-svg-wrapper') as HTMLElement;
     if (!container) {
-      document.body.appendChild(infoBox);
+      this.doc.body.appendChild(infoBox);
       this.themeInfoEl = infoBox;
       return;
     }
@@ -2563,10 +2531,12 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     }
     
     // Apply position
-    infoBox.setCssStyles({ 'position': 'absolute' });
-    infoBox.setCssStyles({ 'left': `${bestPosition.x}px` });
-    infoBox.setCssStyles({ 'top': `${bestPosition.y}px` });
-    infoBox.setCssStyles({ 'zIndex': '1000' });
+    infoBox.addClass('nl-position-absolute');
+    infoBox.setCssProps({
+      '--info-left': `${bestPosition.x}px`,
+      '--info-top': `${bestPosition.y}px`
+    });
+    infoBox.addClass('nl-z-index-1000');
   }
 
   private drawCenterText(svg: SVGElement, text: string, centerX: number, centerY: number) {
@@ -2606,7 +2576,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     
     // Draw each line
     displayLines.forEach((line, idx) => {
-      const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      const textEl = this.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
       textEl.setAttribute('class', 'concept-center-text');
       textEl.setAttribute('x', centerX.toString());
       textEl.setAttribute('y', (startY + idx * lineHeight).toString());
@@ -2648,7 +2618,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     allRelations.forEach(rel => rel.classList.add('faded'));
     allRelationNodes.forEach(node => node.classList.add('faded'));
     if (centerText) centerText.classList.add('faded');
-    circles.forEach(circle => (circle as SVGElement).setCssStyles({ 'opacity': '0.3' }));
+    circles.forEach(circle => (circle as SVGElement).addClass('nl-opacity-03'));
 
     // Collect all connected node IDs
     const connectedNodeIds = new Set<string>([nodeId]);
@@ -2712,7 +2682,7 @@ export class ConceptMapModal extends Modal {
   private onConfirm: (name: string) => void;
   private conceptMapName: string = '';
 
-  constructor(app: any, onConfirm: (name: string) => void) {
+  constructor(app: App, onConfirm: (name: string) => void) {
     super(app);
     this.onConfirm = onConfirm;
   }
@@ -2762,16 +2732,16 @@ export class ConceptMapVisualizationModal extends Modal {
   private conceptMapData: ConceptMapData;
   private name: string;
   private manager: ConceptMapManager;
-  private zoomLevel: number = 1;
+  zoomLevel: number = 1;
   private svgContainer: HTMLElement | null = null;
   private zoomLevelDisplay: HTMLElement | null = null;
   private svgWrapper: HTMLElement | null = null;
-  private panOffset = { x: 0, y: 0 };
+  panOffset = { x: 0, y: 0 };
   private isPanning = false;
   private lastPanPoint = { x: 0, y: 0 };
   private zoomAnchorX: number | null = null;
   private zoomAnchorY: number | null = null;
-  private mouseMoveTimeout: any = null;
+  private mouseMoveTimeout: number | null = null;
   private helpContainer: HTMLElement | null = null;
   
   // Mobile touch properties
@@ -2779,11 +2749,11 @@ export class ConceptMapVisualizationModal extends Modal {
   private lastTouchDistance: number = 0;
   private lastTapTime: number = 0;
   private lastTapTarget: HTMLElement | null = null;
-  private longPressTimeout: any = null;
+  private longPressTimeout: number | null = null;
   private activeNode: HTMLElement | null = null;
   private isNodeHighlighted: boolean = false;
 
-  constructor(app: any, conceptMapData: ConceptMapData, name: string) {
+  constructor(app: App, conceptMapData: ConceptMapData, name: string) {
     super(app);
     this.conceptMapData = conceptMapData;
     this.name = name;
@@ -2796,7 +2766,7 @@ export class ConceptMapVisualizationModal extends Modal {
     
     // Add modal class for styling and store reference for auto-zoom
     modalEl.addClass('concept-map-modal');
-    (window as any).activeConceptMapModal = this;
+    window.activeConceptMapModal = this;
 
     // Create body
     const body = contentEl.createDiv({ cls: 'concept-map-modal-body' });
@@ -2858,11 +2828,11 @@ export class ConceptMapVisualizationModal extends Modal {
     svgWrapper.addEventListener('mousemove', (e) => {
       // Clear existing timeout
       if (this.mouseMoveTimeout) {
-        clearTimeout(this.mouseMoveTimeout);
+        window.clearTimeout(this.mouseMoveTimeout);
       }
       
       // Set timeout to reset anchor after movement stops
-      this.mouseMoveTimeout = setTimeout(() => {
+      this.mouseMoveTimeout = window.setTimeout(() => {
         this.zoomAnchorX = null;
         this.zoomAnchorY = null;
       }, 100);
@@ -2910,7 +2880,7 @@ export class ConceptMapVisualizationModal extends Modal {
 
     // Update zoom
     this.zoomLevel = newZoom;
-    this.svgContainer.setCssStyles({ 'transform': `scale(${this.zoomLevel})` });
+    this.svgContainer.setCssProps({ '--zoom-transform': `scale(${this.zoomLevel})` });
     
     // Calculate new scroll position to keep cursor at same content position
     const newScrollLeft = contentX * newZoom - cursorX;
@@ -2922,15 +2892,15 @@ export class ConceptMapVisualizationModal extends Modal {
     this.updateZoomDisplay();
   }
 
-  private updateZoomDisplay() {
+  updateZoomDisplay() {
     if (this.zoomLevelDisplay) {
       this.zoomLevelDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
     }
   }
 
-  private updateTransform() {
+  updateTransform() {
     if (this.svgContainer) {
-      this.svgContainer.setCssStyles({ 'transform': `scale(${this.zoomLevel}) translate(${this.panOffset.x}px, ${this.panOffset.y}px)` });
+      this.svgContainer.setCssProps({ '--zoom-transform': `scale(${this.zoomLevel}) translate(${this.panOffset.x}px, ${this.panOffset.y}px)` });
     }
   }
 
@@ -2940,7 +2910,7 @@ export class ConceptMapVisualizationModal extends Modal {
       if (e.button === 0) { // Left mouse button
         this.isPanning = true;
         this.lastPanPoint = { x: e.clientX, y: e.clientY };
-        wrapper.setCssStyles({ 'cursor': 'grabbing' });
+        wrapper.addClass('nl-cursor-grabbing');
         e.preventDefault();
       }
     });
@@ -2961,16 +2931,16 @@ export class ConceptMapVisualizationModal extends Modal {
 
     wrapper.addEventListener('mouseup', () => {
       this.isPanning = false;
-      wrapper.setCssStyles({ 'cursor': 'default' });
+      wrapper.addClass('nl-cursor-default');
     });
 
     wrapper.addEventListener('mouseleave', () => {
       this.isPanning = false;
-      wrapper.setCssStyles({ 'cursor': 'default' });
+      wrapper.addClass('nl-cursor-default');
     });
 
     // Set initial cursor
-    wrapper.setCssStyles({ 'cursor': 'default' });
+    wrapper.addClass('nl-cursor-default');
 
     // Prevent context menu on right click
     wrapper.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -2997,9 +2967,9 @@ export class ConceptMapVisualizationModal extends Modal {
   private toggleHelp() {
     if (this.helpContainer) {
       if (this.helpContainer.style.display === 'none') {
-        this.helpContainer.setCssStyles({ 'display': 'block' });
+        this.helpContainer.addClass('nl-display-block');
       } else {
-        this.helpContainer.setCssStyles({ 'display': 'none' });
+        this.helpContainer.addClass('nl-display-none');
       }
       return;
     }
@@ -3036,7 +3006,7 @@ export class ConceptMapVisualizationModal extends Modal {
       
       if (this.touches.length === 1) {
         const touch = this.touches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement;
+        const target = this.containerEl.ownerDocument.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement;
         
         // Handle double tap detection
         const currentTime = Date.now();
@@ -3054,7 +3024,7 @@ export class ConceptMapVisualizationModal extends Modal {
         
         // Start long press timer for nodes
         if (this.isNodeElement(target)) {
-          this.longPressTimeout = setTimeout(() => {
+          this.longPressTimeout = window.setTimeout(() => {
             this.handleLongPress(target);
           }, 500); // 500ms for long press
         }
@@ -3071,7 +3041,7 @@ export class ConceptMapVisualizationModal extends Modal {
       
       // Clear long press timeout if multiple touches
       if (this.touches.length > 1 && this.longPressTimeout) {
-        clearTimeout(this.longPressTimeout);
+        window.clearTimeout(this.longPressTimeout);
         this.longPressTimeout = null;
       }
     }, { passive: false });
@@ -3084,7 +3054,7 @@ export class ConceptMapVisualizationModal extends Modal {
       
       // Clear long press timeout on move
       if (this.longPressTimeout) {
-        clearTimeout(this.longPressTimeout);
+        window.clearTimeout(this.longPressTimeout);
         this.longPressTimeout = null;
       }
       
@@ -3122,7 +3092,7 @@ export class ConceptMapVisualizationModal extends Modal {
       
       // Clear long press timeout
       if (this.longPressTimeout) {
-        clearTimeout(this.longPressTimeout);
+        window.clearTimeout(this.longPressTimeout);
         this.longPressTimeout = null;
       }
       
@@ -3130,7 +3100,7 @@ export class ConceptMapVisualizationModal extends Modal {
       if (this.touches.length === 0 && this.lastTapTarget) {
         const timeSinceLastTap = Date.now() - this.lastTapTime;
         if (timeSinceLastTap > 300) { // Not a double tap
-          setTimeout(() => {
+          window.setTimeout(() => {
             if (Date.now() - this.lastTapTime > 250) { // Ensure no double tap occurred
               this.handleSingleTap(this.lastTapTarget!);
             }
@@ -3154,7 +3124,7 @@ export class ConceptMapVisualizationModal extends Modal {
       this.touches = [];
       this.isPanning = false;
       if (this.longPressTimeout) {
-        clearTimeout(this.longPressTimeout);
+        window.clearTimeout(this.longPressTimeout);
         this.longPressTimeout = null;
       }
     });
@@ -3206,25 +3176,12 @@ export class ConceptMapVisualizationModal extends Modal {
     if (!nodeText && !nodeId) return;
     
     // Create tooltip
-    const tooltip = document.createElement('div');
+    const tooltip = this.containerEl.ownerDocument.createElement('div');
     tooltip.className = 'mobile-node-tooltip';
-    tooltip.setCssStyles({ 'cssText': `
-      position: fixed;
-      background: var(--background-secondary);
-      color: var(--text-normal);
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--background-modifier-border);
-      font-size: 14px;
-      z-index: 3000;
-      pointer-events: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      max-width: 200px;
-      word-wrap: break-word;
-    ` });
+    tooltip.addClass('mobile-node-tooltip-style');
     
     tooltip.textContent = nodeText;
-    document.body.appendChild(tooltip);
+    this.containerEl.ownerDocument.body.appendChild(tooltip);
     
     // Position tooltip near the touch point
     const rect = target.getBoundingClientRect();
@@ -3242,11 +3199,13 @@ export class ConceptMapVisualizationModal extends Modal {
       top = rect.bottom + 10;
     }
     
-    tooltip.setCssStyles({ 'left': `${left}px` });
-    tooltip.setCssStyles({ 'top': `${top}px` });
+    tooltip.setCssProps({
+      '--tooltip-left': `${left}px`,
+      '--tooltip-top': `${top}px`
+    });
     
     // Auto-hide tooltip after 3 seconds
-    setTimeout(() => {
+    window.setTimeout(() => {
       tooltip.remove();
     }, 3000);
   }
@@ -3280,8 +3239,8 @@ export class ConceptMapVisualizationModal extends Modal {
     // Dim all elements first
     const allElements = svg.querySelectorAll('circle, text, line, path');
     allElements.forEach(el => {
-      (el as SVGElement).setCssStyles({ 'opacity': '0.3' });
-      (el as SVGElement).setCssStyles({ 'filter': 'grayscale(0.7)' });
+      (el as SVGElement).addClass('nl-opacity-03');
+      (el as SVGElement).addClass('nl-filter-grayscale07');
     });
     
     // Find and highlight the selected node
@@ -3289,13 +3248,13 @@ export class ConceptMapVisualizationModal extends Modal {
     nodeElements.forEach(el => {
       const element = el as SVGElement;
       if (element.textContent?.trim() === nodeId || element.getAttribute('data-node-id') === nodeId) {
-        element.setCssStyles({ 'opacity': '1' });
-        element.setCssStyles({ 'filter': 'none' });
-        element.setCssStyles({ 'stroke': '#ff6b6b' });
-        element.setCssStyles({ 'strokeWidth': '3' });
+        element.addClass('nl-opacity-1');
+        element.addClass('nl-filter-none');
+        element.addClass('nl-stroke-ff6b6b');
+        element.addClass('nl-stroke-width-3');
         
         // Add pulsing animation
-        element.setCssStyles({ 'animation': 'pulse 2s infinite' });
+        element.addClass('nl-animation-pulse2sinfinite');
       }
     });
     
@@ -3310,37 +3269,23 @@ export class ConceptMapVisualizationModal extends Modal {
                              conn.classList.contains(`connection-${nodeId}`);
       
       if (connectedToNode) {
-        conn.setCssStyles({ 'opacity': '1' });
-        conn.setCssStyles({ 'filter': 'none' });
-        conn.setCssStyles({ 'stroke': '#4ecdc4' });
-        conn.setCssStyles({ 'strokeWidth': '2' });
+        conn.addClass('nl-opacity-1');
+        conn.addClass('nl-filter-none');
+        conn.addClass('nl-stroke-4ecdc4');
+        conn.addClass('nl-stroke-width-2');
       }
     });
     
     // Add visual feedback overlay
-    const overlay = document.createElement('div');
+    const overlay = this.containerEl.ownerDocument.createElement('div');
     overlay.className = 'mobile-node-highlight-overlay';
-    overlay.setCssStyles({ 'cssText': `
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--background-secondary);
-      color: var(--text-normal);
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--accent-color);
-      font-size: 12px;
-      z-index: 2500;
-      pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    ` });
+    overlay.addClass('mobile-node-highlight-overlay-style');
     overlay.textContent = `Connections for: ${nodeId}`;
-    document.body.appendChild(overlay);
+    this.containerEl.ownerDocument.body.appendChild(overlay);
     
     // Store overlay for cleanup
     this.activeNode = target;
-    (target as any)._highlightOverlay = overlay;
+    highlightOverlayMap.set(target, overlay);
   }
 
   private showThematicOverlay(target: HTMLElement) {
@@ -3387,73 +3332,38 @@ export class ConceptMapVisualizationModal extends Modal {
 
   private createSimpleThematicOverlay(nodeId: string, themeReason: string, glowColor: string) {
     // Clear any existing thematic overlays
-    const existingOverlay = document.querySelector('.mobile-thematic-overlay');
+    const existingOverlay = this.containerEl.ownerDocument.querySelector('.mobile-thematic-overlay');
     if (existingOverlay) {
       existingOverlay.remove();
     }
     
     // Create thematic overlay
-    const overlay = document.createElement('div');
+    const overlay = this.containerEl.ownerDocument.createElement('div');
     overlay.className = 'mobile-thematic-overlay';
-    overlay.setCssStyles({ 'cssText': `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--background-secondary);
-      color: var(--text-normal);
-      padding: 20px;
-      border-radius: 12px;
-      border: 2px solid ${glowColor};
-      max-width: 300px;
-      z-index: 3000;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      animation: fadeInScale 0.3s ease;
-    ` });
+    overlay.addClass('mobile-thematic-overlay-style');
+    overlay.setCssProps({ '--theme-glow': glowColor });
     
-    const title = document.createElement('h3');
-    title.setCssStyles({ 'cssText': `
-      margin: 0 0 12px 0;
-      color: ${glowColor};
-      font-size: 16px;
-      text-align: center;
-    ` });
+    const title = this.containerEl.ownerDocument.createElement('h3');
+    title.addClass('mobile-thematic-title');
+    title.setCssProps({ '--theme-glow': glowColor });
     title.textContent = nodeId;
     
-    const content = document.createElement('p');
-    content.setCssStyles({ 'cssText': `
-      margin: 0;
-      font-size: 14px;
-      line-height: 1.4;
-    ` });
+    const content = this.containerEl.ownerDocument.createElement('p');
+    content.addClass('mobile-thematic-content');
     content.textContent = themeReason;
     
-    const closeButton = document.createElement('button');
-    closeButton.setCssStyles({ 'cssText': `
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 18px;
-      cursor: pointer;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ` });
+    const closeButton = this.containerEl.ownerDocument.createElement('button');
+    closeButton.addClass('mobile-thematic-close-btn');
     closeButton.textContent = '×';
     closeButton.addEventListener('click', () => overlay.remove());
     
     overlay.appendChild(closeButton);
     overlay.appendChild(title);
     overlay.appendChild(content);
-    document.body.appendChild(overlay);
+    this.containerEl.ownerDocument.body.appendChild(overlay);
     
     // Auto-close after 5 seconds
-    setTimeout(() => {
+    window.setTimeout(() => {
       if (overlay.parentNode) {
         overlay.remove();
       }
@@ -3471,32 +3381,33 @@ export class ConceptMapVisualizationModal extends Modal {
         const allElements = svg.querySelectorAll('circle, text, line, path');
         allElements.forEach(el => {
           const element = el as SVGElement;
-          element.setCssStyles({ 'opacity': '' });
-          element.setCssStyles({ 'filter': '' });
-          element.setCssStyles({ 'stroke': '' });
-          element.setCssStyles({ 'strokeWidth': '' });
-          element.setCssStyles({ 'animation': '' });
+          element.addClass('nl-opacity-');
+          element.addClass('nl-filter-');
+          element.addClass('nl-stroke-');
+          element.addClass('nl-stroke-width-');
+          element.addClass('nl-animation-');
         });
       }
     }
     
     // Clear highlight overlay
-    if (this.activeNode && (this.activeNode as any)._highlightOverlay) {
-      (this.activeNode as any)._highlightOverlay.remove();
+    if (this.activeNode && highlightOverlayMap.has(this.activeNode)) {
+      highlightOverlayMap.get(this.activeNode)!.remove();
+      highlightOverlayMap.delete(this.activeNode);
     }
     
     // Clear mobile overlays
-    const highlightOverlay = document.querySelector('.mobile-node-highlight-overlay');
+    const highlightOverlay = this.containerEl.ownerDocument.querySelector('.mobile-node-highlight-overlay');
     if (highlightOverlay) {
       highlightOverlay.remove();
     }
     
-    const thematicOverlay = document.querySelector('.mobile-thematic-overlay');
+    const thematicOverlay = this.containerEl.ownerDocument.querySelector('.mobile-thematic-overlay');
     if (thematicOverlay) {
       thematicOverlay.remove();
     }
     
-    const tooltips = document.querySelectorAll('.mobile-node-tooltip');
+    const tooltips = this.containerEl.ownerDocument.querySelectorAll('.mobile-node-tooltip');
     tooltips.forEach(tooltip => tooltip.remove());
   }
 
@@ -3504,6 +3415,6 @@ export class ConceptMapVisualizationModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     // Clean up global reference
-    (window as any).activeConceptMapModal = null;
+    window.activeConceptMapModal = null;
   }
 }

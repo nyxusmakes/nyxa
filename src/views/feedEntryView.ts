@@ -4,6 +4,10 @@ import { ParsedFeed, ParsedFeedEntry } from '../parsing/feedParsing';
 
 export const VIEW_TYPE_NEXUS_FEED_ENTRIES = 'NEXUS_FEED_ENTRIES_VIEW';
 
+interface FeedEntryViewState {
+    feedData?: ParsedFeed;
+}
+
 export class FeedEntryView extends ItemView {
     plugin: AIPlugin;
     private feedData: ParsedFeed | null = null;
@@ -27,10 +31,10 @@ export class FeedEntryView extends ItemView {
     }
 
     
-    async setState(state: any, result: any): Promise<void> {
-        
-        if (state && state.feedData) {
-            this.feedData = state.feedData as ParsedFeed;
+    async setState(state: Record<string, unknown>, result: import('obsidian').ViewStateResult): Promise<void> {
+        const feedState = state as FeedEntryViewState;
+        if (feedState && feedState.feedData) {
+            this.feedData = feedState.feedData;
             
              if (this.entriesContainer) { 
                  this.renderEntries();
@@ -45,13 +49,13 @@ export class FeedEntryView extends ItemView {
              const container = this.containerEl.children[1] as HTMLElement; 
              container.empty(); 
              container.createEl('p', { text: 'No feed data loaded.', cls: 'no-entries-message' });
-             container.setCssStyles({ 'textAlign': 'center' });
-             container.setCssStyles({ 'color': 'var(--text-muted)' });
+             container.addClass('nl-text-align-center');
+             container.addClass('nl-color-var--text-muted');
         }
         await super.setState(state, result);
     }
 
-    getState(): any {
+    getState(): Record<string, unknown> {
         
         
         

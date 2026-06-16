@@ -44,9 +44,9 @@ export abstract class BaseProvider {
     generateContentWithTools?(
         modelId: string,
         messages: UnifiedMessage[],
-        tools: any[],
+        tools: Record<string, unknown>[],
         options?: UnifiedGenerationOptions & { toolChoice?: string },
-        executeToolCallback?: (toolCall: any) => Promise<any>,
+        executeToolsCallback?: (toolCalls: Record<string, unknown>[]) => Promise<Array<Record<string, unknown>>>,
         onThinking?: (text: string) => void
     ): Promise<{ content: string; totalTokens?: number }>;
 }

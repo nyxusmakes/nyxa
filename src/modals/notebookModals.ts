@@ -149,7 +149,7 @@ export class NotebookFormModal extends Modal {
         const row = webList.createDiv({ cls: 'web-context-row' });
         row.createSpan({ text: src.name, cls: 'web-context-name' });
         // --- MAKE URL CLICKABLE ---
-        const urlLink = document.createElement('a');
+        const urlLink = this.containerEl.ownerDocument.createElement('a');
         urlLink.href = src.url;
         urlLink.textContent = src.url;
         urlLink.target = '_blank';

@@ -4,6 +4,10 @@ import { ModelLatencyModal } from './modals/modelLatencyModal';
 import { CustomProviderModal } from './modals/customProviderModal';
 import { MCPRegistryEntry } from './mcp/mcpRegistry';
 import { validateNvidiaApiKey } from './services/nvidiaService';
+import { ParsedFeedEntry } from './parsing/feedParsing';
+import { SavedConceptMap } from './tools/createConceptMaps';
+import { SavedSlideshow } from './tools/createSlides';
+import type AIPlugin from './main';
 
 // Move Provider type directly into settings.ts
 export type Provider = 'gemini' | 'groq' | 'openrouter' | 'opencode' | 'ollama' | 'nvidia' | (string & {});
@@ -99,7 +103,7 @@ export interface AISettings {
   // Kept for backward compatibility and as fallback when API headers are unavailable
   modelTokenLimits: Record<string, number>;
   embeddingFolderPath: string;
-  bookmarkedEntries: any[]; // New setting for bookmarked feed entries; type fixed from ParsedFeedEntry to any
+  bookmarkedEntries: ParsedFeedEntry[]; // New setting for bookmarked feed entries; type fixed from ParsedFeedEntry to any
   customModels: CustomModel[]; // New setting for custom models
   modelCache: { // Cache for dynamically fetched models
     gemini?: CustomModel[];
@@ -175,8 +179,8 @@ export interface AISettings {
   chatWallpaperHeaderOpacity: number; // Opacity of header/input with liquid glass (0-1)
   chatWallpaperEnabled: boolean; // Whether wallpaper is enabled
   customProviders: CustomProviderConfig[]; // New setting for custom providers
-  savedConceptMaps: any[];
-  savedSlideshows: any[];
+  savedConceptMaps: SavedConceptMap[];
+  savedSlideshows: SavedSlideshow[];
 }
 
 export const DEFAULT_SETTINGS: AISettings = {
@@ -685,7 +689,7 @@ function isGemini3Model(modelId: string): boolean {
   return modelId.startsWith('gemini-3');
 }
 
-export function getGeminiThinkingConfig(modelId: string, settings: AISettings): { thinkingConfig: any } | undefined {
+export function getGeminiThinkingConfig(modelId: string, settings: AISettings): { thinkingConfig: Record<string, unknown> } | undefined {
   if (!settings.enableThinkingMode || !modelId.startsWith('gemini')) return undefined;
 
   if (isGemini25Model(modelId)) {
@@ -979,7 +983,7 @@ export class AISettingTab extends PluginSettingTab {
   private expandedSections: Set<string> = new Set();
   constructor(
     app: App,
-    private plugin: any  // Change type to any to break circular dependency
+    private plugin: AIPlugin
   ) {
     super(app, plugin);
   }
@@ -1007,8 +1011,8 @@ export class AISettingTab extends PluginSettingTab {
       return true;
     } else if (provider === 'nvidia') {
       return !!this.plugin.settings.nvidiaApiKey && this.plugin.settings.nvidiaApiKey.length > 0;
-    } else if (this.plugin.settings.customProviders?.some((p: any) => p.id === provider)) {
-      const cp = this.plugin.settings.customProviders.find((p: any) => p.id === provider);
+    } else if (this.plugin.settings.customProviders?.some((p: CustomProviderConfig) => p.id === provider)) {
+      const cp = this.plugin.settings.customProviders.find((p: CustomProviderConfig) => p.id === provider);
       return !!cp?.apiKey && cp.apiKey.length > 0;
     } else {
       return !!this.plugin.settings.geminiApiKey && this.plugin.settings.geminiApiKey.length > 0;
@@ -1100,7 +1104,7 @@ export class AISettingTab extends PluginSettingTab {
              await this.plugin.saveSettings();
 
              // Refresh models from providers when provider is changed
-             await this.plugin.refreshModelsFromProviders();
+             await this.plugin.refreshModelsFromProviders(true);
            });
       });
 
@@ -1216,7 +1220,7 @@ await this.plugin.saveSettings();
  } else {
    new Notice('API key saved successfully');
  }                 // Refresh models from providers when API key is updated
-                 await this.plugin.refreshModelsFromProviders();
+                 await this.plugin.refreshModelsFromProviders(true);
                  // Refresh display to update model enable/disable states
                  this.display();
               } else {
@@ -1246,24 +1250,13 @@ await this.plugin.saveSettings();
     else apiKeyUrl = 'https://aistudio.google.com/app/apikey';
 
     // Style the control element to stack items vertically and align to the right
-    apiSetting.controlEl.setCssStyles({
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'flex-end'
-    });
+    apiSetting.controlEl.addClass('nl-display-flex', 'nl-flex-direction-column', 'nl-align-items-flex-end');
 
     const linkContainer = apiSetting.controlEl.createDiv({
       cls: 'setting-item-description'
     });
     
-    linkContainer.setCssStyles({
-      maxWidth: '200px',
-      textAlign: 'right',
-      marginTop: '4px',
-      lineHeight: '1.2',
-      whiteSpace: 'normal',
-      wordBreak: 'break-word'
-    });
+    linkContainer.addClass('nl-max-width-200px', 'nl-text-align-right', 'nl-margin-top-4px', 'nl-line-height-12', 'nl-white-space-normal', 'nl-word-break-break-word');
 
     linkContainer.createEl('a', {
       text: `Get your Free ${providerDisplayName} API key here`,
@@ -1295,7 +1288,7 @@ await this.plugin.saveSettings();
                new Notice(`Switched to ${val === 'cloud' ? 'Cloud' : 'Local'} mode`);
                
                // Refresh models from providers when mode/URL changes
-               await this.plugin.refreshModelsFromProviders();
+               await this.plugin.refreshModelsFromProviders(true);
              })
         );
       
@@ -1318,7 +1311,7 @@ await this.plugin.saveSettings();
                new Notice('Ollama base URL saved successfully');
                
                // Refresh models from providers when URL is manually updated
-               await this.plugin.refreshModelsFromProviders();
+               await this.plugin.refreshModelsFromProviders(true);
              } else {
                new Notice('Invalid URL format. Please enter a valid HTTP/HTTPS URL.');
              }
@@ -1340,7 +1333,7 @@ await this.plugin.saveSettings();
                 new Notice(`Reset to default ${this.plugin.settings.ollamaMode} URL`);
                 
                 // Refresh models from providers after reset
-                await this.plugin.refreshModelsFromProviders();
+                await this.plugin.refreshModelsFromProviders(true);
               });
       });
       
@@ -1374,13 +1367,13 @@ await this.plugin.saveSettings();
       btn.setIcon('plus')
         .setTooltip('Add new custom provider')
         .onClick(() => {
-          new CustomProviderModal(this.app, async (provider) => {
+          new CustomProviderModal(this.app, (provider) => { void (async () => {
             this.plugin.settings.customProviders.push(provider);
             await this.plugin.saveSettings();
-            await this.plugin.refreshModelsFromProviders();
+            await this.plugin.refreshModelsFromProviders(true);
             this.display();
             new Notice(`Added custom provider: ${provider.name}`);
-          }).open();
+          })(); }).open();
         });
     });
 
@@ -1411,30 +1404,30 @@ await this.plugin.saveSettings();
       const editBtn = actionsCell.createEl('button', { cls: 'index-action-btn' });
       setIcon(editBtn, 'pencil');
       editBtn.addEventListener('click', () => {
-        new CustomProviderModal(this.app, async (updatedProvider) => {
+        new CustomProviderModal(this.app, (updatedProvider) => { void (async () => {
           const index = this.plugin.settings.customProviders.findIndex((p: CustomProviderConfig) => p.id === provider.id);
           if (index !== -1) {
             this.plugin.settings.customProviders[index] = updatedProvider;
             await this.plugin.saveSettings();
-            await this.plugin.refreshModelsFromProviders();
+            await this.plugin.refreshModelsFromProviders(true);
             this.display();
             new Notice(`Updated custom provider: ${updatedProvider.name}`);
           }
-        }, provider).open();
+        })(); }, provider).open();
       });
 
       const deleteBtn = actionsCell.createEl('button', { cls: 'index-action-btn index-delete-btn' });
       setIcon(deleteBtn, 'trash-2');
-      deleteBtn.addEventListener('click', async () => {
+      deleteBtn.addEventListener('click', () => { void (async () => {
         const confirmed = confirm(`Are you sure you want to delete the provider "${provider.name}"? This may affect models using this provider.`);
         if (confirmed) {
           this.plugin.settings.customProviders = this.plugin.settings.customProviders.filter((p: CustomProviderConfig) => p.id !== provider.id);
           await this.plugin.saveSettings();
-          await this.plugin.refreshModelsFromProviders();
+          await this.plugin.refreshModelsFromProviders(true);
           this.display();
           new Notice(`Deleted custom provider: ${provider.name}`);
         }
-      });
+      })(); });
     }
   }
 
@@ -1533,9 +1526,9 @@ await this.plugin.saveSettings();
     const headerSetting = new Setting(headerEl).setName(type === 'embedding' ? 'Embedding indexes' : 'BM25 indexes').setHeading();
     
     // Ensure the setting item takes full width and has no extra padding
-    headerSetting.settingEl.setCssStyles({ width: '100%' });
-    headerSetting.settingEl.setCssStyles({ borderTop: 'none' });
-    headerSetting.settingEl.setCssStyles({ padding: '0' });
+    headerSetting.settingEl.addClass('nl-width-100');
+    headerSetting.settingEl.addClass('nl-border-top-none');
+    headerSetting.settingEl.addClass('nl-padding-0');
 
     if (type === 'embedding') {
       headerSetting.addButton(btn => {
@@ -1544,11 +1537,11 @@ await this.plugin.saveSettings();
            .onClick(() => this.showAddIndexDialog('embedding'));
         btn.buttonEl.addClass('mod-cta');
         // Add some horizontal padding to make the plus look better
-        btn.buttonEl.setCssStyles({ padding: '0 10px' });
+        btn.buttonEl.addClass('nl-padding-010px');
       });
     }
 
-    const indexesOfType = this.plugin.settings.indexConfigurations.filter((i: any) => i.type === type);
+    const indexesOfType = this.plugin.settings.indexConfigurations.filter((i) => i.type === type);
 
     if (indexesOfType.length === 0) {
       sectionEl.createEl('p', {
@@ -1586,7 +1579,7 @@ await this.plugin.saveSettings();
         : this.plugin.settings.selectedBM25IndexId === index.id;
       checkbox.disabled = index.isBuilding || false;
 
-      checkbox.addEventListener('change', async () => {
+      checkbox.addEventListener('change', () => { void (async () => {
         if (type === 'embedding') {
           this.plugin.settings.selectedEmbeddingIndexId = checkbox.checked ? index.id : null;
         } else {
@@ -1609,7 +1602,7 @@ await this.plugin.saveSettings();
 
         this.display(); // Refresh to update checkboxes
         new Notice('Index selection saved');
-      });
+      })(); });
 
       // Name cell
       const nameCell = row.createEl('td', { cls: 'index-name-cell', attr: { title: index.name } });
@@ -1733,7 +1726,7 @@ await this.plugin.saveSettings();
         buildBtn.addClass('building');
         
         // We use a small timeout to ensure the DOM is fully ready.
-        setTimeout(async () => {
+        window.setTimeout(() => { void (async () => {
           try {
             // Re-attach to the build process
             await this.buildIndex(index, (progress: number, fileStatus?: string) => {
@@ -1755,10 +1748,10 @@ await this.plugin.saveSettings();
                this.display();
             }
           }
-        }, 50);
+        })(); }, 50);
       }
 
-      buildBtn.addEventListener('click', async () => {
+      buildBtn.addEventListener('click', () => {
         if (index.isBuilding) {
           // Pause requested
           this.plugin.embeddingsManager.pauseIndexBuild(index.id);
@@ -1769,49 +1762,51 @@ await this.plugin.saveSettings();
           return;
         }
 
-        // Start build
-        index.isBuilding = true;
-        index.buildProgress = index.buildProgress || 0;
-        index.buildError = undefined;
-        
-        // Update button to show pause option
-        buildBtn.addClass('building');
-        setIcon(buildBtn, 'pause');
-        buildBtn.setAttribute('aria-label', 'Pause building');
-        
-        // Replace status cell content with progress percentage
-        statusCell.empty();
-        statusCell.setText(`${index.buildProgress}%`);
-        statusCell.addClass('index-building-progress');
-
-        try {
-          await this.buildIndex(index, (progress: number, fileStatus?: string) => {
-                        index.buildProgress = progress;
-            // Update progress percentage in real-time
-            statusCell.setText(`${progress}%`);
-            
-            // Update file status in real-time if provided
-            if (fileStatus) {
-              filesCell.setText(`${fileStatus} (${progress}%)`);
-            }
-          });
+        void (async () => {
+          // Start build
+          index.isBuilding = true;
+          index.buildProgress = index.buildProgress || 0;
+          index.buildError = undefined;
           
-          // Reset build progress after completion
-          index.buildProgress = 0;
-          new Notice(`${index.name} built successfully`);
-        } catch (error) {
-          const err = error as Error;
-          if (err.message === 'PAUSED') {
-            new Notice(`${index.name} build paused`);
-          } else {
-            index.buildError = err.message;
-            new Notice(`Failed to build ${index.name}: ${err.message}`);
+          // Update button to show pause option
+          buildBtn.addClass('building');
+          setIcon(buildBtn, 'pause');
+          buildBtn.setAttribute('aria-label', 'Pause building');
+          
+          // Replace status cell content with progress percentage
+          statusCell.empty();
+          statusCell.setText(`${index.buildProgress}%`);
+          statusCell.addClass('index-building-progress');
+
+          try {
+            await this.buildIndex(index, (progress: number, fileStatus?: string) => {
+                          index.buildProgress = progress;
+              // Update progress percentage in real-time
+              statusCell.setText(`${progress}%`);
+              
+              // Update file status in real-time if provided
+              if (fileStatus) {
+                filesCell.setText(`${fileStatus} (${progress}%)`);
+              }
+            });
+            
+            // Reset build progress after completion
+            index.buildProgress = 0;
+            new Notice(`${index.name} built successfully`);
+          } catch (error) {
+            const err = error as Error;
+            if (err.message === 'PAUSED') {
+              new Notice(`${index.name} build paused`);
+            } else {
+              index.buildError = err.message;
+              new Notice(`Failed to build ${index.name}: ${err.message}`);
+            }
+          } finally {
+            index.isBuilding = false;
+            // Refresh to show final state (timestamp or paused state)
+            this.display();
           }
-        } finally {
-          index.isBuilding = false;
-          // Refresh to show final state (timestamp or paused state)
-          this.display();
-        }
+        })();
       });
 
       // Delete button (only for embedding indexes, BM25 must always exist)
@@ -1833,11 +1828,11 @@ await this.plugin.saveSettings();
         setIcon(deleteBtn, 'trash-2');
         deleteBtn.disabled = index.isBuilding || false;
 
-        deleteBtn.addEventListener('click', async () => {
+        deleteBtn.addEventListener('click', () => { void (async () => {
           const confirmed = confirm(`Are you sure you want to delete the index "${index.name}"? This will also permanently delete the index file from your vault.`);
           if (!confirmed) return;
 
-          const indexToRemove = this.plugin.settings.indexConfigurations.findIndex((i: any) => i.id === index.id);
+          const indexToRemove = this.plugin.settings.indexConfigurations.findIndex((i) => i.id === index.id);
           if (indexToRemove !== -1) {
             // Physically delete the file from disk first
             await this.plugin.embeddingsManager.deleteIndexFile(index.id);
@@ -1856,7 +1851,7 @@ await this.plugin.saveSettings();
             this.display();
             new Notice(`${index.name} and its data file deleted`);
           }
-        });
+        })(); });
 
       }
     }
@@ -1906,13 +1901,13 @@ await this.plugin.saveSettings();
     cancelBtn.addEventListener('click', () => { dialogEl.remove(); });
 
     const createBtn = buttonContainer.createEl('button', { text: 'Create', cls: 'mod-cta' });
-    createBtn.addEventListener('click', async () => {
+    createBtn.addEventListener('click', () => { void (async () => {
       if (!indexName.trim()) {
         new Notice('Please enter an index name');
         return;
       }
 
-      const newIndex: any = {
+      const newIndex: AISettings['indexConfigurations'][0] = {
         id: `${type}-${Date.now()}`,
         type,
         name: indexName,
@@ -1929,11 +1924,11 @@ await this.plugin.saveSettings();
       dialogEl.remove();
       this.display();
       new Notice(`${indexName} created. Click the build button to index your vault.`);
-    });
+    })(); });
   }
 
   /** Opens a dialog to edit exclusions for an existing embedding index. */
-  private showIndexExclusionsDialog(index: any): void {
+  private showIndexExclusionsDialog(index: AISettings['indexConfigurations'][0]): void {
     const dialogEl = this.containerEl.createDiv({ cls: 'index-add-dialog' });
     new Setting(dialogEl).setName(`Exclusions — ${index.name}`).setHeading();
 
@@ -1949,14 +1944,14 @@ await this.plugin.saveSettings();
     cancelBtn.addEventListener('click', () => { dialogEl.remove(); });
 
     const saveBtn = buttonContainer.createEl('button', { text: 'Save', cls: 'mod-cta' });
-    saveBtn.addEventListener('click', async () => {
+    saveBtn.addEventListener('click', () => { void (async () => {
       index.excludedFolders = [...pendingFolders];
       index.excludedFiles = [...pendingFiles];
       await this.plugin.saveSettings();
       dialogEl.remove();
       this.display();
       new Notice('Exclusions saved.');
-    });
+    })(); });
   }
 
   private renderExclusionsPicker(
@@ -1975,16 +1970,16 @@ await this.plugin.saveSettings();
     });
     // Results rendered inline (not absolute) to avoid clipping inside scrollable modal
     const searchResults = pickerEl.createDiv({ cls: 'index-excl-search-results' });
-    searchResults.setCssStyles({ display: 'none' });
+    searchResults.addClass('nl-display-none');
 
     const allMdFiles = this.app.vault.getMarkdownFiles().map(f => f.path).sort();
 
     const renderSearchResults = (query: string) => {
       searchResults.empty();
-      if (!query.trim()) { searchResults.setCssStyles({ display: 'none' }); return; }
+      if (!query.trim()) { searchResults.addClass('nl-display-none'); return; }
       const matches = allMdFiles.filter(p => p.toLowerCase().includes(query.toLowerCase())).slice(0, 20);
-      if (matches.length === 0) { searchResults.setCssStyles({ display: 'none' }); return; }
-      searchResults.setCssStyles({ display: 'block' });
+      if (matches.length === 0) { searchResults.addClass('nl-display-none'); return; }
+      searchResults.addClass('nl-display-block');
       for (const path of matches) {
         const item = searchResults.createDiv({ cls: 'index-excl-search-item' });
         const cb = item.createEl('input', { type: 'checkbox' });
@@ -2012,11 +2007,12 @@ await this.plugin.saveSettings();
     const folderListEl = pickerEl.createDiv({ cls: 'index-excl-folder-list' });
 
     // Use vault.getAllFolders() for reliable folder enumeration
-    const allFolders = (this.app.vault as any).getAllFolders
-      ? (this.app.vault as any).getAllFolders().map((f: any) => f.path).filter((p: string) => p !== '').sort()
+    const vault = this.app.vault as unknown as { getAllFolders?(): Array<{ path: string }> };
+    const allFolders = vault.getAllFolders
+      ? vault.getAllFolders().map((f) => f.path).filter((p: string) => p !== '').sort()
       : this.app.vault.getAllLoadedFiles()
-          .filter((f: any) => f.children !== undefined && f.path !== '')
-          .map((f: any) => f.path)
+          .filter((f) => f instanceof TFolder && f.path !== '')
+          .map((f) => f.path)
           .sort();
 
     const renderFolderList = () => {
@@ -2029,7 +2025,7 @@ await this.plugin.saveSettings();
         const selectAllCb = selectAllItem.createEl('input', { type: 'checkbox' });
         selectAllCb.checked = allPaths.every(p => pendingFolders.includes(p));
         const selectAllLabel = selectAllItem.createEl('span', { cls: 'index-excl-folder-label', text: 'Select All' });
-        selectAllLabel.setCssStyles({ fontWeight: 'bold' });
+        selectAllLabel.addClass('nl-font-weight-bold');
 
         selectAllCb.addEventListener('change', () => {
           if (selectAllCb.checked) {
@@ -2126,7 +2122,7 @@ await this.plugin.saveSettings();
     renderExcludedSummary();
   }
 
-  private async buildIndex(indexConfig: any, progressCallback: (progress: number, fileStatus?: string) => void): Promise<void> {
+  private async buildIndex(indexConfig: AISettings['indexConfigurations'][0], progressCallback: (progress: number, fileStatus?: string) => void): Promise<void> {
     if (!indexConfig) {
       throw new Error('Index not found');
     }
@@ -2157,8 +2153,8 @@ await this.plugin.saveSettings();
             throw new Error('Ollama not accessible');
           }
           
-          const data = await response.json();
-          const availableModels = data.models?.map((m: any) => m.name) || [];
+          const data = await response.json() as OllamaTagsResponse;
+          const availableModels = data.models?.map((m: { name: string }) => m.name) || [];
           
           // Check if the model is pulled
           if (!availableModels.includes(indexConfig.model)) {
@@ -2423,13 +2419,13 @@ await this.plugin.saveSettings();
              this.plugin.settings.saveYoutubeTranscripts = val;
              await this.plugin.saveSettings();
              // Show/hide folder setting based on toggle
-             folderSetting.settingEl.setCssStyles({ display: val ? '' : 'none' });
+             folderSetting.settingEl.toggleClass('nl-display-none', !(val));
              new Notice(`YouTube transcripts will ${val ? 'be saved as files' : 'be used internally only'}`);
            })
       );
 
     // Initially hide/show folder setting based on current toggle value
-    folderSetting.settingEl.setCssStyles({ display: (this.plugin.settings.saveYoutubeTranscripts ?? true) ? '' : 'none' });
+    folderSetting.settingEl.toggleClass('nl-display-none', !((this.plugin.settings.saveYoutubeTranscripts ?? true)));
 
     // Add PDF output directory setting
     new Setting(containerEl).setName('File output').setHeading();
@@ -2522,10 +2518,8 @@ if (this.validatePath(normalizedPath)) {
             // Update live - find all response views and update wallpaper
             const viewType = 'ai-tutor-response';
             this.app.workspace.getLeavesOfType(viewType).forEach(leaf => {
-              const view = leaf.view as any;
-              if (view && typeof view.updateWallpaper === 'function') {
-                view.updateWallpaper();
-              }
+              const view = leaf.view as unknown as { updateWallpaper?: () => void };
+              view?.updateWallpaper?.();
             });
             new Notice(`Response opacity updated to ${Math.round(val * 100)}%`);
           })
@@ -2548,10 +2542,8 @@ if (this.validatePath(normalizedPath)) {
             // Update live - find all response views and update wallpaper
             const viewType = 'ai-tutor-response';
             this.app.workspace.getLeavesOfType(viewType).forEach(leaf => {
-              const view = leaf.view as any;
-              if (view && typeof view.updateWallpaper === 'function') {
-                view.updateWallpaper();
-              }
+              const view = leaf.view as unknown as { updateWallpaper?: () => void };
+              view?.updateWallpaper?.();
             });
             new Notice(`Header/Input opacity updated to ${Math.round(val * 100)}%`);
           })
@@ -2608,7 +2600,7 @@ if (this.validatePath(normalizedPath)) {
       { id: 'opencode', name: 'OpenCode Zen' },
       { id: 'ollama', name: 'Ollama' },
       { id: 'nvidia', name: 'NVIDIA' },
-      ...this.plugin.settings.customProviders.map((p: any) => ({ id: p.id as Provider, name: p.name }))
+      ...this.plugin.settings.customProviders.map((p: CustomProviderConfig) => ({ id: p.id as Provider, name: p.name }))
     ];
     new Setting(containerEl).setName('Custom AI models' ).setHeading();
     
@@ -2641,8 +2633,8 @@ if (this.validatePath(normalizedPath)) {
         cls: 'provider-model-count', 
         text: `${providerModels.length} models` 
       });
-      modelCount.setCssStyles({ color: 'var(--text-muted)' });
-      modelCount.setCssStyles({ fontSize: '0.85em' });
+      modelCount.addClass('nl-color-var--text-muted');
+      modelCount.addClass('nl-font-size-085em');
 
       // Header Right: Verification Button / Spinner / Status
       const headerRight = header.createDiv({ cls: 'provider-header-right' });
@@ -2724,7 +2716,7 @@ if (this.validatePath(normalizedPath)) {
         emptyRow.createEl('td', { 
           text: 'No models added for this provider.',
           attr: { colspan: '5' }
-        }).setCssStyles({ textAlign: 'center' });
+        }).addClass('nl-text-align-center');
       }
 
       const addBtnContainer = content.createDiv({ cls: 'provider-add-button-container' });
@@ -2761,13 +2753,13 @@ if (this.validatePath(normalizedPath)) {
       cls: 'model-input-wide',
       attr: { placeholder: 'e.g., gemini-2.5-flash' }
     });
-    idInput.addEventListener('change', async () => {
+    idInput.addEventListener('change', () => { void (async () => {
       model.id = idInput.value;
       model.verificationStatus = 'unverified'; // Reset status when ID changes
       model.isNew = true;
       await this.plugin.saveSettings();
       this.display(); // Refresh to show unverified status
-    });
+    })(); });
 
     // Model Name cell
     const nameCell = row.createEl('td');
@@ -2795,11 +2787,11 @@ if (this.validatePath(normalizedPath)) {
       cls: 'model-input-number',
       attr: { min: '0', placeholder: 'Optional' }
     });
-    tokenInput.addEventListener('change', async () => {
+    tokenInput.addEventListener('change', () => { void (async () => {
       const limit = parseInt(tokenInput.value);
       model.tokenLimit = isNaN(limit) ? undefined : limit;
       await this.plugin.saveSettings();
-    });
+    })(); });
 
     // Settings button cell (three-dot icon)
     const settingsCell = row.createEl('td', { cls: 'cell-center' });
@@ -2831,7 +2823,7 @@ if (this.validatePath(normalizedPath)) {
       enabledCheckbox.checked = model.enabled !== false;
     }
     
-    enabledCheckbox.addEventListener('change', async () => {
+    enabledCheckbox.addEventListener('change', () => { void (async () => {
       // Double-check API key exists before allowing enable
       if (enabledCheckbox.checked && !this.hasApiKeyForProvider(model.provider) && model.provider !== 'ollama') {
         enabledCheckbox.checked = false;
@@ -2847,7 +2839,7 @@ if (this.validatePath(normalizedPath)) {
       model.enabled = enabledCheckbox.checked;
       await this.plugin.saveSettings();
       this.display(); // Refresh to update enabled count in header
-    });
+    })(); });
 
     // Delete button (appears on hover) - added AFTER all cells
     const deleteBtn = row.createEl('span', { 
@@ -2855,7 +2847,7 @@ if (this.validatePath(normalizedPath)) {
       attr: { title: 'Delete model' }
     });
     setIcon(deleteBtn, 'x');
-    deleteBtn.addEventListener('click', async (e) => {
+    deleteBtn.addEventListener('click', (e) => { void (async () => {
       e.stopPropagation();
       const modelIndex = this.plugin.settings.customModels.findIndex((m: CustomModel) => m.id === model.id && m.provider === model.provider);
       if (modelIndex > -1) {
@@ -2864,7 +2856,7 @@ if (this.validatePath(normalizedPath)) {
         this.display();
         new Notice(`Model '${model.name || model.id}' deleted`);
       }
-    });
+    })(); });
   }
 
   private addNewModelRow(container: HTMLElement, provider?: Provider) {
@@ -2883,7 +2875,8 @@ if (this.validatePath(normalizedPath)) {
   }
 
   private openModelSettingsModal(model: CustomModel) {
-    const modal = document.createElement('div');
+    const doc = this.containerEl.ownerDocument;
+    const modal = doc.createElement('div');
     modal.className = 'model-settings-modal-container is-visible'; // Add is-visible class
     
     const modalBg = modal.createDiv({ cls: 'model-settings-modal-bg' });
@@ -2964,28 +2957,28 @@ if (this.validatePath(normalizedPath)) {
     
     const cancelBtn = modalFooter.createEl('button', { text: 'Cancel' });
     cancelBtn.addEventListener('click', () => {
-      document.body.removeChild(modal);
+      doc.body.removeChild(modal);
     });
     
     const saveBtn = modalFooter.createEl('button', { 
       text: 'Save',
       cls: 'mod-cta'
     });
-    saveBtn.addEventListener('click', async () => {
+    saveBtn.addEventListener('click', () => { void (async () => {
       model.temperature = parseFloat(tempSlider.value);
       model.topP = parseFloat(topPSlider.value);
       await this.plugin.saveSettings();
-      document.body.removeChild(modal);
+      doc.body.removeChild(modal);
       new Notice('Model settings saved');
-    });
+    })(); });
     
     // Close modal on background click
     modalBg.addEventListener('click', () => {
-      document.body.removeChild(modal);
+      doc.body.removeChild(modal);
     });
     
     // Add modal to body
-    document.body.appendChild(modal);
+    doc.body.appendChild(modal);
   }
 
   private createCustomEmbeddingModelsTable(containerEl: HTMLElement) {
@@ -2995,8 +2988,8 @@ if (this.validatePath(normalizedPath)) {
       { id: 'ollama', name: 'Ollama' },
       { id: 'nvidia', name: 'NVIDIA' },
       ...this.plugin.settings.customProviders
-        .filter((p: any) => p.enableEmbeddings)
-        .map((p: any) => ({ id: p.id as Provider, name: p.name }))
+        .filter((p: CustomProviderConfig) => p.enableEmbeddings)
+        .map((p: CustomProviderConfig) => ({ id: p.id as Provider, name: p.name }))
     ];
 
     new Setting(containerEl).setName('Custom embedding models' ).setHeading();
@@ -3028,8 +3021,8 @@ if (this.validatePath(normalizedPath)) {
         cls: 'provider-model-count', 
         text: `${providerModels.length} models` 
       });
-      modelCount.setCssStyles({ color: 'var(--text-muted)' });
-      modelCount.setCssStyles({ fontSize: '0.85em' });
+      modelCount.addClass('nl-color-var--text-muted');
+      modelCount.addClass('nl-font-size-085em');
 
       // Header Right: Verification Button / Spinner / Status
       const headerRight = header.createDiv({ cls: 'provider-header-right' });
@@ -3099,7 +3092,7 @@ if (this.validatePath(normalizedPath)) {
         emptyRow.createEl('td', { 
           text: 'No embedding models added for this provider.',
           attr: { colspan: '4' }
-        }).setCssStyles({ textAlign: 'center' });
+        }).addClass('nl-text-align-center');
       }
 
       const addBtnContainer = content.createDiv({ cls: 'provider-add-button-container' });
@@ -3136,13 +3129,13 @@ if (this.validatePath(normalizedPath)) {
       cls: 'model-input-wide',
       attr: { placeholder: 'e.g., text-embedding-004' }
     });
-    idInput.addEventListener('change', async () => {
+    idInput.addEventListener('change', () => { void (async () => {
       model.id = idInput.value;
       model.verificationStatus = 'unverified'; // Reset status when ID changes
       model.isNew = true;
       await this.plugin.saveSettings();
       this.display(); // Refresh to update dots
-    });
+    })(); });
 
     // Display Name cell
     const nameCell = row.createEl('td');
@@ -3158,10 +3151,10 @@ if (this.validatePath(normalizedPath)) {
       badge.setAttribute('title', 'Newly discovered or modified model');
     }
 
-    nameInput.addEventListener('change', async () => {
+    nameInput.addEventListener('change', () => { void (async () => {
       model.name = nameInput.value;
       await this.plugin.saveSettings();
-    });
+    })(); });
 
     // Context Window cell (read-only display)
     const contextWindowCell = row.createEl('td');
@@ -3185,11 +3178,11 @@ if (this.validatePath(normalizedPath)) {
       enabledCheckbox.checked = model.enabled !== false;
     }
 
-    enabledCheckbox.addEventListener('change', async () => {
+    enabledCheckbox.addEventListener('change', () => { void (async () => {
       model.enabled = enabledCheckbox.checked;
       await this.plugin.saveSettings();
       this.display(); // Refresh to update enabled count in header
-    });
+    })(); });
 
     // Delete button
     const deleteBtn = row.createEl('span', { 
@@ -3197,7 +3190,7 @@ if (this.validatePath(normalizedPath)) {
       attr: { title: 'Delete embedding model' }
     });
     setIcon(deleteBtn, 'x');
-    deleteBtn.addEventListener('click', async (e) => {
+    deleteBtn.addEventListener('click', (e) => { void (async () => {
       e.stopPropagation();
       const modelIndex = this.plugin.settings.customEmbeddingModels.indexOf(model);
       if (modelIndex > -1) {
@@ -3205,7 +3198,7 @@ if (this.validatePath(normalizedPath)) {
         await this.plugin.saveSettings();
         this.display();
       }
-    });
+    })(); });
   }
 
   private addNewEmbeddingModelRow(container: HTMLElement, provider?: Provider) {
@@ -3241,18 +3234,18 @@ if (this.validatePath(normalizedPath)) {
     
     // Get all folders from vault, excluding already excluded ones
     const allFolders = this.app.vault.getAllLoadedFiles()
-      .filter(f => (f as any).children !== undefined)
+      .filter(f => f instanceof TFolder)
       .map(f => f.path)
       .filter(path => !this.plugin.settings.excludedFolders?.includes(path));
     
-    this.setupAutocomplete(folderInput, folderSuggestions, allFolders, async (selected) => {
+    this.setupAutocomplete(folderInput, folderSuggestions, allFolders, (selected) => { void (async () => {
       if (!this.plugin.settings.excludedFolders.includes(selected)) {
         this.plugin.settings.excludedFolders.push(selected);
         await this.plugin.saveSettings();
         this.display();
         new Notice(`Folder '${selected}' excluded from indexing`);
       }
-    });
+    })(); });
 
     // File exclusion input with autocomplete
     const fileSection = exclusionContainer.createDiv({ cls: 'exclusion-input-section' });
@@ -3272,7 +3265,7 @@ if (this.validatePath(normalizedPath)) {
       .map(f => f.path)
       .filter(path => !this.plugin.settings.excludedFiles?.includes(path));
     
-    this.setupAutocomplete(fileInput, fileSuggestions, allFiles, async (selected) => {
+    this.setupAutocomplete(fileInput, fileSuggestions, allFiles, (selected) => { void (async () => {
       if (!this.plugin.settings.excludedFiles) {
         this.plugin.settings.excludedFiles = [];
       }
@@ -3282,7 +3275,7 @@ if (this.validatePath(normalizedPath)) {
         this.display();
         new Notice(`File '${selected}' excluded from indexing`);
       }
-    });
+    })(); });
 
     // Collapsible section to show current exclusions
     const exclusionsDisplay = exclusionContainer.createDiv({ cls: 'exclusions-display' });
@@ -3301,7 +3294,7 @@ if (this.validatePath(normalizedPath)) {
 
     // Excluded folders list
     const foldersListSection = exclusionsContent.createDiv({ cls: 'exclusion-list-section' });
-    foldersListSection.createEl('h5', { text: 'Excluded Folders' });
+    new Setting(foldersListSection).setName('Excluded Folders').setHeading();
     const foldersList = foldersListSection.createDiv({ cls: 'exclusion-list' });
     
     const excludedFolders: string[] = this.plugin.settings.excludedFolders || [];
@@ -3312,7 +3305,7 @@ if (this.validatePath(normalizedPath)) {
         const item = foldersList.createDiv({ cls: 'exclusion-item' });
         item.createEl('span', { text: folder, cls: 'exclusion-item-text' });
         const removeBtn = item.createEl('span', { cls: 'exclusion-remove-btn', text: '×' });
-        removeBtn.addEventListener('click', async () => {
+        removeBtn.addEventListener('click', () => { void (async () => {
           const idx = this.plugin.settings.excludedFolders.indexOf(folder);
           if (idx > -1) {
             this.plugin.settings.excludedFolders.splice(idx, 1);
@@ -3320,13 +3313,13 @@ if (this.validatePath(normalizedPath)) {
             this.display();
             new Notice(`Folder '${folder}' removed from exclusions`);
           }
-        });
+        })(); });
       });
     }
 
     // Excluded files list
     const filesListSection = exclusionsContent.createDiv({ cls: 'exclusion-list-section' });
-    filesListSection.createEl('h5', { text: 'Excluded Files' });
+    new Setting(filesListSection).setName('Excluded Files').setHeading();
     const filesList = filesListSection.createDiv({ cls: 'exclusion-list' });
     
     const excludedFiles: string[] = this.plugin.settings.excludedFiles || [];
@@ -3337,7 +3330,7 @@ if (this.validatePath(normalizedPath)) {
         const item = filesList.createDiv({ cls: 'exclusion-item' });
         item.createEl('span', { text: file, cls: 'exclusion-item-text' });
         const removeBtn = item.createEl('span', { cls: 'exclusion-remove-btn', text: '×' });
-        removeBtn.addEventListener('click', async () => {
+        removeBtn.addEventListener('click', () => { void (async () => {
           const idx = this.plugin.settings.excludedFiles.indexOf(file);
           if (idx > -1) {
             this.plugin.settings.excludedFiles.splice(idx, 1);
@@ -3345,7 +3338,7 @@ if (this.validatePath(normalizedPath)) {
             this.display();
             new Notice(`File '${file}' removed from exclusions`);
           }
-        });
+        })(); });
       });
     }
   }
@@ -3367,7 +3360,7 @@ if (this.validatePath(normalizedPath)) {
       selectedIndex = -1;
 
       if (query.length === 0) {
-        suggestionsEl.setCssStyles({ display: 'none' });
+        suggestionsEl.addClass('nl-display-none');
         return;
       }
 
@@ -3376,18 +3369,18 @@ if (this.validatePath(normalizedPath)) {
         .slice(0, 10); // Limit to 10 suggestions
 
       if (matches.length === 0) {
-        suggestionsEl.setCssStyles({ display: 'none' });
+        suggestionsEl.addClass('nl-display-none');
         return;
       }
 
-      suggestionsEl.setCssStyles({ display: 'block' });
+      suggestionsEl.addClass('nl-display-block');
       matches.forEach((match, idx) => {
         const suggestion = suggestionsEl.createDiv({ cls: 'autocomplete-suggestion' });
         suggestion.textContent = match;
         suggestion.addEventListener('click', () => {
           onSelect(match);
           input.value = '';
-          suggestionsEl.setCssStyles({ display: 'none' });
+          suggestionsEl.addClass('nl-display-none');
         });
         suggestion.addEventListener('mouseenter', () => {
           selectedIndex = idx;
@@ -3413,16 +3406,16 @@ if (this.validatePath(normalizedPath)) {
         const selected = suggestions[selectedIndex] as HTMLElement;
         onSelect(selected.textContent || '');
         input.value = '';
-        suggestionsEl.setCssStyles({ display: 'none' });
+        suggestionsEl.addClass('nl-display-none');
       } else if (e.key === 'Escape') {
-        suggestionsEl.setCssStyles({ display: 'none' });
+        suggestionsEl.addClass('nl-display-none');
       }
     });
 
     input.addEventListener('blur', () => {
       // Delay to allow click on suggestion
-      setTimeout(() => {
-        suggestionsEl.setCssStyles({ display: 'none' });
+      window.setTimeout(() => {
+        suggestionsEl.addClass('nl-display-none');
       }, 200);
     });
   }
@@ -3440,7 +3433,7 @@ if (this.validatePath(normalizedPath)) {
    */
   private async checkIndexChanges(): Promise<void> {
     try {
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => window.setTimeout(resolve, 50));
       if (!this.plugin.embeddingsManager || typeof this.plugin.embeddingsManager.detectChanges !== 'function') {
         return;
       }
@@ -3508,7 +3501,7 @@ if (this.validatePath(normalizedPath)) {
         cls: 'mcp-prereq-btn',
       });
 
-      checkBtn.addEventListener('click', async () => {
+      checkBtn.addEventListener('click', () => { void (async () => {
         checkBtn.disabled = true;
         checkBtn.textContent = 'Checking…';
         statusEl.textContent = '';
@@ -3522,7 +3515,7 @@ if (this.validatePath(normalizedPath)) {
             return;
           }
           // Use Node's child_process — available in Electron/Obsidian desktop
-          const { execSync } = (window as any).require('child_process') as typeof import('child_process');
+          const { execSync } = window.require!('child_process');
           const version = execSync(cmd, { timeout: 5000, encoding: 'utf8' }).trim();
 
           statusEl.textContent = `✅ Installed — ${version}`;
@@ -3537,10 +3530,10 @@ if (this.validatePath(normalizedPath)) {
           await this.plugin.saveSettings();
 
           // Fade out and remove the card after a short delay
-          setTimeout(() => {
-            card.setCssStyles({ transition: 'opacity 0.4s' });
-            card.setCssStyles({ opacity: '0' });
-            setTimeout(() => {
+          window.setTimeout(() => {
+            card.addClass('nl-transition-opacity04s');
+            card.addClass('nl-opacity-0');
+            window.setTimeout(() => {
               card.remove();
               // If all cards gone, remove the whole wrapper
               if (row.children.length === 0) wrapper.remove();
@@ -3563,7 +3556,7 @@ if (this.validatePath(normalizedPath)) {
             a.rel = 'noopener noreferrer';
           }
         }
-      });
+      })(); });
     });
   }
 
@@ -3602,9 +3595,9 @@ if (this.validatePath(normalizedPath)) {
         text: 'No MCP servers configured. Click "Add MCP Server" to get started.',
         attr: { colspan: '6' }
       });
-      emptyCell.setCssStyles({ textAlign: 'center' });
-      emptyCell.setCssStyles({ fontStyle: 'italic' });
-      emptyCell.setCssStyles({ color: 'var(--text-muted)' });
+      emptyCell.addClass('nl-text-align-center');
+      emptyCell.addClass('nl-font-style-italic');
+      emptyCell.addClass('nl-color-var--text-muted');
     }
     
     // Add new server button
@@ -3626,8 +3619,8 @@ if (this.validatePath(normalizedPath)) {
     // Transport cell
     const transportCell = row.createEl('td');
     transportCell.setText(server.transport.toUpperCase());
-    transportCell.setCssStyles({ fontWeight: '600' });
-    transportCell.setCssStyles({ fontSize: '0.85em' });
+    transportCell.addClass('nl-font-weight-600');
+    transportCell.addClass('nl-font-size-085em');
     
     // Command/URL cell
     const commandCell = row.createEl('td');
@@ -3636,10 +3629,10 @@ if (this.validatePath(normalizedPath)) {
     } else {
       commandCell.setText(server.url || '');
     }
-    commandCell.setCssStyles({ fontFamily: 'monospace' });
-    commandCell.setCssStyles({ fontSize: '0.9em' });
-    commandCell.setCssStyles({ wordBreak: 'break-all' });
-    commandCell.setCssStyles({ whiteSpace: 'normal' });
+    commandCell.addClass('nl-font-family-monospace');
+    commandCell.addClass('nl-font-size-09em');
+    commandCell.addClass('nl-word-break-break-all');
+    commandCell.addClass('nl-white-space-normal');
     
     // Arguments cell
     const argsCell = row.createEl('td');
@@ -3648,10 +3641,10 @@ if (this.validatePath(normalizedPath)) {
     } else {
       argsCell.setText(server.apiKey ? '🔑 API Key Set' : '-');
     }
-    argsCell.setCssStyles({ fontFamily: 'monospace' });
-    argsCell.setCssStyles({ fontSize: '0.9em' });
-    argsCell.setCssStyles({ wordBreak: 'break-all' });
-    argsCell.setCssStyles({ whiteSpace: 'normal' });
+    argsCell.addClass('nl-font-family-monospace');
+    argsCell.addClass('nl-font-size-09em');
+    argsCell.addClass('nl-word-break-break-all');
+    argsCell.addClass('nl-white-space-normal');
     
     // Status cell
     const statusCell = row.createEl('td');
@@ -3662,8 +3655,8 @@ if (this.validatePath(normalizedPath)) {
     
     // Actions cell
     const actionsCell = row.createEl('td');
-    actionsCell.setCssStyles({ display: 'flex' });
-    actionsCell.setCssStyles({ gap: '8px' });
+    actionsCell.addClass('nl-display-flex');
+    actionsCell.addClass('nl-gap-8px');
     
     // Edit button
     const editBtn = actionsCell.createEl('button', { 
@@ -3679,7 +3672,7 @@ if (this.validatePath(normalizedPath)) {
       attr: { 'aria-label': server.disabled ? 'Enable server' : 'Disable server' }
     });
     setIcon(toggleBtn, server.disabled ? 'play' : 'pause');
-    toggleBtn.addEventListener('click', async () => {
+    toggleBtn.addEventListener('click', () => { void (async () => {
       const wasDisabled = this.plugin.settings.mcpServers[index].disabled;
       this.plugin.settings.mcpServers[index].disabled = !wasDisabled;
       await this.plugin.saveSettings();
@@ -3700,7 +3693,7 @@ if (this.validatePath(normalizedPath)) {
       }
 
       this.display();
-    });
+    })(); });
     
     // Delete button
     const deleteBtn = actionsCell.createEl('button', { 
@@ -3708,17 +3701,17 @@ if (this.validatePath(normalizedPath)) {
       attr: { 'aria-label': 'Delete server' }
     });
     setIcon(deleteBtn, 'trash-2');
-    deleteBtn.addEventListener('click', async () => {
+    deleteBtn.addEventListener('click', () => { void (async () => {
       if (confirm(`Delete MCP server "${server.name}"?`)) {
         this.plugin.settings.mcpServers.splice(index, 1);
         await this.plugin.saveSettings();
         this.display();
       }
-    });
+    })(); });
   }
 
   private addNewMCPServer(container: HTMLElement): void {
-    const modal = new MCPServerModal(this.app, async (server: MCPServerConfig) => {
+    const modal = new MCPServerModal(this.app, (server: MCPServerConfig) => { void (async () => {
       if (!this.plugin.settings.mcpServers) {
         this.plugin.settings.mcpServers = [];
       }
@@ -3733,17 +3726,17 @@ if (this.validatePath(normalizedPath)) {
       }
 
       this.display();
-    });
+    })(); });
     modal.open();
   }
 
   private editMCPServer(index: number): void {
     const server = this.plugin.settings.mcpServers[index];
-    const modal = new MCPServerModal(this.app, async (updatedServer: MCPServerConfig) => {
+    const modal = new MCPServerModal(this.app, (updatedServer: MCPServerConfig) => { void (async () => {
       this.plugin.settings.mcpServers[index] = updatedServer;
       await this.plugin.saveSettings();
       this.display();
-    }, server);
+    })(); }, server);
     modal.open();
   }
 }
@@ -3980,10 +3973,10 @@ class MCPServerModal extends Modal {
     
     // Buttons
     const buttonContainer = contentEl.createDiv({ cls: 'modal-button-container' });
-    buttonContainer.setCssStyles({ display: 'flex' });
-    buttonContainer.setCssStyles({ justifyContent: 'flex-end' });
-    buttonContainer.setCssStyles({ gap: '8px' });
-    buttonContainer.setCssStyles({ marginTop: '16px' });
+    buttonContainer.addClass('nl-display-flex');
+    buttonContainer.addClass('nl-justify-content-flex-end');
+    buttonContainer.addClass('nl-gap-8px');
+    buttonContainer.addClass('nl-margin-top-16px');
     
     const cancelBtn = buttonContainer.createEl('button', { text: 'Cancel' });
     cancelBtn.addEventListener('click', () => this.close());
@@ -3994,19 +3987,19 @@ class MCPServerModal extends Modal {
 
   private updateViewMode(): void {
     if (this.isSchemaView) {
-      this.fieldsContainer.setCssStyles({ display: 'none' });
-      this.schemaContainer.setCssStyles({ display: 'block' });
+      this.fieldsContainer.addClass('nl-display-none');
+      this.schemaContainer.addClass('nl-display-block');
       
       // Try to populate schema from fields if empty or just switched
       const currentConfig = this.getCurrentConfigFromFields();
       if (currentConfig) {
         // Strip out ID and disabled state for cleaner schema view
-        const { id, disabled, name, ...schemaFields } = currentConfig as any;
+        const { id, disabled, name, ...schemaFields } = currentConfig as unknown as MCPServerConfig;
         this.schemaInput.value = JSON.stringify(schemaFields, null, 2);
       }
     } else {
-      this.fieldsContainer.setCssStyles({ display: 'block' });
-      this.schemaContainer.setCssStyles({ display: 'none' });
+      this.fieldsContainer.addClass('nl-display-block');
+      this.schemaContainer.addClass('nl-display-none');
       
       // Try to populate fields from schema if schema was edited
       this.syncFieldsFromSchema();
@@ -4018,7 +4011,7 @@ class MCPServerModal extends Modal {
     if (!rawValue) return;
 
     try {
-      let parsed = JSON.parse(rawValue);
+      let parsed = JSON.parse(rawValue) as MCPSchemaInput;
       
       // Handle the case where someone pastes the full "mcpServers" object
       if (parsed.mcpServers && typeof parsed.mcpServers === 'object') {
@@ -4031,7 +4024,7 @@ class MCPServerModal extends Modal {
 
       if (parsed.transport) {
         this.transportSelect.value = parsed.transport;
-        this.updateTransportFields(parsed.transport);
+        this.updateTransportFields(parsed.transport as 'stdio' | 'sse');
       } else if (parsed.command) {
         this.transportSelect.value = 'stdio';
         this.updateTransportFields('stdio');
@@ -4064,7 +4057,7 @@ class MCPServerModal extends Modal {
   private getCurrentConfigFromFields(): Partial<MCPServerConfig> | null {
     if (!this.transportSelect) return null;
     const transport = this.transportSelect.value as 'stdio' | 'sse';
-    const config: any = { transport };
+    const config: Partial<MCPServerConfig> = { transport };
     
     if (this.nameInput.value) config.name = this.nameInput.value;
     
@@ -4080,7 +4073,7 @@ class MCPServerModal extends Modal {
     const envStr = this.envInput.value.trim();
     if (envStr) {
       try {
-        config.env = JSON.parse(envStr);
+        config.env = JSON.parse(envStr) as Record<string, string>;
       } catch (e) {}
     }
     
@@ -4089,11 +4082,11 @@ class MCPServerModal extends Modal {
 
   private updateTransportFields(transport: 'stdio' | 'sse'): void {
     if (transport === 'stdio') {
-      this.stdioContainer.setCssStyles({ display: 'block' });
-      this.sseContainer.setCssStyles({ display: 'none' });
+      this.stdioContainer.addClass('nl-display-block');
+      this.sseContainer.addClass('nl-display-none');
     } else {
-      this.stdioContainer.setCssStyles({ display: 'none' });
-      this.sseContainer.setCssStyles({ display: 'block' });
+      this.stdioContainer.addClass('nl-display-none');
+      this.sseContainer.addClass('nl-display-block');
     }
   }
 
@@ -4114,7 +4107,7 @@ class MCPServerModal extends Modal {
     let env: Record<string, string> | undefined;
     if (envStr) {
       try {
-        env = JSON.parse(envStr);
+        env = JSON.parse(envStr) as Record<string, string>;
       } catch (error) {
         new Notice('Invalid JSON for environment variables');
         return;
@@ -4176,7 +4169,7 @@ class MCPServerModal extends Modal {
    */
   autofillFromRegistry(entry: MCPRegistryEntry, resolvedEnv: Record<string, string>, resolvedArgs?: string[]): void {
     // Wait one tick for the modal DOM to be ready
-    setTimeout(() => {
+    window.setTimeout(() => {
       if (this.nameInput) this.nameInput.value = entry.name;
 
       // Set transport

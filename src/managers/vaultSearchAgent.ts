@@ -1,14 +1,32 @@
 import { App, Notice, requestUrl } from 'obsidian';
 import { AISettings, getGeminiThinkingConfig, getModelTemperature, getModelTopP } from '../settings';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, type Part } from '@google/generative-ai';
 import { MultimodalInput } from '../utils/multimodalUtils';
-import { GroqService, GroqApiError, convertChatHistoryForGroq, ChatMessage as GroqChatMessage, GroqStreamEvent, GROQ_VISION_MODEL, GroqContentPart } from '../services/groqService';
+import { GroqService, GroqApiError, convertChatHistoryForGroq, ChatMessage as GroqChatMessage, GeminiHistoryMessage, GroqStreamEvent, GROQ_VISION_MODEL, GroqContentPart } from '../services/groqService';
 import { OpenRouterService, OpenRouterApiError, ChatMessage as OpenRouterChatMessage } from '../services/openRouterService';
-import { OllamaService, OllamaApiError } from '../services/ollamaService';
+import { OllamaService, OllamaApiError, ChatMessage as OllamaChatMessage } from '../services/ollamaService';
 import { NvidiaService, NvidiaApiError, ChatMessage as NvidiaChatMessage } from '../services/nvidiaService';
 import { RateLimitManager } from '../utils/rateLimitManager';
 import { GeminiService } from '../services/geminiService';
-import { UnifiedProviderManager } from '../services/unifiedProviderManager';
+import { UnifiedProviderManager, UnifiedMessage } from '../services/unifiedProviderManager';
+
+interface GeminiStreamChunk {
+    candidates?: Array<{
+        content?: { parts?: GeminiPartExtended[] };
+    }>;
+}
+
+interface GeminiUsageResponse {
+    text?: () => string;
+    usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+    };
+}
+
+interface GeminiErrorWithStatus {
+    status?: number;
+}
 
 export interface VaultSearchResult {
     path: string;
@@ -149,7 +167,7 @@ export class VaultSearchAgent {
     private stopProcessing: boolean = false; 
     private lastApiCallTime: number = 0;  
     private snippetUpdateCallback: SnippetUpdateCallback; 
-    search: any;
+    search: unknown;
 
     
     private rateLimitManager: RateLimitManager;
@@ -355,7 +373,7 @@ export class VaultSearchAgent {
         query: string,
         relevantContent: VaultSearchResult[],
         enableInlineCitations: boolean = false, 
-        chatHistory: any[] = [], 
+        chatHistory: Record<string, unknown>[] = [], 
         multimodalInputs: MultimodalInput[] = [],
         systemInstructions: string = '', 
         temporalContext?: {startDate: number | null, endDate: number | null, cleanQuery: string}, 
@@ -644,24 +662,25 @@ RESPONSE QUALITY CHECKLIST:
                     const model = genAI.getGenerativeModel({ model: this.settings.model });
 
                     
-                    const chatConfig: any = {
-                        history: chatHistory,
-                        generationConfig: {
-                            temperature: getModelTemperature(this.settings.model, this.settings),
-                            topK: 40,
-                            topP: getModelTopP(this.settings.model, this.settings),
-                            maxOutputTokens: 8192,
-                        },
+                    const generationConfig: Record<string, unknown> = {
+                        temperature: getModelTemperature(this.settings.model, this.settings),
+                        topK: 40,
+                        topP: getModelTopP(this.settings.model, this.settings),
+                        maxOutputTokens: 8192,
                     };
                     const geminiThinkingConfig = getGeminiThinkingConfig(this.settings.model, this.settings);
                     if (geminiThinkingConfig) {
-                        chatConfig.generationConfig.thinkingConfig = geminiThinkingConfig.thinkingConfig;
+                        generationConfig.thinkingConfig = geminiThinkingConfig.thinkingConfig;
                     }
+                    const chatConfig: GeminiStartChatConfig = {
+                        history: chatHistory,
+                        generationConfig,
+                    };
                     
-                    const chat = model.startChat(chatConfig);
+                    const chat = model.startChat(chatConfig as unknown as Parameters<typeof model.startChat>[0]);
                     
                     
-                    const messageParts: any[] = [];
+                    const messageParts: Part[] = [];
                     
                     
                     const fullPrompt = `${baseSystemInstructions}\n\nContent from notes:\n${formattedVaultContent}\n\nQuestion: ${query}`;
@@ -698,13 +717,14 @@ RESPONSE QUALITY CHECKLIST:
                         if (abortSignal?.aborted || this.stopProcessing) {
                             throw new DOMException('Aborted', 'AbortError');
                         }
-                        const candidate = chunk.candidates?.[0];
+                        const typedChunk = chunk as unknown as GeminiStreamChunk;
+                        const candidate = typedChunk.candidates?.[0];
                         const parts = candidate?.content?.parts;
                         if (!Array.isArray(parts)) continue;
                         for (const part of parts) {
                             const text = typeof part?.text === 'string' ? part.text : '';
                             if (!text) continue;
-                            if ((part as any)?.thought === true) {
+                            if (part?.thought === true) {
                                 this.snippetUpdateCallback('Thinking...', text);
                             } else {
                                 finalAnswer += text;
@@ -713,14 +733,14 @@ RESPONSE QUALITY CHECKLIST:
                         }
                     }
                     const finalResponse = await streamResult.response;
-                    if ((!finalAnswer || !finalAnswer.trim()) && finalResponse?.text) {
-                        finalAnswer = finalResponse.text();
+                    const typedFinalResponse = finalResponse as unknown as GeminiUsageResponse;
+                    if ((!finalAnswer || !finalAnswer.trim()) && typedFinalResponse?.text) {
+                        finalAnswer = typedFinalResponse.text();
                     }
                     
                     
-                    if ((finalResponse as any).usageMetadata) {
-                        const usage = (finalResponse as any).usageMetadata;
-                        totalTokens = (usage.promptTokenCount || 0) + (usage.candidatesTokenCount || 0);
+                    if (typedFinalResponse.usageMetadata) {
+                        totalTokens = ((typedFinalResponse.usageMetadata.promptTokenCount as number) || 0) + ((typedFinalResponse.usageMetadata.candidatesTokenCount as number) || 0);
                     }
                 } else if (this.settings.provider === 'groq') {
                     
@@ -739,7 +759,7 @@ RESPONSE QUALITY CHECKLIST:
                     const modelTokenLimit = rateLimitState.limits?.tokensPerMinute || 8000;
                     const groqMessages: GroqChatMessage[] = [
                         { role: 'system', content: baseSystemInstructions },
-                        ...convertChatHistoryForGroq(chatHistory, this.settings.model, modelTokenLimit)
+                        ...convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit) as GroqChatMessage[]
                     ];
                     if (formattedVaultContent) {
                         groqMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` } as GroqChatMessage);
@@ -814,7 +834,7 @@ RESPONSE QUALITY CHECKLIST:
                     const modelTokenLimit = rateLimitState.limits?.tokensPerMinute || 8000;
                     const openRouterMessages: OpenRouterChatMessage[] = [
                         { role: 'system', content: baseSystemInstructions },
-                        ...convertChatHistoryForGroq(chatHistory, this.settings.model, modelTokenLimit) as OpenRouterChatMessage[]
+                        ...convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit) as OpenRouterChatMessage[]
                     ];
                     if (formattedVaultContent) {
                         openRouterMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` });
@@ -837,7 +857,7 @@ RESPONSE QUALITY CHECKLIST:
                     );
                 } else if (this.settings.provider === 'ollama') {
                     
-                    const { OllamaService } = await import('../services/ollamaService');
+                    
                     const ollamaService = new OllamaService(
                         this.settings.ollamaBaseUrl,
                         this.settings.ollamaApiKey,
@@ -847,9 +867,9 @@ RESPONSE QUALITY CHECKLIST:
                     
                     const rateLimitState = this.rateLimitManager.getState(this.settings.provider, this.settings.model);
                     const modelTokenLimit = rateLimitState.limits?.tokensPerMinute || 8000;
-                    const ollamaMessages: any[] = [
+                    const ollamaMessages: OllamaChatMessage[] = [
                         { role: 'system', content: baseSystemInstructions },
-                        ...convertChatHistoryForGroq(chatHistory, this.settings.model, modelTokenLimit)
+                        ...(convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit) as unknown as OllamaChatMessage[])
                     ];
                     if (formattedVaultContent) {
                         ollamaMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` });
@@ -865,15 +885,15 @@ RESPONSE QUALITY CHECKLIST:
                     
                     if (ollamaThinkOption) {
                         let contentBuffer = '';
-                        await (ollamaService as any).generateContentStreamEvents(
+                        await (ollamaService as OllamaService).generateContentStreamEvents(
                             this.settings.model,
                             ollamaMessages,
-                            (evt: any) => {
+                            (evt: { type?: string; text?: string }) => {
                                 if (evt?.type === 'thinking' && evt.text) {
-                                    this.snippetUpdateCallback('Thinking...', evt.text);
+                                    this.snippetUpdateCallback('Thinking...', evt.text as string);
                                 } else if (evt?.type === 'content' && evt.text) {
-                                    contentBuffer += evt.text;
-                                    this.snippetUpdateCallback('Generating response...', evt.text);
+                                    contentBuffer += evt.text as string;
+                                    this.snippetUpdateCallback('Generating response...', evt.text as string);
                                 }
                             },
                             {
@@ -887,14 +907,9 @@ RESPONSE QUALITY CHECKLIST:
                         finalAnswer = contentBuffer;
                     } else {
                         
-                        let contentBuffer = '';
-                        await (ollamaService as any).generateContentStream(
+                        finalAnswer = await (ollamaService as OllamaService).generateContent(
                             this.settings.model,
                             ollamaMessages,
-                            (chunk: string) => {
-                                contentBuffer += chunk;
-                                this.snippetUpdateCallback('Generating response...', chunk);
-                            },
                             {
                                 temperature: getModelTemperature(this.settings.model, this.settings),
                                 maxTokens: 8192,
@@ -903,7 +918,6 @@ RESPONSE QUALITY CHECKLIST:
                                 abortSignal
                             }
                         );
-                        finalAnswer = contentBuffer;
                     }
                 } else if (this.settings.provider === 'nvidia') {
                     
@@ -917,7 +931,7 @@ RESPONSE QUALITY CHECKLIST:
                     const modelTokenLimit = rateLimitState.limits?.tokensPerMinute || 8000;
                     const nvidiaMessages: NvidiaChatMessage[] = [
                         { role: 'system', content: baseSystemInstructions },
-                        ...(convertChatHistoryForGroq(chatHistory, this.settings.model, modelTokenLimit) as any[])
+                        ...(convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit) as NvidiaChatMessage[])
                     ];
                     if (formattedVaultContent) {
                         nvidiaMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` } as NvidiaChatMessage);
@@ -958,13 +972,20 @@ RESPONSE QUALITY CHECKLIST:
                 } else if (UnifiedProviderManager.getInstance().hasProvider(this.settings.provider)) {
                     const unifiedProvider = UnifiedProviderManager.getInstance().getProvider(this.settings.provider)!;
                     
-                    const unifiedMessages: any[] = [
+                    const unifiedMessages: UnifiedMessage[] = [
                         { role: 'system', content: baseSystemInstructions },
-                        ...chatHistory
-                            .filter(m => (m.parts?.[0]?.text || m.content || '').trim().length > 0)
-                            .map(m => ({
-                                role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : 'user',
-                                content: m.parts?.[0]?.text || m.content || ''
+                        ...(chatHistory
+                            .filter(m => {
+                                const parts = m.parts as Array<{ text?: string }> | undefined;
+                                const text = parts?.[0]?.text || m.content || '';
+                                return (text as string).trim().length > 0;
+                            })
+                            .map(m => {
+                                const parts = m.parts as Array<{ text?: string }> | undefined;
+                                return {
+                                    role: ((m.role === 'model' || m.role === 'assistant') ? 'assistant' : 'user') as 'user' | 'assistant',
+                                    content: String(parts?.[0]?.text || m.content || '')
+                                };
                             }))
                     ];
 
@@ -1014,9 +1035,9 @@ RESPONSE QUALITY CHECKLIST:
                 } else {
                     
                     
-                    const messages: any[] = [
+                    const messages: Record<string, unknown>[] = [
                         { role: 'system', content: baseSystemInstructions },
-                        ...chatHistory 
+                        ...chatHistory
                     ];
 
                     let finalUserContent = '';
@@ -1042,9 +1063,9 @@ RESPONSE QUALITY CHECKLIST:
                             max_tokens: 8192,
                         })
                     });
-                    finalAnswer = resp.json.choices[0].message.content;
+                    finalAnswer = (resp.json as OpenAIChatCompletionResponse).choices?.[0]?.message?.content ?? '';
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                                   
                  
                  if (this.stopProcessing) {
@@ -1085,7 +1106,7 @@ RESPONSE QUALITY CHECKLIST:
                      }
                  }
                   
-                  else if (error.status === 429) { 
+                  else if ((error as GeminiErrorWithStatus).status === 429) { 
                        
                        throw new Error(`API rate limit exceeded`);
                   } else if (error instanceof Error) {

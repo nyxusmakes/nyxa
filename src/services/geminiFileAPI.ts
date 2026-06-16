@@ -104,8 +104,9 @@ export class GeminiFileAPIService {
                 fileName: file.name
             };
 
-        } catch (error: any) {
-                        new Notice(`Failed to upload ${file.name}: ${error.message}`);
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            new Notice(`Failed to upload ${file.name}: ${err.message || 'Unknown error'}`);
             return null;
         }
     }
@@ -132,7 +133,7 @@ export class GeminiFileAPIService {
      * Get metadata for an uploaded file using REST API
      * @param fileUri The URI of the uploaded file
      */
-    async getFileMetadata(fileUri: string): Promise<any> {
+    async getFileMetadata(fileUri: string): Promise<Record<string, unknown> | null> {
         if (!this.apiKey) {
                         return null;
         }

@@ -157,7 +157,7 @@ export class IndexManagementModal extends Modal {
                 const progressContainer = statusCell.createDiv({ cls: 'index-progress-container' });
                 const progressBar = progressContainer.createDiv({ cls: 'index-progress-bar' });
                 const progressFill = progressBar.createDiv({ cls: 'index-progress-fill' });
-                progressFill.setCssStyles({ 'width': `${index.buildProgress || 0}%` });
+                progressFill.setCssProps({ '--progress-width': `${index.buildProgress || 0}%` });
                 const progressText = progressContainer.createDiv({ cls: 'index-progress-text' });
                 progressText.setText(`${index.buildProgress || 0}%`);
             } else {
@@ -197,38 +197,40 @@ export class IndexManagementModal extends Modal {
             }
             buildBtn.disabled = index.isBuilding || false;
 
-            buildBtn.addEventListener('click', async () => {
-                index.isBuilding = true;
-                index.buildProgress = 0;
-                index.buildError = undefined;
-                this.onOpen(); // Refresh to show progress
+            buildBtn.addEventListener('click', () => {
+                void (async () => {
+                    index.isBuilding = true;
+                    index.buildProgress = 0;
+                    index.buildError = undefined;
+                    this.onOpen(); // Refresh to show progress
 
-                try {
-                    await this.onBuildIndex(index.id, (progress: number) => {
-                                                index.buildProgress = progress;
-                        // Update progress bar in real-time
-                        const row = this.contentEl.querySelector(`tr[data-index-id="${index.id}"]`);
-                        if (row) {
-                            const progressFill = row.querySelector('.index-progress-fill') as HTMLElement;
-                            const progressText = row.querySelector('.index-progress-text') as HTMLElement;
-                            if (progressFill && progressText) {
-                                                                progressFill.setCssStyles({ 'width': `${progress}%` });
-                                progressText.setText(`${progress}%`);
+                    try {
+                        await this.onBuildIndex(index.id, (progress: number) => {
+                                                    index.buildProgress = progress;
+                            // Update progress bar in real-time
+                            const row = this.contentEl.querySelector(`tr[data-index-id="${index.id}"]`);
+                            if (row) {
+                                const progressFill = row.querySelector('.index-progress-fill') as HTMLElement;
+                                const progressText = row.querySelector('.index-progress-text') as HTMLElement;
+                                if (progressFill && progressText) {
+                                                                    progressFill.setCssProps({ '--progress-width': `${progress}%` });
+                                    progressText.setText(`${progress}%`);
+                                } else {
+                                                                }
                             } else {
-                                                            }
-                        } else {
-                                                    }
-                    });
-                    index.buildProgress = 100;
-                    new Notice(`${index.name} built successfully`);
-                } catch (error) {
-                    const err = error as Error;
-                    index.buildError = err.message;
-                    new Notice(`Failed to build ${index.name}: ${err.message}`);
-                } finally {
-                    index.isBuilding = false;
-                    this.onOpen(); // Refresh to show final state
-                }
+                                                        }
+                        });
+                        index.buildProgress = 100;
+                        new Notice(`${index.name} built successfully`);
+                    } catch (error) {
+                        const err = error as Error;
+                        index.buildError = err.message;
+                        new Notice(`Failed to build ${index.name}: ${err.message}`);
+                    } finally {
+                        index.isBuilding = false;
+                        this.onOpen(); // Refresh to show final state
+                    }
+                })();
             });
 
             // Delete button

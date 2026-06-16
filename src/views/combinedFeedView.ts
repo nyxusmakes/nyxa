@@ -29,13 +29,13 @@ export class CombinedFeedView extends ItemView {
     }
 
     
-    async setState(state: any, result: any): Promise<void> {
+    async setState(state: Record<string, unknown>, result: import('obsidian').ViewStateResult): Promise<void> {
         
         await super.setState(state, result);
         
     }
 
-    getState(): any {
+    getState(): Record<string, unknown> {
         
         return super.getState();
     }
@@ -76,7 +76,7 @@ export class CombinedFeedView extends ItemView {
     
     private async fetchAndRenderCombinedFeeds(): Promise<void> {
         if (this.loadingIndicator) {
-            this.loadingIndicator.setCssStyles({ 'display': 'block' }); 
+            this.loadingIndicator.addClass('nl-display-block'); 
             this.entriesContainer?.empty(); 
         }
 
@@ -104,7 +104,7 @@ export class CombinedFeedView extends ItemView {
         }
 
         if (this.loadingIndicator) {
-             this.loadingIndicator.setCssStyles({ 'display': 'none' }); 
+             this.loadingIndicator.addClass('nl-display-none'); 
         }
 
         

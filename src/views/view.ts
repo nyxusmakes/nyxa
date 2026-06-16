@@ -11,7 +11,7 @@ import AIPlugin from '../main';
 
 import { QnAManager, QASettingsModal as QnASettingsModal, Question as QnAQuestion, QASettings as QnASettings } from '../tools/createQnA';
 import { MCQManager, MCQSettingsModal as MCQModal, MCQ as MCQItem, MCQSettings as MCQSett } from '../tools/createMCQs';
-import { ConceptMapManager, ConceptMapModal, SavedConceptMap } from '../tools/createConceptMaps';
+import { ConceptMapManager, ConceptMapModal, SavedConceptMap, ConceptMapData } from '../tools/createConceptMaps';
 import { SlideManager, SlideshowSettingsModal, SavedSlideshow, SlideshowVoiceSettingsModal } from '../tools/createSlides';
 import { MultimodalInput, processFileForMultimodal, isMultimodalSupported, getFileIcon, isTextFile } from '../utils/multimodalUtils';
 
@@ -44,6 +44,11 @@ interface MCQResult {
   incorrectAttempts: number;
   marks: number;
   accuracy: number;
+}
+
+interface NotebookChatViewLike {
+  notebook?: { id: string };
+  externalInvalidateContextCache?: () => void;
 }
 
 interface MindmapNode {
@@ -121,7 +126,7 @@ export class NoteSuggester {
     this.input.addEventListener('keydown', (e) => this.onKeyDown(e));
     this.input.addEventListener('blur', () => {
       
-      setTimeout(() => this.suggestions.hide(), 100);
+      window.setTimeout(() => this.suggestions.hide(), 100);
     });
     this.input.addEventListener('focus', () => {
       
@@ -289,7 +294,7 @@ export class FolderSuggester {
 
   private getAvailableFolders(): string[] {
     const allFolders = this.app.vault.getAllLoadedFiles()
-      .filter((f: TAbstractFile) => (f as any).children !== undefined) 
+      .filter((f: TAbstractFile) => (f as unknown as Record<string, unknown>).children !== undefined) 
       .map((f: TAbstractFile) => f.path)
       .filter((path: string) => path !== '' && !path.startsWith('.'));
     return allFolders;
@@ -310,7 +315,7 @@ export class FolderSuggester {
     this.input.addEventListener('input', () => this.onInputChange());
     this.input.addEventListener('keydown', (e) => this.onKeyDown(e));
     this.input.addEventListener('blur', () => {
-      setTimeout(() => this.suggestions.hide(), 100);
+      window.setTimeout(() => this.suggestions.hide(), 100);
     });
     this.input.addEventListener('focus', () => {
       if (this.input.value.trim()) {
@@ -428,6 +433,7 @@ export class AITutorView extends ItemView {
   private container: HTMLElement;
   private settings: AISettings;
   private plugin: AIPlugin;
+  get document() { return this.containerEl.ownerDocument; }
   private noteSuggester!: NoteSuggester;
   private state: {
     questions: Question[];
@@ -474,6 +480,7 @@ export class AITutorView extends ItemView {
   private _mcqSubmitBtn?: ButtonComponent;
   private _mcqProgressDialog?: HTMLElement;
   private _mcqEvaluationInProgress: boolean = false;
+  private _progressIntervalMap = new WeakMap<HTMLElement, ReturnType<typeof setInterval>>();
 
   constructor(leaf: WorkspaceLeaf, settings: AISettings, plugin: AIPlugin) {
     super(leaf);
@@ -516,8 +523,8 @@ export class AITutorView extends ItemView {
       apiKey = this.settings.nvidiaApiKey;
     } else if (provider === 'opencode') {
       apiKey = this.settings.openCodeApiKey;
-    } else if (this.settings.customProviders?.some((p: any) => p.id === provider)) {
-      const cp = this.settings.customProviders.find((p: any) => p.id === provider);
+    } else if (this.settings.customProviders?.some((p) => p.id === provider)) {
+      const cp = this.settings.customProviders.find((p) => p.id === provider);
       apiKey = cp?.apiKey || '';
     } else {
       apiKey = this.settings.geminiApiKey || this.settings.apiKey;
@@ -570,16 +577,20 @@ export class AITutorView extends ItemView {
         const startSlidesButton = this.container.querySelector('.start-slides-button') as HTMLElement;
         
         if (startQAButton) {
-          startQAButton.setCssStyles({ 'display': selectedPaths.length > 0 ? 'grid' : 'none' });
+          startQAButton.toggleClass('nl-display-grid', !!(selectedPaths.length > 0));
+          startQAButton.toggleClass('nl-display-none', !(selectedPaths.length > 0));
         }
         if (startMCQButton) {
-          startMCQButton.setCssStyles({ 'display': selectedPaths.length > 0 ? 'grid' : 'none' });
+          startMCQButton.toggleClass('nl-display-grid', !!(selectedPaths.length > 0));
+          startMCQButton.toggleClass('nl-display-none', !(selectedPaths.length > 0));
         }
         if (startConceptMapButton) {
-          startConceptMapButton.setCssStyles({ 'display': selectedPaths.length > 0 ? 'grid' : 'none' });
+          startConceptMapButton.toggleClass('nl-display-grid', !!(selectedPaths.length > 0));
+          startConceptMapButton.toggleClass('nl-display-none', !(selectedPaths.length > 0));
         }
         if (startSlidesButton) {
-          startSlidesButton.setCssStyles({ 'display': selectedPaths.length > 0 ? 'grid' : 'none' });
+          startSlidesButton.toggleClass('nl-display-grid', !!(selectedPaths.length > 0));
+          startSlidesButton.toggleClass('nl-display-none', !(selectedPaths.length > 0));
         }
         
         
@@ -606,14 +617,14 @@ export class AITutorView extends ItemView {
             return;
           }
           
-          new QASettingsModal(this.app, this.settings, new Set(selectedPaths), async (settings) => {
-            await this.generateQuestions(selectedPaths, settings);
+          new QASettingsModal(this.app, this.settings, new Set(selectedPaths), (settings) => {
+            void this.generateQuestions(selectedPaths, settings);
           }).open();
         }
       });
     
     startQAButton.buttonEl.addClass('start-qa-button');
-    startQAButton.buttonEl.setCssStyles({ 'display': 'none' });
+    startQAButton.buttonEl.addClass('nl-display-none');
 
     
     const startMCQButton = new ButtonComponent(buttonContainer)
@@ -627,14 +638,14 @@ export class AITutorView extends ItemView {
             return;
           }
           
-          new MCQSettingsModal(this.app, this.settings, new Set(selectedPaths), async (settings) => {
-            await this.generateMCQs(selectedPaths, settings);
+          new MCQSettingsModal(this.app, this.settings, new Set(selectedPaths), (settings) => {
+            void this.generateMCQs(selectedPaths, settings);
           }).open();
         }
       });
     
     startMCQButton.buttonEl.addClass('start-mcq-button');
-    startMCQButton.buttonEl.setCssStyles({ 'display': 'none' });
+    startMCQButton.buttonEl.addClass('nl-display-none');
 
     
     if (!Platform.isMobile) {
@@ -649,14 +660,14 @@ export class AITutorView extends ItemView {
               return;
             }
             
-            new ConceptMapModal(this.app, async (name) => {
-              await this.generateConceptMap(selectedPaths, name);
+            new ConceptMapModal(this.app, (name) => {
+              void this.generateConceptMap(selectedPaths, name);
             }).open();
           }
         });
       
       this.startConceptMapButton.buttonEl.addClass('start-conceptmap-button');
-      this.startConceptMapButton.buttonEl.setCssStyles({ 'display': 'none' });
+      this.startConceptMapButton.buttonEl.addClass('nl-display-none');
     }
 
     
@@ -673,14 +684,14 @@ export class AITutorView extends ItemView {
               return;
             }
             
-            new SlideshowSettingsModal(this.app, this.settings, new Set(selectedPaths), async (settings) => {
-              await this.generateSlideshow(selectedPaths, settings);
+            new SlideshowSettingsModal(this.app, this.settings, new Set(selectedPaths), (settings) => {
+              void this.generateSlideshow(selectedPaths, settings);
             }).open();
           }
         });
       
       startSlidesButton.buttonEl.addClass('start-slides-button');
-      startSlidesButton.buttonEl.setCssStyles({ 'display': 'none' });
+      startSlidesButton.buttonEl.addClass('nl-display-none');
     }
 
     
@@ -769,7 +780,7 @@ export class AITutorView extends ItemView {
   private async invalidateNotebookCache(notebookId: string) {
     this.app.workspace.iterateAllLeaves((leaf: WorkspaceLeaf) => {
       if (leaf.view && leaf.view.getViewType && leaf.view.getViewType() === VIEW_TYPE_NOTEBOOK_CHAT) {
-        const view: any = leaf.view;
+        const view = leaf.view as unknown as NotebookChatViewLike;
         if (view.notebook && view.notebook.id === notebookId && typeof view.externalInvalidateContextCache === 'function') {
           view.externalInvalidateContextCache();
         }
@@ -795,19 +806,21 @@ export class AITutorView extends ItemView {
       return;
     }
     
-    new NotebookFormModal(this.app, this.plugin, latestNotebook, async (settings) => {
-      await this.notebookManager.updateNotebook(latestNotebook.id, settings.name, Array.from(settings.sourcePaths), settings.customInstruction, settings.webSources, settings.inlineCitation, settings.mode, settings.sourceFolders, settings.feedSources);
-      
-      await this.notebookManager.loadNotebooks();
-      this.invalidateNotebookCache(latestNotebook.id);
-      this.renderInitial();
+    new NotebookFormModal(this.app, this.plugin, latestNotebook, (settings) => {
+      void (async () => {
+        await this.notebookManager.updateNotebook(latestNotebook.id, settings.name, Array.from(settings.sourcePaths), settings.customInstruction, settings.webSources, settings.inlineCitation, settings.mode, settings.sourceFolders, settings.feedSources);
+        
+        await this.notebookManager.loadNotebooks();
+        this.invalidateNotebookCache(latestNotebook.id);
+        this.renderInitial();
+      })();
     }).open();
   }
 
   private handleDeleteNotebook(notebookId: string) {
     if (confirm('Are you sure you want to delete this notebook?')) {
       
-      (document.activeElement as HTMLElement)?.blur();
+      (this.document.activeElement as HTMLElement)?.blur();
       this.notebookManager.deleteNotebook(notebookId);
       this.invalidateNotebookCache(notebookId);
       this.renderInitial();
@@ -849,8 +862,8 @@ export class AITutorView extends ItemView {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_NOTEBOOK_CHAT);
     for (const leaf of leaves) {
       const viewState = leaf.getViewState();
-      const notebook = (viewState.state as unknown as any)?.notebook;
-      if (notebook?.id === notebookId) {
+      const state = viewState.state as { notebook?: { id: string } } | undefined;
+      if (state?.notebook?.id === notebookId) {
         return leaf;
       }
     }
@@ -881,7 +894,7 @@ export class AITutorView extends ItemView {
       attr: { style: 'width: 100%; box-sizing: border-box;' }
     });
     searchInput.addEventListener('keydown', (e) => e.stopPropagation());
-    setTimeout(() => searchInput.focus(), 100);
+    window.setTimeout(() => searchInput.focus(), 100);
 
     const itemsToFilter: { itemEl: HTMLElement, name: string }[] = [];
     const headersToFilter: { headerEl: HTMLElement, items: HTMLElement[], separatorEl?: HTMLElement }[] = [];
@@ -909,19 +922,20 @@ export class AITutorView extends ItemView {
           option.classList.add('selected');
         }
         option.textContent = model.name;
-        option.addEventListener('click', async () => {
-          
-          this.settings.aiTutorModel = model.id;
-          this.settings.aiTutorProvider = model.provider;
-          
-          this.settings.model = model.id;
-          this.settings.provider = model.provider;
-          if (modelBtn) modelBtn.textContent = model.name;
-          menuEl.remove();
-          await this.plugin.saveSettings();
-          
-          
-          this.updateContextBar();
+        option.addEventListener('click', () => {
+          void (async () => {
+            this.settings.aiTutorModel = model.id;
+            this.settings.aiTutorProvider = model.provider;
+            
+            this.settings.model = model.id;
+            this.settings.provider = model.provider;
+            if (modelBtn) modelBtn.textContent = model.name;
+            menuEl.remove();
+            await this.plugin.saveSettings();
+            
+            
+            this.updateContextBar();
+          })();
         });
       });
 
@@ -936,12 +950,12 @@ export class AITutorView extends ItemView {
     searchInput.addEventListener('input', (e) => {
       const query = (e.target as HTMLInputElement).value.toLowerCase();
       itemsToFilter.forEach(obj => {
-        obj.itemEl.setCssStyles({ 'display': obj.name.includes(query) ? '' : 'none' });
+        obj.itemEl.toggleClass('nl-display-none', !(obj.name.includes(query)));
       });
       headersToFilter.forEach(headerObj => {
         const hasVisibleItems = headerObj.items.some(item => item.style.display !== 'none');
-        headerObj.headerEl.setCssStyles({ 'display': hasVisibleItems ? '' : 'none' });
-        if (headerObj.separatorEl) headerObj.separatorEl.setCssStyles({ 'display': hasVisibleItems ? '' : 'none' });
+        headerObj.headerEl.toggleClass('nl-display-none', !(hasVisibleItems));
+        if (headerObj.separatorEl) headerObj.separatorEl.toggleClass('nl-display-none', !(hasVisibleItems));
       });
     });
 
@@ -950,18 +964,18 @@ export class AITutorView extends ItemView {
     const containerRect = this.containerEl.getBoundingClientRect();
     
     
-    menuEl.setCssStyles({ 'right': `${containerRect.right - btnRect.right}px` });
-    menuEl.setCssStyles({ 'top': `${btnRect.bottom - containerRect.top + 5}px` });
+    menuEl.setCssProps({ '--menu-right':  `${containerRect.right - btnRect.right}px` });
+    menuEl.setCssProps({ '--menu-top':  `${btnRect.bottom - containerRect.top + 5}px` });
     
     
     const closeHandler = (e: MouseEvent) => {
       if (!menuEl.contains(e.target as Node) && 
           !(e.target as Element).closest('.model-select-btn')) {
         menuEl.remove();
-        document.removeEventListener('click', closeHandler);
+        this.document.removeEventListener('click', closeHandler);
       }
     };
-    setTimeout(() => document.addEventListener('click', closeHandler), 0);
+    window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
   }
 
   private async updateContextBar() {
@@ -990,7 +1004,7 @@ export class AITutorView extends ItemView {
       }
     }
 
-    this.contextBarContainer.setCssStyles({ 'display': 'flex' });
+    this.contextBarContainer.addClass('nl-display-flex');
 
     let currentTokens = 0;
     const tokenEstimator = new TokenEstimator();
@@ -1011,8 +1025,8 @@ export class AITutorView extends ItemView {
     const percentage = Math.min(100, (currentTokens / maxTokens) * 100);
 
     
-    this.contextProgressBar.setCssStyles({ 'transition': 'width 0.3s ease-out' });
-    this.contextProgressBar.setCssStyles({ 'width': `${percentage}%` });
+    this.contextProgressBar.addClass('nl-transition-width03sease-out');
+    this.contextProgressBar.setCssProps({ '--progress-width':  `${percentage}%` });
     
     
     this.contextLabel.setText(`${currentTokens.toLocaleString()} / ${maxTokens.toLocaleString()} tokens (${percentage.toFixed(1)}%)`);
@@ -1046,10 +1060,10 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': 'none' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
-      const progressContainer = document.createElement('div');
+      const progressContainer = this.document.createElement('div');
       progressContainer.className = 'qna-inline-progress';
       
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -1083,7 +1097,7 @@ export class AITutorView extends ItemView {
         notePaths, 
         qaSettings,
         (percentage, status) => {
-          progressFill.setCssStyles({ 'width': `${percentage}%` });
+          progressFill.setCssProps({ '--progress-width':  `${percentage}%` });
           progressText.textContent = status;
           progressPercentage.textContent = `${percentage}%`;
         }
@@ -1092,7 +1106,7 @@ export class AITutorView extends ItemView {
 
       
       progressContainer.remove();
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
 
       this.renderQA();
       
@@ -1102,7 +1116,7 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
       
       
       const progressContainer = this.container.querySelector('.qna-inline-progress');
@@ -1127,8 +1141,8 @@ export class AITutorView extends ItemView {
       const answerSection = questionContainer.createDiv({ cls: 'answer-section' });
       const answer = answerSection.createEl('textarea');
       answer.rows = 3;
-      answer.setCssStyles({ 'width': '100%' });
-      answer.setCssStyles({ 'marginBottom': '10px' });
+      answer.addClass('nl-width-100');
+      answer.addClass('nl-margin-bottom-10px');
       answer.value = q.answer || '';
       
       answer.disabled = this.timerActive && this.timerType === 'qna' && !this.timerEndTime;
@@ -1173,7 +1187,7 @@ export class AITutorView extends ItemView {
       .setButtonText('Start New Session')
       .onClick(() => {
         
-        (document.activeElement as HTMLElement)?.blur();
+        (this.document.activeElement as HTMLElement)?.blur();
         this.renderInitial();
       });
   }
@@ -1206,7 +1220,7 @@ export class AITutorView extends ItemView {
       const progressLabel = progressContainer.createDiv({ cls: 'relevance-progress-label' });
       
       
-      progressBar.setCssStyles({ 'width': `${relevanceScore}%` });
+      progressBar.setCssProps({ '--progress-width':  `${relevanceScore}%` });
       progressLabel.setText(`Relevance Score: ${relevanceScore}%`);
 
       
@@ -1242,10 +1256,10 @@ export class AITutorView extends ItemView {
 
 
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': 'none' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
 
-      const progressContainer = document.createElement('div');
+      const progressContainer = this.document.createElement('div');
       progressContainer.className = 'mcq-inline-progress';
 
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -1279,7 +1293,7 @@ export class AITutorView extends ItemView {
         notePaths, 
         mcqSettings,
         (percentage, status) => {
-          progressFill.setCssStyles({ 'width': `${percentage}%` });
+          progressFill.setCssProps({ '--progress-width':  `${percentage}%` });
           progressText.textContent = status;
           progressPercentage.textContent = `${percentage}%`;
         }
@@ -1288,7 +1302,7 @@ export class AITutorView extends ItemView {
 
 
       progressContainer.remove();
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
 
       this.renderMCQs();
 
@@ -1298,7 +1312,7 @@ export class AITutorView extends ItemView {
 
 
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
 
 
       const progressContainer = this.container.querySelector('.mcq-inline-progress');
@@ -1383,7 +1397,7 @@ export class AITutorView extends ItemView {
       .setButtonText('Start New Session')
       .onClick(() => {
         
-        (document.activeElement as HTMLElement)?.blur();
+        (this.document.activeElement as HTMLElement)?.blur();
         this.renderInitial();
       });
   }
@@ -1485,7 +1499,7 @@ export class AITutorView extends ItemView {
     }
     
     
-    const dialog = document.createElement('div');
+    const dialog = this.document.createElement('div');
     dialog.className = 'mcq-progress-dialog mcq-progress-inline';
     
     
@@ -1515,27 +1529,27 @@ export class AITutorView extends ItemView {
     const progressInterval = setInterval(() => {
       progress += Math.random() * 15;
       if (progress > 90) progress = 90;
-      progressFill.setCssStyles({ 'width': `${progress}%` });
+      progressFill.setCssProps({ '--progress-width':  `${progress}%` });
     }, 200);
     
     
-    (dialog as unknown as any)._progressInterval = progressInterval;
+    this._progressIntervalMap.set(dialog, progressInterval);
   }
   
   private hideMCQProgressDialog() {
     if (this._mcqProgressDialog) {
-      
-      const interval = (this._mcqProgressDialog as unknown as any)._progressInterval;
+      const interval = this._progressIntervalMap.get(this._mcqProgressDialog);
       if (interval) {
         clearInterval(interval);
       }
+      this._progressIntervalMap.delete(this._mcqProgressDialog);
       
       this._mcqProgressDialog.remove();
       this._mcqProgressDialog = undefined;
     }
   }
   
-  private showMCQEvaluationError(error: any) {
+  private showMCQEvaluationError(error: unknown) {
     this.hideMCQProgressDialog();
     this._mcqEvaluationInProgress = false;
     
@@ -1553,11 +1567,11 @@ export class AITutorView extends ItemView {
     }
     
     
-    const overlay = document.createElement('div');
+    const overlay = this.document.createElement('div');
     overlay.className = 'mcq-error-overlay';
     
     
-    const dialog = document.createElement('div');
+    const dialog = this.document.createElement('div');
     dialog.className = 'mcq-error-dialog';
     
     
@@ -1574,7 +1588,7 @@ export class AITutorView extends ItemView {
     message.textContent = 'There was an error evaluating your test. Please try again.';
     
     
-    if (error && error.message) {
+    if (error instanceof Error) {
       const details = content.createDiv({ cls: 'mcq-error-details' });
       details.textContent = `Error: ${error.message}`;
     }
@@ -1597,7 +1611,7 @@ export class AITutorView extends ItemView {
       });
     
     overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
+    this.document.body.appendChild(overlay);
     
     
     new Notice('Test evaluation failed. Please try again.');
@@ -1687,10 +1701,10 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': 'none' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
-      const progressContainer = document.createElement('div');
+      const progressContainer = this.document.createElement('div');
       progressContainer.className = 'concept-map-inline-progress';
       
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -1724,7 +1738,7 @@ export class AITutorView extends ItemView {
       const conceptMapData = await this.conceptMapManager.generateConceptMap(
         notePaths,
         (percentage, status) => {
-          progressFill.setCssStyles({ 'width': `${percentage}%` });
+          progressFill.setCssProps({ '--progress-width':  `${percentage}%` });
           progressText.textContent = status;
           progressPercentage.textContent = `${percentage}%`;
         }
@@ -1750,7 +1764,7 @@ export class AITutorView extends ItemView {
       
       
       progressContainer.remove();
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
       this.renderInitial();
 
     } catch (error: unknown) {
@@ -1759,7 +1773,7 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
       
       
       const progressContainer = this.container.querySelector('.concept-map-inline-progress');
@@ -1770,17 +1784,17 @@ export class AITutorView extends ItemView {
   }
 
   
-  async generateSlideshow(notePaths: string[], settings: any) {
+  async generateSlideshow(notePaths: string[], settings: { name: string; type: 'zen'; preferredVoice?: string; voiceRate?: number; voicePitch?: number }) {
     try {
       
       const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'] as HTMLElement;
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button, .start-slides-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': 'none' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
-      const progressContainer = document.createElement('div');
+      const progressContainer = this.document.createElement('div');
       progressContainer.className = 'slideshow-inline-progress';
       
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -1810,8 +1824,8 @@ export class AITutorView extends ItemView {
       }
 
       
-      progressFill.setCssStyles({ 'width': '0%' });
-      progressFill.setCssStyles({ 'transition': 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' });
+      progressFill.addClass('nl-width-0');
+      progressFill.addClass('nl-transition-remaining-21');
 
       let filePath: string;
 
@@ -1831,7 +1845,7 @@ export class AITutorView extends ItemView {
             percentage = 95;
           }
           
-          progressFill.setCssStyles({ 'width': `${percentage}%` });
+          progressFill.setCssProps({ '--progress-width':  `${percentage}%` });
           progressText.textContent = message;
           progressPercentage.textContent = `${percentage}%`;
         }
@@ -1852,7 +1866,7 @@ export class AITutorView extends ItemView {
       this.saveSavedSlideshows();
 
       
-      progressFill.setCssStyles({ 'width': '100%' });
+      progressFill.addClass('nl-width-100');
       progressText.textContent = 'Complete!';
       progressPercentage.textContent = '100%';
 
@@ -1862,9 +1876,9 @@ export class AITutorView extends ItemView {
       new Notice('Zen slideshow created successfully!');
       
       
-      setTimeout(() => {
+      window.setTimeout(() => {
         progressContainer.remove();
-        startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+        startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
         this.renderInitial();
       }, 1000);
 
@@ -1874,7 +1888,7 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button, .start-slides-button') as NodeListOf<HTMLElement>;
-      startButtons.forEach(btn => btn.setCssStyles({ 'pointerEvents': '' }));
+      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
       
       
       const progressContainer = this.container.querySelector('.slideshow-inline-progress');
@@ -2043,9 +2057,9 @@ export class AITutorView extends ItemView {
     const match = text.substring(index, index + query.length);
     const after = text.substring(index + query.length);
     
-    if (before) element.appendChild(document.createTextNode(before));
+    if (before) element.appendChild(this.document.createTextNode(before));
     const highlight = element.createEl('mark', { text: match, cls: 'search-highlight' });
-    if (after) element.appendChild(document.createTextNode(after));
+    if (after) element.appendChild(this.document.createTextNode(after));
   }
 
   private async openSavedConceptMap(conceptMap: SavedConceptMap) {
@@ -2064,7 +2078,7 @@ export class AITutorView extends ItemView {
       
       
       if (!file) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => window.setTimeout(resolve, 200));
         file = this.app.vault.getAbstractFileByPath(conceptMap.filePath) as TFile | null;
       }
       
@@ -2098,10 +2112,10 @@ export class AITutorView extends ItemView {
           }
   }
 
-  private parseConceptMapFromMarkdown(content: string, defaultName: string): any {
+  private parseConceptMapFromMarkdown(content: string, defaultName: string): ConceptMapData {
     const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
-    const conceptMapData: any = {
+    const conceptMapData: ConceptMapData = {
       noteName: defaultName,
       innerCircle: [],
       outerCircle: [],
@@ -2206,7 +2220,7 @@ export class AITutorView extends ItemView {
   private deleteSavedConceptMap(id: string) {
     if (confirm('Are you sure you want to delete this concept map from the saved list?')) {
       
-      (document.activeElement as HTMLElement)?.blur();
+      (this.document.activeElement as HTMLElement)?.blur();
       this.state.savedConceptMaps = this.state.savedConceptMaps.filter(cm => cm.id !== id);
       this.saveSavedConceptMaps();
       this.renderInitial();
@@ -2273,13 +2287,14 @@ export class AITutorView extends ItemView {
       
       const zenData = await this.slideManager.loadZenSlideshow(slideshow.filePath);
       
-      new SlideshowVoiceSettingsModal(this.app, zenData, async (updatedSettings) => {
+      new SlideshowVoiceSettingsModal(this.app, zenData, (updatedSettings) => {
         zenData.preferredVoice = updatedSettings.preferredVoice;
         zenData.voiceRate = updatedSettings.voiceRate;
         zenData.voicePitch = updatedSettings.voicePitch;
         
-        await this.slideManager.saveZenSlideshow(zenData, slideshow.filePath);
-        new Notice('Slideshow voice updated successfully');
+        void this.slideManager.saveZenSlideshow(zenData, slideshow.filePath).then(() => {
+          new Notice('Slideshow voice updated successfully');
+        });
       }).open();
       
     } catch (error) {
@@ -2289,7 +2304,7 @@ export class AITutorView extends ItemView {
 
   private deleteSavedSlideshow(id: string) {
     if (confirm('Are you sure you want to delete this slideshow from the saved list?')) {
-      (document.activeElement as HTMLElement)?.blur();
+      (this.document.activeElement as HTMLElement)?.blur();
       this.state.savedSlideshows = this.state.savedSlideshows.filter(s => s.id !== id);
       this.saveSavedSlideshows();
       this.renderInitial();
@@ -2416,7 +2431,7 @@ export class AITutorView extends ItemView {
     this.hideMCQProgressDialog();
     
     
-    const errorOverlays = document.body.querySelectorAll('.mcq-error-overlay');
+    const errorOverlays = this.document.body.querySelectorAll('.mcq-error-overlay');
     errorOverlays.forEach(overlay => overlay.remove());
     
     
@@ -2503,29 +2518,29 @@ export class AITutorView extends ItemView {
     
     this.timerContainer?.remove();
     this.timerContainer = this.container.createDiv({ cls: 'timer-fixed-container' });
-    this.timerContainer.setCssStyles({ 'position': 'sticky' });
-    this.timerContainer.setCssStyles({ 'top': '0' });
-    this.timerContainer.setCssStyles({ 'right': '0' });
-    this.timerContainer.setCssStyles({ 'display': 'flex' });
-    this.timerContainer.setCssStyles({ 'justifyContent': 'flex-end' });
-    this.timerContainer.setCssStyles({ 'alignItems': 'center' });
-    this.timerContainer.setCssStyles({ 'zIndex': '10' });
-    this.timerContainer.setCssStyles({ 'background': 'var(--background-primary, #fff)' });
-    this.timerContainer.setCssStyles({ 'padding': '8px 16px 0 0' });
-    this.timerContainer.setCssStyles({ 'gap': '8px' });
+    this.timerContainer.addClass('nl-position-sticky');
+    this.timerContainer.addClass('nl-top-0');
+    this.timerContainer.addClass('nl-right-0');
+    this.timerContainer.addClass('nl-display-flex');
+    this.timerContainer.addClass('nl-justify-content-flex-end');
+    this.timerContainer.addClass('nl-align-items-center');
+    this.timerContainer.addClass('nl-z-index-10');
+    this.timerContainer.addClass('nl-background-rem-26');
+    this.timerContainer.addClass('nl-padding-8px16px00');
+    this.timerContainer.addClass('nl-gap-8px');
 
     
     const timerIcon = this.timerContainer.createSpan({ cls: 'lucide-timer', attr: { 'aria-label': 'Set timer' } });
     setIcon(timerIcon, 'timer');
-    timerIcon.setCssStyles({ 'cursor': 'pointer' });
+    timerIcon.addClass('nl-cursor-pointer');
     timerIcon.title = 'Set timer';
 
     
     const timerDisplay = this.timerContainer.createSpan({ cls: 'timer-countdown' });
-    timerDisplay.setCssStyles({ 'fontWeight': 'bold' });
-    timerDisplay.setCssStyles({ 'fontSize': '1.1em' });
-    timerDisplay.setCssStyles({ 'marginLeft': '8px' });
-    timerDisplay.setCssStyles({ 'display': 'none' });
+    timerDisplay.addClass('nl-font-weight-bold');
+    timerDisplay.addClass('nl-font-size-11em');
+    timerDisplay.addClass('nl-margin-left-8px');
+    timerDisplay.addClass('nl-display-none');
 
     timerIcon.onclick = () => {
       if (this.timerActive) return; 
@@ -2541,7 +2556,7 @@ export class AITutorView extends ItemView {
     this.timerType = type;
     this.timerNoticeShown = false;
     this.timerEndTime = Date.now() + ms;
-    timerDisplay.setCssStyles({ 'display': '' });
+    timerDisplay.addClass('nl-display-');
     this.updateTimerDisplay(timerDisplay);
     this.timerInterval && window.clearInterval(this.timerInterval);
     this.timerInterval = window.setInterval(() => {
@@ -2609,7 +2624,7 @@ class QASettingsModal extends Modal {
     private saveDirectory: string;
     private customPrompt: string = '';
 
-    constructor(app: any, pluginSettings: AISettings, initialSelectedPaths: Set<string>, onSubmit: (settings: QASettings) => void) {
+    constructor(app: App, pluginSettings: AISettings, initialSelectedPaths: Set<string>, onSubmit: (settings: QASettings) => void) {
         super(app);
         this.initialSelectedPaths = initialSelectedPaths;
         this.onSubmit = onSubmit;
@@ -2715,7 +2730,7 @@ class MCQSettingsModal extends Modal {
   private correctMarks: number = 1;
   private incorrectMarks: number = 0;
 
-  constructor(app: any, pluginSettings: AISettings, initialSelectedPaths: Set<string>, onSubmit: (settings: MCQSettings) => void) {
+  constructor(app: App, pluginSettings: AISettings, initialSelectedPaths: Set<string>, onSubmit: (settings: MCQSettings) => void) {
     super(app);
     this.initialSelectedPaths = initialSelectedPaths;
     this.onSubmit = onSubmit;
@@ -2851,7 +2866,7 @@ class MindmapSettingsModal extends Modal {
   private customPrompt: string = '';
   private saveDirectory: string;
 
-  constructor(app: any, pluginSettings: AISettings, initialSelectedPaths: Set<string>, onSubmit: (settings: { customPrompt: string; saveDirectory: string }) => void) {
+  constructor(app: App, pluginSettings: AISettings, initialSelectedPaths: Set<string>, onSubmit: (settings: { customPrompt: string; saveDirectory: string }) => void) {
     super(app);
     this.initialSelectedPaths = initialSelectedPaths;
     this.onSubmit = onSubmit;
@@ -2912,7 +2927,7 @@ class MindmapSettingsModal extends Modal {
 
 class TimerModal extends Modal {
   private onSubmit: (ms: number) => void;
-  constructor(app: any, onSubmit: (ms: number) => void) {
+  constructor(app: App, onSubmit: (ms: number) => void) {
     super(app);
     this.onSubmit = onSubmit;
   }
@@ -2921,8 +2936,8 @@ class TimerModal extends Modal {
     contentEl.empty();
     contentEl.createEl('h2', { text: 'Set Time Limit' });
     const input = contentEl.createEl('input', { type: 'text', placeholder: 'mm:ss (e.g., 05:00)' });
-    input.setCssStyles({ 'width': '100%' });
-    input.setCssStyles({ 'marginBottom': '10px' });
+    input.addClass('nl-width-100');
+    input.addClass('nl-margin-bottom-10px');
     const submitBtn = contentEl.createEl('button', { text: 'Set Timer' });
     submitBtn.onclick = () => {
       const value = input.value.trim();

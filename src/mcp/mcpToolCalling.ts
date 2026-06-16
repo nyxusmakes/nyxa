@@ -4,7 +4,16 @@ export interface MCPToolCall {
     serverId: string;
     serverName: string;
     toolName: string;
-    arguments: any;
+    arguments: Record<string, unknown>;
+}
+
+interface AIToolCall {
+    function?: {
+        name?: string;
+        arguments?: string | Record<string, unknown>;
+    };
+    name?: string;
+    arguments?: Record<string, unknown>;
 }
 
 export interface MCPToolResult {
@@ -52,7 +61,7 @@ export class MCPToolCallingService {
     }
 
     /** Stable hash of tool arguments for deduplication key. */
-    private hashArgs(args: any): string {
+    private hashArgs(args: Record<string, unknown>): string {
         try {
             return JSON.stringify(args, Object.keys(args || {}).sort());
         } catch {
@@ -64,14 +73,14 @@ export class MCPToolCallingService {
      * @param serverIds Array of server IDs to get tools from
      * @param selectedTools Optional map of serverId -> tool names to filter which tools to include
      */
-    formatToolsForAI(serverIds: string[], selectedTools?: Map<string, string[]>): any[] {
-        const tools: any[] = [];
+    formatToolsForAI(serverIds: string[], selectedTools?: Map<string, string[]>): Record<string, unknown>[] {
+        const tools: Record<string, unknown>[] = [];
 
         for (const serverId of serverIds) {
             const serverTools = this.mcpService.getServerTools(serverId);
-            const connection = (this.mcpService as any).servers.get(serverId);
+            const serverConfig = this.mcpService.getConnectedServerById(serverId);
             
-            if (!connection) continue;
+            if (!serverConfig) continue;
 
             // Filter tools if selectedTools is provided
             const selectedToolNames = selectedTools?.get(serverId) || [];
@@ -81,13 +90,13 @@ export class MCPToolCallingService {
 
             for (const tool of toolsToFormat) {
                 // Sanitize server name to avoid whitespace in tool names
-                const sanitizedServerName = sanitizeServerName(connection.config.name);
+                const sanitizedServerName = sanitizeServerName(serverConfig.name);
                 
                 tools.push({
                     type: 'function',
                     function: {
                         name: `${sanitizedServerName}__${tool.name}`,
-                        description: tool.description || `Tool from ${connection.config.name}`,
+                        description: tool.description || `Tool from ${serverConfig.name}`,
                         parameters: tool.inputSchema || {
                             type: 'object',
                             properties: {},
@@ -108,11 +117,11 @@ export class MCPToolCallingService {
      * re-invoking the MCP server. This prevents duplicate executions when a
      * fallback model re-requests a tool that already ran.
      */
-    async executeToolCall(toolCall: any): Promise<MCPToolResult> {
+    async executeToolCall(toolCall: AIToolCall): Promise<MCPToolResult> {
         try {
             // Parse the tool name to extract server and tool.
             // Format: <sanitizedServerName>__<toolName>
-            const fullToolName = toolCall.function?.name || toolCall.name;
+            const fullToolName = (toolCall.function?.name as string | undefined) || (toolCall.name as string | undefined) || '';
             const separatorIdx = fullToolName.indexOf('__');
             
             if (separatorIdx === -1) {
@@ -124,7 +133,7 @@ export class MCPToolCallingService {
 
             // Parse arguments early so we can build the dedup key
             const args = typeof toolCall.function?.arguments === 'string'
-                ? JSON.parse(toolCall.function.arguments)
+                ? JSON.parse(toolCall.function.arguments) as Record<string, unknown>
                 : toolCall.function?.arguments || toolCall.arguments || {};
 
             // ── Deduplication check ──────────────────────────────────────────
@@ -146,18 +155,19 @@ export class MCPToolCallingService {
 
             
             // Execute the tool
-            const result = await this.mcpService.invokeTool(server.id, toolName, args);
+            const result = await this.mcpService.invokeTool(server.id, toolName, args) as Record<string, unknown>;
 
             // Format the result
             let content = '';
-            if (result.content) {
-                for (const item of result.content) {
+            if (result.content && Array.isArray(result.content)) {
+                for (const item of result.content as Record<string, unknown>[]) {
                     if (item.type === 'text') {
-                        content += item.text + '\n';
+                        content += (item.text as string || '') + '\n';
                     } else if (item.type === 'image') {
-                        content += `[Image: ${item.mimeType}]\n`;
+                        content += `[Image: ${item.mimeType as string | undefined}]\n`;
                     } else if (item.type === 'resource') {
-                        content += `[Resource: ${item.resource?.uri}]\n`;
+                        const resource = item.resource as Record<string, unknown> | undefined;
+                        content += `[Resource: ${resource?.uri as string | undefined}]\n`;
                     }
                 }
             }
@@ -176,8 +186,9 @@ export class MCPToolCallingService {
             return toolResult;
 
         } catch (error) {
-                        return {
-                toolName: toolCall.function?.name || toolCall.name || 'unknown',
+            const fullToolName = (toolCall.function?.name as string | undefined) || (toolCall.name as string | undefined) || 'unknown';
+            return {
+                toolName: fullToolName,
                 serverName: 'unknown',
                 success: false,
                 content: '',
@@ -189,7 +200,7 @@ export class MCPToolCallingService {
     /**
      * Format tool results for AI model
      */
-    formatToolResultForAI(toolCallId: string, result: MCPToolResult): any {
+    formatToolResultForAI(toolCallId: string, result: MCPToolResult): Record<string, unknown> {
         return {
             tool_call_id: toolCallId,
             role: 'tool',
@@ -209,11 +220,11 @@ export class MCPToolCallingService {
 
         for (const serverId of serverIds) {
             const serverTools = this.mcpService.getServerTools(serverId);
-            const connection = (this.mcpService as any).servers.get(serverId);
+            const serverName = this.mcpService.getServerName(serverId);
             
-            if (!connection || serverTools.length === 0) continue;
+            if (!serverName || serverTools.length === 0) continue;
 
-            description += `## ${connection.config.name}\n\n`;
+            description += `## ${serverName}\n\n`;
 
             for (const tool of serverTools) {
                 description += `### ${tool.name}\n`;
@@ -221,9 +232,9 @@ export class MCPToolCallingService {
                 
                 if (tool.inputSchema?.properties) {
                     description += '**Parameters:**\n';
-                    for (const [param, schema] of Object.entries(tool.inputSchema.properties)) {
-                        const paramSchema = schema as any;
-                        const required = tool.inputSchema.required?.includes(param) ? ' (required)' : '';
+                    for (const [param, schema] of Object.entries(tool.inputSchema.properties as Record<string, unknown>)) {
+                        const paramSchema = schema as Record<string, unknown>;
+                        const required = (tool.inputSchema.required as string[] | undefined)?.includes(param) ? ' (required)' : '';
                         description += `- \`${param}\`${required}: ${paramSchema.description || paramSchema.type || 'any'}\n`;
                     }
                     description += '\n';
