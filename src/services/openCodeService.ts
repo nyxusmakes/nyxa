@@ -14,7 +14,7 @@ interface OpenCodeRequestBody {
     tool_choice?: string;
 }
 
-interface OpenCodeToolCallResult {
+interface _OpenCodeToolCallResult {
     success: boolean;
     content: string;
     error?: string;
@@ -144,7 +144,7 @@ export class OpenCodeProvider extends BaseProvider {
                 options?.abortSignal
             );
             return { text: fullContent };
-        } catch (error) {
+        } catch {
                     }
 
         // Fallback: requestUrl simulated streaming (cross-platform)

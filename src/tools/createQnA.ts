@@ -9,7 +9,7 @@ import { NvidiaService, ChatMessage as NvidiaChatMessage } from '../services/nvi
 import { MultimodalInput, processFileForMultimodal, isTextFile } from '../utils/multimodalUtils';
 import { UnifiedProviderManager } from '../services/unifiedProviderManager';
 
-interface OpenAIErrorResponse {
+interface _OpenAIErrorResponse {
   error: {
     message: string;
   };

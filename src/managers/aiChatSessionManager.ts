@@ -73,11 +73,12 @@ export class AIChatSessionManager {
               name = session.name || id;
               createdAt = session.createdAt || createdAt;
               updatedAt = session.updatedAt || updatedAt;
-            } catch {}
+            } catch { // Intentionally ignored
+            }
             return { id, name, createdAt, updatedAt };
           })
       );
-    } catch (e) {
+    } catch {
       // Directory may not exist yet
       return [];
     }
@@ -145,7 +146,8 @@ export class AIChatSessionManager {
                   return questionMatch || answerMatch;
                 }).length;
               }
-            } catch {}
+            } catch { // Intentionally ignored
+            }
             
             // Only return sessions that match the search
             return matchFound ? { id, name, createdAt, updatedAt, matchCount } : null;
@@ -174,14 +176,15 @@ export class AIChatSessionManager {
               name = session.name || id;
               createdAt = session.createdAt || createdAt;
               updatedAt = session.updatedAt || updatedAt;
-            } catch {}
+            } catch { // Intentionally ignored
+            }
             return { id, name, createdAt, updatedAt };
           })
         );
         
         return { sessions, total };
       }
-    } catch (e) {
+    } catch {
       return { sessions: [], total: 0 };
     }
   }
@@ -193,7 +196,7 @@ export class AIChatSessionManager {
       if (!exists) return null;
       const json = await this.app.vault.adapter.read(file);
       return JSON.parse(json) as AIChatSession;
-    } catch (e) {
+    } catch {
       return null;
     }
   }

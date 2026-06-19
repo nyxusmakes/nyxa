@@ -80,9 +80,6 @@ export class ModelSelector {
     
     // Notify user about unavailable providers
     if (unavailableProviders.length > 0) {
-      const providerMessages = unavailableProviders.map(provider => {
-        return this.getProviderSetupMessage(provider);
-      }).join('\n');
           }
 
     // STRICT 7K TPM FLOOR — no model below this threshold enters any auto chain,
@@ -164,10 +161,6 @@ export class ModelSelector {
 
     // SELECTION:
     // 1. Initial sort by TPM ascending (standard baseline)
-    const allSortedCandidates = [...modelsWithActualTPM].sort((a: ModelCapability, b: ModelCapability) => {
-      if (a.actualTPM !== b.actualTPM) return a.actualTPM - b.actualTPM;
-      return a.model.id.localeCompare(b.model.id);
-    });
 
     const SAFETY_MARGIN = 1.2;
     const requiredTPM = estimatedTokens * SAFETY_MARGIN;

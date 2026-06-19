@@ -1,4 +1,4 @@
-import { MCPService, MCPTool } from './mcpService';
+import { MCPService } from './mcpService';
 
 export interface MCPToolCall {
     serverId: string;

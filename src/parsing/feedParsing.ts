@@ -86,7 +86,7 @@ function stripHtml(html: string): string {
     try {
         const doc = new DOMParser().parseFromString(html, 'text/html');
         return doc.body.textContent || "";
-    } catch (e) {
+    } catch {
         return html.replace(/<[^>]*>/g, '');
     }
 }

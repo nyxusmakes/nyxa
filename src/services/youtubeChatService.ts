@@ -1,9 +1,8 @@
 import { AISettings } from '../settings';
-import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { Part } from '@google/generative-ai';
 import { RateLimitManager } from '../utils/rateLimitManager';
 import { GeminiService } from './geminiService';
 import { YouTubeTranscriptService } from './youtubeTranscriptService';
-import { Notice } from 'obsidian';
 import { OllamaService } from './ollamaService';
 import { GroqService } from './groqService';
 import { OpenRouterService } from './openRouterService';

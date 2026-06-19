@@ -1,4 +1,4 @@
-import { App, Notice, TFile, normalizePath } from 'obsidian';
+import { App, Notice, normalizePath } from 'obsidian';
 
 export type NotebookMode = 'cag' | 'rag';
 
@@ -167,7 +167,8 @@ export class NotebookChatHistoryManager {
               name = session.name || id;
               createdAt = session.createdAt || createdAt;
               updatedAt = session.updatedAt || updatedAt;
-            } catch {}
+            } catch { // Intentionally ignored
+            }
           return {
             id,
               name,
@@ -176,7 +177,7 @@ export class NotebookChatHistoryManager {
           };
           })
       );
-    } catch (e) {
+    } catch {
       
       return [];
     }
@@ -189,7 +190,7 @@ export class NotebookChatHistoryManager {
       if (!exists) return null;
       const json = await this.app.vault.adapter.read(file);
       return JSON.parse(json) as NotebookChatSession;
-    } catch (e) {
+    } catch {
       return null;
     }
   }

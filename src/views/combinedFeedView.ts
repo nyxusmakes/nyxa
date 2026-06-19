@@ -1,6 +1,6 @@
-import { ItemView, WorkspaceLeaf, App, Setting, ButtonComponent, Notice, ExtraButtonComponent } from 'obsidian';
+import { ItemView, WorkspaceLeaf, ExtraButtonComponent } from 'obsidian';
 import AIPlugin from '../main';
-import { parseFeed, ParsedFeed, ParsedFeedEntry } from '../parsing/feedParsing';
+import { parseFeed, ParsedFeedEntry } from '../parsing/feedParsing';
 import { getFaviconUrl } from '../utils/utils';
 
 export const VIEW_TYPE_COMBINED_FEED = 'AI_COMBINED_FEED_VIEW';
@@ -182,8 +182,8 @@ export class CombinedFeedView extends ItemView {
                      thumbnailContainer.createEl('img', {
                          attr: { src: entry.thumbnail, alt: entry.title || 'Feed entry thumbnail' }
                      });
-                 } catch (e) {
-                                            thumbnailContainer.createDiv({ text: entry.contentSnippet || 'No description available.', cls: 'feed-entry-description-placeholder' });
+                 } catch {
+                                             thumbnailContainer.createDiv({ text: entry.contentSnippet || 'No description available.', cls: 'feed-entry-description-placeholder' });
                  }
 
             } else {
@@ -215,7 +215,7 @@ export class CombinedFeedView extends ItemView {
                             cls: 'entry-date' 
                         });
                     }
-                } catch (e) {
+                } catch {
                                     }
             } else if (!entry.author) {
                 metadataLine.createEl('span', { text: 'No Date', cls: 'entry-date' });

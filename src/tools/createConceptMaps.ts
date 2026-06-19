@@ -8,7 +8,7 @@ import { NvidiaService, ChatMessage as NvidiaChatMessage } from '../services/nvi
 import { MultimodalInput, processFileForMultimodal, isTextFile } from '../utils/multimodalUtils';
 import { UnifiedProviderManager } from '../services/unifiedProviderManager';
 
-interface OpenAIErrorResponse {
+interface _OpenAIErrorResponse {
   error: {
     message: string;
   };
@@ -923,7 +923,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     if (!parentDirPath) {
       try {
                 await this.app.vault.adapter.mkdir(parentDir);
-      } catch (error) {
+      } catch {
                 // Continue anyway, it might already exist
       }
     }
@@ -933,7 +933,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     if (!dirPath) {
       try {
                 await this.app.vault.adapter.mkdir(dir);
-      } catch (error) {
+      } catch {
                 throw new Error(`Failed to create directory: ${dir}`);
       }
     }
@@ -2172,8 +2172,6 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     // Get container
     const container = this.doc.querySelector('.concept-map-svg-wrapper') as HTMLElement;
     if (!container) return;
-    
-    const containerRect = container.getBoundingClientRect();
     
     // Get all nodes in this theme
     const themeNodeIds: string[] = [];

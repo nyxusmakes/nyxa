@@ -148,7 +148,7 @@ export class GeminiFileAPIService {
             });
             
             return response.json;
-        } catch (error) {
+        } catch {
                         return null;
         }
     }
@@ -181,7 +181,7 @@ export class GeminiFileAPIService {
             }
             
             return true;
-        } catch (error) {
+        } catch {
                         return false;
         }
     }

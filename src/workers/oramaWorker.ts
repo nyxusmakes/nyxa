@@ -39,7 +39,7 @@ interface OramaWorkerMessage {
     payload?: OramaWorkerPayload;
 }
 
-interface OramaWorkerResponse {
+interface _OramaWorkerResponse {
     success: boolean;
     instanceId: string;
     id?: string;

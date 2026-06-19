@@ -1,28 +1,25 @@
-import { App, ItemView, WorkspaceLeaf, ButtonComponent, Notice, MarkdownRenderer, TFile, Component, SuggestModal, ToggleComponent, TFolder, Modal, Setting, setIcon, normalizePath, requestUrl, Platform } from 'obsidian';
-import { decode } from '@msgpack/msgpack';
+import { App, ItemView, WorkspaceLeaf, ButtonComponent, Notice, MarkdownRenderer, TFile, Component, SuggestModal, TFolder, Modal, Setting, setIcon, normalizePath, requestUrl, Platform } from 'obsidian';
 import { OramaWorkerManager } from '../utils/oramaWorkerManager';
-import { AISettings, Provider, getModelsGroupedByProvider, getModelDisplayName as getModelDisplayNameFromSettings, getProviderForModel, getProviderForEmbeddingModel, SavedSystemInstruction, getGeminiThinkingConfig, getModelTemperature, getModelTopP } from '../settings';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AISettings, Provider, getModelsGroupedByProvider, getModelDisplayName as getModelDisplayNameFromSettings, getProviderForEmbeddingModel, getGeminiThinkingConfig, getModelTemperature, getModelTopP } from '../settings';
 import { TokenEstimator, TaskType } from '../utils/tokenEstimator';
 import { ModelSelector, ModelSelection } from '../modelSelector';
 import AIPlugin from '../main';
 import { WebSearchService, SearchResult as WebSearchResult } from '../services/webSearch';
-import { VaultSearchAgent, VaultSearchResult } from '../managers/vaultSearchAgent';
+import { VaultSearchAgent } from '../managers/vaultSearchAgent';
 import { BasicChatService } from '../services/basicChatService';
 import { OllamaService } from '../services/ollamaService';
-import { extractTextFromImage } from '../utils/utils';
 import { UnifiedProviderManager } from '../services/unifiedProviderManager';
-import { AIChatSessionManager, AIChatSessionMeta, AIChatSession } from '../managers/aiChatSessionManager';
+import { AIChatSessionManager, AIChatSession } from '../managers/aiChatSessionManager';
 import { YouTubeChatService } from '../services/youtubeChatService';
 import { YouTubeTranscriptModal } from '../modals/youtubeTranscriptModal';
-import { handleFileCreationPrompt, processDiagramContent } from '../tools/fileCreateTool';
+import { processDiagramContent } from '../tools/fileCreateTool';
 import { MultimodalInput, processFileForMultimodal, isTextFile, isImageFile, isPDFFile, isAudioFile, isVideoFile, isMultimodalSupported, getFileIcon, extractImagesFromMarkdown } from '../utils/multimodalUtils';
 import { RateLimitManager } from '../utils/rateLimitManager';
 import { GeminiService } from '../services/geminiService';
 import { GeminiFileAPIService } from '../services/geminiFileAPI';
-import { MCPServerSelectionModal, MCPServerSelection } from '../modals/mcpServerSelectionModal';
-import { MCPToolCallingService, sanitizeServerName } from '../mcp/mcpToolCalling';
-import { executeCode, detectLanguage, isExecutable, isRenderable, isEnhanceable, wrapInMarkdownFence } from '../tools/codeExecutor';
+import { MCPServerSelectionModal } from '../modals/mcpServerSelectionModal';
+import { MCPToolCallingService } from '../mcp/mcpToolCalling';
+import { executeCode, detectLanguage, isExecutable, isRenderable, wrapInMarkdownFence } from '../tools/codeExecutor';
 import { SaveNoteModal } from '../modals/saveNoteModal';
 
 interface MCPResourceReadResult {
@@ -241,7 +238,7 @@ interface FileActionState {
     isExcalidraw?: boolean;
 }
 
-type PauseResumeTimerCallback = (pause: boolean) => void;
+type _PauseResumeTimerCallback = (pause: boolean) => void;
 
 class FileModal extends SuggestModal<TFile> {
     private selectedCallback: (file: TFile) => void;
@@ -302,7 +299,6 @@ class FolderModal extends SuggestModal<TFolder> {
     onChooseSuggestion(folder: TFolder) {
         const value = this.queryInput.value;
         const beforeCursor = value.slice(0, this.cursorPosition - 1);
-        const afterCursor = value.slice(this.cursorPosition);
 
         this.queryInput.value = beforeCursor + folder.path + '/';
         this.queryInput.setSelectionRange(this.queryInput.value.length, this.queryInput.value.length);
@@ -419,7 +415,6 @@ class WebPageURLModal extends Modal {
     }
 
     onOpen() {
-        const { contentEl } = this;
         this.renderContent();
     }
 
@@ -1261,7 +1256,7 @@ export class ResponseView extends ItemView {
         const headerRightControls = headerSection.createDiv({ cls: 'header-right-controls' });
 
         
-        const headerModelBtn = new ButtonComponent(headerRightControls)
+        const _headerModelBtn = new ButtonComponent(headerRightControls)
             .setButtonText(this.getModelButtonText())
             .setClass('header-model-btn')
             .onClick(() => this.showModelMenu());
@@ -1417,7 +1412,7 @@ export class ResponseView extends ItemView {
             'Use prefix @mcp to use MCP servers and tools...'
         ];
         let promptIndex = 0;
-        let placeholderInterval: number | null = null;
+        let _placeholderInterval: number | null = null;
         let isInputActive = false;
         const setNextPlaceholder = () => {
             if (!isInputActive && this.document.activeElement !== this.queryInput) {
@@ -1427,7 +1422,7 @@ export class ResponseView extends ItemView {
                 }
             }
         };
-        placeholderInterval = window.setInterval(setNextPlaceholder, 3500);
+        _placeholderInterval = window.setInterval(setNextPlaceholder, 3500);
         this.queryInput.addEventListener('focus', () => {
             isInputActive = true;
         });
@@ -2475,7 +2470,7 @@ export class ResponseView extends ItemView {
             
             return selection;
 
-        } catch (error) {
+        } catch {
                         
             return null;
         }
@@ -2559,7 +2554,6 @@ export class ResponseView extends ItemView {
 
                 } catch (error) {
                     lastError = error as Error;
-                    const errorMsg = error instanceof Error ? error.message.toLowerCase() : '';
                     
                     if (i === modelsToTry.length - 1) {
                         throw new Error(`${operationName} failed: All ${modelsToTry.length} models exhausted. Last error: ${lastError.message}`);
@@ -3005,7 +2999,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const headerRightControls = headerSection.createDiv({ cls: 'header-right-controls' });
 
         
-        const headerModelBtn = new ButtonComponent(headerRightControls)
+        const _headerModelBtn = new ButtonComponent(headerRightControls)
             .setButtonText(this.getModelButtonText())
             .setClass('header-model-btn')
             .onClick(() => this.showModelMenu());
@@ -3462,7 +3456,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
     private async performWebSearch(query: string): Promise<WebSearchResult[]> {
         try {
             return await this.webSearchService.searchWeb(query);
-        } catch (error) {
+        } catch {
                         new Notice('Web search failed. Please check your API credentials.');
             return [];
         }
@@ -3632,7 +3626,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             }
 
             
-            const lowerPrompt = creationPrompt.toLowerCase();
             const isCanvasRequest = /\bcanvas\b/i.test(creationPrompt);
             const isExcalidrawRequest = /\bexcalidraw\b/i.test(creationPrompt);
 
@@ -3643,7 +3636,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             
 
             let targetFolder: string | undefined;
-            let fileContext = '';
 
             
             if (this.selectedFiles.size > 0) {
@@ -3662,13 +3654,12 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                             try {
                                 const content = await this.app.vault.read(fileOrFolder);
                                 fileContents.push(`--- File: ${fileOrFolder.basename} ---\n${content}\n`);
-                            } catch (e) {
-                                                            }
+                            } catch {
+                            }
                         }
                     }
                 }
 
-                fileContext = fileContents.filter(Boolean).join('\n');
             }
 
             
@@ -3697,19 +3688,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             }
 
             
-            let webContext = '';
-            if (this.webEnabled && this.webSearchService && creationPrompt) {
-                try {
-                    const webResults = await this.webSearchService.googleCustomSearch(creationPrompt, this.settings);
-                    if (webResults && webResults.length > 0) {
-                        webContext = '\n--- Google Search Results ---\n' + webResults.map(r => `Title: ${r.title}\nURL: ${r.link}\nSnippet: ${r.snippet}`).join('\n\n') + '\n';
-                    }
-                } catch (e) {
-                    
-                }
-            }
-
-            
             const contextFiles: Array<{ path: string; content: string; basename: string }> = [];
 
             if (this.selectedFiles.size > 0) {
@@ -3724,8 +3702,8 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                     content: content,
                                     basename: fileOrFolder.basename
                                 });
-                            } catch (e) {
-                                                            }
+                            } catch {
+                            }
                         }
                     }
                 }
@@ -4134,8 +4112,8 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                         
                                         folderFiles.push({ path: file.path, content, similarity: 1.0 });
                                     }
-                                } catch (readError) {
-                                                                    }
+                                } catch {
+                                }
                             }
 
                             return folderFiles;
@@ -4184,7 +4162,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
                                 
                                 return null;
-                            } catch (readError) {
+                            } catch {
                                                                 new Notice(`Could not read file: ${path}`);
                                 return null;
                             }
@@ -4294,9 +4272,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             }
 
                 if (isVaultWideSearch || isFlashSearch || this.selectedFiles.size > 0 || contextUrls.length > 0) {
-                    
-                    const isVaultQuery = isVaultWideSearch || isFlashSearch || this.selectedFiles.size > 0;
-
                     
                     let temporalContext: { startDate: number | null, endDate: number | null, cleanQuery: string } | undefined = undefined;
 
@@ -5096,7 +5071,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                         e.preventDefault();
 
                         
-                        const fnNum = id.replace(/\D/g, '');
                         let refEl = container.querySelector(`sup a[href="#${id}"]`) as HTMLElement;
                         if (!refEl) {
                             refEl = container.querySelector(`a[href="#${id}"]`) as HTMLElement;
@@ -5227,7 +5201,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                 const videoId = extractYouTubeId(url);
                                 if (videoId) {
                                     const embedContainer = citationItem.createDiv({ cls: 'youtube-embed-container' });
-                                    const iframe = embedContainer.createEl('iframe', {
+                                    const _iframe = embedContainer.createEl('iframe', {
                                         cls: 'youtube-embed',
                                         attr: {
                                             src: `https://www.youtube.com/embed/${videoId}`,
@@ -5236,7 +5210,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                             allowfullscreen: 'true'
                                         }
                                     });
-                                    const titleEl = embedContainer.createDiv({
+                                    const _titleEl = embedContainer.createDiv({
                                         cls: 'youtube-embed-title',
                                         text: source.path.replace('YouTube: ', '')
                                     });
@@ -5270,7 +5244,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                 const videoId = extractYouTubeId(url);
                                 if (videoId) {
                                     const embedContainer = sourceItem.createDiv({ cls: 'youtube-embed-container' });
-                                    const iframe = embedContainer.createEl('iframe', {
+                                    const _iframe = embedContainer.createEl('iframe', {
                                         cls: 'youtube-embed',
                                         attr: {
                                             src: `https://www.youtube.com/embed/${videoId}`,
@@ -5279,7 +5253,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                             allowfullscreen: 'true'
                                         }
                                     });
-                                    const titleEl = embedContainer.createDiv({
+                                    const _titleEl = embedContainer.createDiv({
                                         cls: 'youtube-embed-title',
                                         text: source.path.replace('YouTube: ', '')
                                     });
@@ -5377,7 +5351,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             const sourcesHeader = webSourcesEl.createDiv({ cls: 'sources-header' });
             const toggleIcon = sourcesHeader.createSpan({ cls: 'sources-toggle-icon' });
             toggleIcon.setText('▶'); 
-            const headerText = sourcesHeader.createEl('h6', { text: `Web Sources (${webResults.length})` });
+            const _headerText = sourcesHeader.createEl('h6', { text: `Web Sources (${webResults.length})` });
 
             
             const sourcesContent = webSourcesEl.createDiv({ cls: 'sources-content' });
@@ -5430,7 +5404,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const sourcesHeader = sourcesEl.createDiv({ cls: 'sources-header' });
         const toggleIcon = sourcesHeader.createSpan({ cls: 'sources-toggle-icon' });
         toggleIcon.setText('▶'); 
-        const headerText = sourcesHeader.createEl('h6', { text: `Sources Referred (${totalSources})` });
+        const _headerText = sourcesHeader.createEl('h6', { text: `Sources Referred (${totalSources})` });
 
         
         const sourcesContent = sourcesEl.createDiv({ cls: 'sources-content' });
@@ -5651,7 +5625,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                         if (!dirPath) {
                             try {
                                 await this.app.vault.createFolder(directory);
-                            } catch (error: unknown) {
+                            } catch {
                                 new Notice(`Failed to create directory: ${directory}`);
                                 return;
                             }
@@ -5719,7 +5693,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                         if (!dirPath) {
                             try {
                                 await this.app.vault.createFolder(directory);
-                            } catch (error: unknown) {
+                            } catch {
                                 new Notice(`Failed to create directory: ${directory}`);
                                 return;
                             }
@@ -6024,9 +5998,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         
         const thinkingContainer = responseEl.querySelector('.thinking-container') as HTMLElement | null;
         if (thinkingContainer) {
-            const thinkingContentEl = thinkingContainer.querySelector('.thinking-content') as HTMLElement | null;
-            const thinkingText = (this.currentThinkingText || '').trim();
-
             
             if (this.currentThinkingChunkEl && this.currentThinkingChunkText.trim()) {
                 const textToRender = this.currentThinkingChunkText;
@@ -6111,7 +6082,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
             const lang = detectLanguage(pre as HTMLElement);
             const executable = isExecutable(lang);
-            const renderable = isRenderable(lang);
 
             
             const wrapper = this.document.createElement('div');
@@ -6834,7 +6804,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const filesSection = callout.createDiv({ cls: 'index-status-files-section' });
         const filesToggle = filesSection.createDiv({ cls: 'index-status-files-toggle' });
         const toggleIcon = filesToggle.createSpan({ cls: 'index-status-files-toggle-icon', text: '▶' });
-        const toggleText = filesToggle.createSpan({ text: 'View non-indexed files' });
+        const _toggleText = filesToggle.createSpan({ text: 'View non-indexed files' });
 
         const filesList = filesSection.createDiv({ cls: 'index-status-files-list' });
         const filesListInner = filesList.createDiv({ cls: 'index-status-files-list-inner' });
@@ -6925,7 +6895,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                         });
 
                         if (bm25Config) {
-                            const allMdFiles = this.app.vault.getMarkdownFiles();
                             const bm25FileCount = await embeddingsManager.getBM25FileCount(bm25Config.id);
                             bm25Config.fileCount = bm25FileCount;
                             bm25Config.lastUpdated = Date.now();
@@ -6963,8 +6932,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                         );
 
                         if (embConfig) {
-                            const allMdFiles = this.app.vault.getMarkdownFiles();
-                            const nonExcluded = allMdFiles.filter((f) => !embeddingsManager.isFileExcluded(f.path, embConfig.id));
                             const embFileCount = await embeddingsManager.getEmbeddedFileCount(embConfig.id);
                             embConfig.fileCount = embFileCount;
                             embConfig.lastUpdated = Date.now();
@@ -7119,7 +7086,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     });
                 }
             }
-        } catch (error) {
+        } catch {
                         container.empty();
             container.createSpan({ text: 'Error loading files', cls: 'index-status-files-loading' });
         }
@@ -7170,9 +7137,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     vaultIndexName: r.vaultIndexName
                 }))
             };
-
-            
-            const responsesWithFileActions = this.responses.filter(r => r.fileActionIds && r.fileActionIds.length > 0);
 
             await this.aiChatSessionManager.saveSession(session);
         }
@@ -7955,7 +7919,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 this.contextMenuPreviewEl.setCssProps({ '--preview-max-height':  `${previewHeight}px` });
                 this.contextMenuPreviewEl.addClass('nl-display-block');
             }
-        } catch (error) {
+        } catch {
                         if (this.contextMenuPreviewEl) {
                 this.contextMenuPreviewEl.addClass('nl-display-none');
             }
@@ -8501,7 +8465,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             cls: 'session-search-input', 
             placeholder: 'Search sessions by name or message content...' 
         }) as HTMLInputElement;
-        const searchIcon = searchContainer.createSpan({ cls: 'search-icon', text: '🔍' });
+        const _searchIcon = searchContainer.createSpan({ cls: 'search-icon', text: '🔍' });
 
         const sessionList = modalContent.createDiv({ cls: 'session-list' });
         const paginationDiv = modalContent.createDiv({ cls: 'session-pagination', attr: { style: 'display: none;' } });
@@ -9122,7 +9086,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         }
 
         
-        const statusEl = capsule.createDiv({ cls: 'file-action-status' });
+        const _statusEl = capsule.createDiv({ cls: 'file-action-status' });
         this.updateFileActionStatus(actionId, 'processing');
 
         
@@ -9205,7 +9169,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 } else {
                                         new Notice('Create modal not available. Please accept or reject the changes.');
                 }
-            }).catch(err => {
+            }).catch(() => {
                                 new Notice('Failed to open create modal. Please accept or reject the changes.');
             });
         }
@@ -9420,7 +9384,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                     await this.app.vault.delete(folder);
                 }
             }
-        } catch (err) {
+        } catch {
             
         }
     }
@@ -10012,8 +9976,8 @@ CRITICAL:
                     ...file,
                     content: enhancedContent
                 });
-            } catch (err) {
-                                
+            } catch {
+                                 
                 enhancedFiles.push({
                     ...file,
                     content: `# ${file.name}\n\n${file.description || 'Content will be added here.'}\n\n*Note: Detailed content generation failed. Please edit manually.*`
@@ -10285,7 +10249,7 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
                 if (result) {
                     return result;
                 }
-            } catch (e) {
+            } catch {
             }
         }
 
@@ -10324,7 +10288,7 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
 
                 return parsed;
             }
-        } catch (e) {
+        } catch {
             
 
             try {
@@ -10347,7 +10311,7 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
 
                     return parsed;
                 }
-            } catch (secondError) {
+            } catch {
             }
         }
 
@@ -10376,7 +10340,7 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
             }
 
             return null;
-        } catch (e) {
+        } catch {
             return null;
         }
     }
@@ -10441,8 +10405,8 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
                     try {
                         const templateContent = await this.app.vault.read(templateFile);
                         finalContent = templateContent + '\n\n' + finalContent;
-                    } catch (readError) {
-                                            }
+                    } catch {
+                                        }
                 }
             }
 
@@ -10552,7 +10516,7 @@ ${jsonContent}
             nameEl.textContent = actionState.fileName;
         }
         
-        const statusEl = capsule.createDiv({ cls: 'file-action-status' });
+        const _statusEl = capsule.createDiv({ cls: 'file-action-status' });
 
         
         this.updateFileActionStatus(actionId, actionState.status, actionState.error);
@@ -10638,7 +10602,7 @@ ${jsonContent}
                         try {
                             const data = await processFileForMultimodal(this.app, file);
                             if (data) multimodalInputs.push(data);
-                        } catch (e) {
+                        } catch {
                                                     }
                     }
                 }
@@ -10700,7 +10664,7 @@ ${jsonContent}
                         try {
                             const content = await this.app.vault.read(fileOrFolder);
                             fileContents.push(`--- File: ${fileOrFolder.basename} ---\n${content}\n`);
-                        } catch (e) {
+                        } catch {
                                                     }
                     } else if (fileOrFolder instanceof TFolder) {
                         const allFiles = fileOrFolder.children.filter(c => c instanceof TFile) as TFile[];
@@ -10708,7 +10672,7 @@ ${jsonContent}
                             try {
                                 const content = await this.app.vault.read(file);
                                 fileContents.push(`--- File: ${file.basename} ---\n${content}\n`);
-                            } catch (e) {
+                            } catch {
                                                             }
                         }
                     }
@@ -10748,7 +10712,7 @@ ${jsonContent}
                             }
 
                             mcpSources.push({ server: server.name, resource: uri });
-                        } catch (error) {
+                        } catch {
                                                         mcpContext += `[Error reading resource: ${uri}]\n`;
                         }
                     }
@@ -11078,7 +11042,7 @@ ${jsonContent}
     }
 }
 
-function escapeRegex(string: string): string {
+function _escapeRegex(string: string): string {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
@@ -11122,7 +11086,6 @@ class CodeCanvasModal extends Modal {
         contentEl.empty();
 
         const lang = this.language.toLowerCase();
-        const isExec = isExecutable(lang);
         const isRender = isRenderable(lang);
 
         

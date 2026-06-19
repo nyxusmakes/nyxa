@@ -1,4 +1,4 @@
-import { Notice, requestUrl, Platform } from 'obsidian';
+import { requestUrl, Platform } from 'obsidian';
 
 
 const child_process = (!Platform.isMobile && (window as unknown as Record<string, unknown>).require) ? ((window as unknown as Record<string, unknown>).require as (module: string) => Record<string, unknown>)('child_process') : null;
@@ -174,10 +174,6 @@ export class MCPService {
                 
                 
                 
-                
-                const displayCmd = [command, ...(config.args || [])].map(a =>
-                    a.includes(' ') ? `"${a}"` : a
-                ).join(' ');
                 
                 const childProcess: ChildProcess = spawnMCPProcess(
                     command,
@@ -369,7 +365,7 @@ export class MCPService {
 
         while (Date.now() < deadline) {
             try {
-                const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
+                const _res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
                 
                                 return;
             } catch (e: unknown) {
@@ -452,7 +448,7 @@ export class MCPService {
                         request.resolve(message.result);
                     }
                 }
-            } catch (error) {
+            } catch {
                             }
         }
     }
@@ -655,7 +651,7 @@ export class MCPService {
                                 result = message.result;
                             }
                         }
-                    } catch (parseError) {
+                    } catch {
                                             }
                 }
                 currentEvent = '';
@@ -718,7 +714,7 @@ export class MCPService {
         try {
             const result = await this.sendRequest(serverId, 'tools/list') as Record<string, unknown>;
             connection.tools = (result.tools as MCPTool[]) || [];
-                    } catch (error) {
+                    } catch {
                         connection.tools = [];
         }
     }
@@ -818,7 +814,7 @@ export class MCPService {
             if (connection.eventSource) {
                 (connection.eventSource as { close?: () => void })?.close?.();
             }
-        } catch (error) {
+        } catch {
                     }
 
         this.servers.delete(serverId);

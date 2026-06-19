@@ -1,14 +1,13 @@
-import { Plugin, Notice, TFile, TAbstractFile, WorkspaceLeaf, ItemView, Setting, Menu, Editor, MarkdownView, Platform, Modal, requestUrl, normalizePath } from 'obsidian';
+import { Plugin, Notice, TFile, WorkspaceLeaf, Editor, Platform, Modal, requestUrl, normalizePath } from 'obsidian';
 import { AISettingTab, AISettings, DEFAULT_SETTINGS, Provider, migrateSettings } from './settings';
 import { AITutorView, VIEW_TYPE_NEXUS_TUTOR } from './views/view';
 import { ResponseView, VIEW_TYPE_NEXUS_CHAT } from './views/responseView';
 import { LandingView, VIEW_TYPE_LANDING } from './views/landingView';
 import { EmbeddingsManager } from './managers/embeddingsManager';
 import { PdfExtractOptionsModal, extractTextFromPdf } from './utils/pdfExtractor';
-import { Vault } from 'obsidian';
 import { VIEW_TYPE_NEXUS_FEED, FeedView } from './views/feedView';
 import { FeedEntryView, VIEW_TYPE_NEXUS_FEED_ENTRIES } from './views/feedEntryView';
-import { parseFeed, ParsedFeed, ParsedFeedEntry } from './parsing/feedParsing';
+import { ParsedFeedEntry } from './parsing/feedParsing';
 import { CombinedFeedView, VIEW_TYPE_COMBINED_FEED } from './views/combinedFeedView';
 import { BookmarkView, VIEW_TYPE_BOOKMARKS } from './views/bookmarkView';
 import { NotebookChatView, VIEW_TYPE_NOTEBOOK_CHAT } from './views/notebookChatView';

@@ -1,5 +1,5 @@
 import { App, Modal, TFile, Notice, ButtonComponent, MarkdownRenderer, Component, TFolder, normalizePath, Setting } from 'obsidian';
-import { AISettings, DEFAULT_SETTINGS, getModelTemperature, getModelTopP, getGeminiThinkingConfig } from '../settings';
+import { AISettings, getModelTemperature, getModelTopP, getGeminiThinkingConfig } from '../settings';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { WebSearchService } from '../services/webSearch';
 import { GroqService, ChatMessage, GroqApiError, GeminiHistoryMessage } from '../services/groqService';
@@ -365,8 +365,6 @@ async function getInitialFileStructure(context: EnhancedFileCreationContext): Pr
   const isGroq = context.settings.provider === 'groq';
   const isOpenRouter = context.settings.provider === 'openrouter';
   const isOllama = context.settings.provider === 'ollama';
-  const isGemini = context.settings.provider === 'gemini';
-  
   // Validate settings based on provider
   if (isGroq) {
     if (!context.settings.groqApiKey || !context.settings.model) {
@@ -800,7 +798,7 @@ function extractAndValidateJSON(aiText: string): FileCreationPlan | null {
     if (isValidPlan(plan)) {
       return sanitizePlan(plan);
     }
-  } catch (e) {
+  } catch {
     // Continue to next strategy
   }
   
@@ -812,7 +810,7 @@ function extractAndValidateJSON(aiText: string): FileCreationPlan | null {
       if (isValidPlan(plan)) {
         return sanitizePlan(plan);
       }
-    } catch (e) {
+    } catch {
       // Continue to next strategy
     }
   }
@@ -825,7 +823,7 @@ function extractAndValidateJSON(aiText: string): FileCreationPlan | null {
       if (isValidPlan(plan)) {
         return sanitizePlan(plan);
       }
-    } catch (e) {
+    } catch {
       // Continue to next strategy
     }
   }
@@ -838,7 +836,7 @@ function extractAndValidateJSON(aiText: string): FileCreationPlan | null {
       if (isValidPlan(plan)) {
         return sanitizePlan(plan);
       }
-    } catch (e) {
+    } catch {
       continue;
     }
   }
@@ -1379,13 +1377,13 @@ async function createFilesFromPlan(app: App, plan: FileCreationPlan): Promise<vo
     
     try {
       folder = await app.vault.createFolder(folderPath);
-    } catch (folderError) {
+    } catch {
       // Folder might already exist, try to get it
       const existingFolder = app.vault.getAbstractFileByPath(folderPath);
       if (existingFolder instanceof TFolder) {
         folder = existingFolder;
       } else {
-        throw folderError;
+        throw new Error(`Failed to create folder: ${folderPath}`);
       }
     }
 
@@ -1400,7 +1398,7 @@ async function createFilesFromPlan(app: App, plan: FileCreationPlan): Promise<vo
           try {
             const templateContent = await app.vault.read(templateFile);
             finalContent = templateContent + '\n\n' + finalContent;
-          } catch (readError) {
+          } catch {
                       }
         }
       }

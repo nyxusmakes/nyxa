@@ -12,7 +12,6 @@ import { RateLimitManager } from '../utils/rateLimitManager';
 import { GeminiService } from './geminiService';
 import { ModelSelection } from '../modelSelector';
 import { UnifiedProviderManager, UnifiedMessage } from './unifiedProviderManager';
-import { sanitizeServerName } from '../mcp/mcpToolCalling';
 import { TaskType } from '../utils/tokenEstimator';
 import {
     MCPExecutionLedger,
@@ -981,7 +980,7 @@ Instructions:
                                 updateSnippetUI('Thinking...', thinking);
                             }
                         );
-                    } catch (streamError) {
+                    } catch {
                                                 responseText = await nvidiaService.generateContent(
                             this.settings.model,
                             nvidiaMessages as NvidiaChatMessage[],
@@ -1651,7 +1650,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                         if (args?.selected_tools && Array.isArray(args.selected_tools)) {
                                             extractedTools = args.selected_tools;
                                         }
-                                    } catch (e) {
+                                    } catch {
                                                                             }
                                 }
                             }
@@ -1692,7 +1691,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                             }).filter(tn => toolNames.includes(tn));
                             
                                                     }
-                    } catch (planErr) {
+                    } catch {
                                             }
                 }
 
@@ -1843,8 +1842,6 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
 
                     for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
                         const chunk = chunks[chunkIdx];
-                        const chunkLabel = chunks.length > 1 ? `[batch ${chunkIdx + 1}/${chunks.length}]` : '';
-
                         await checkAndApplyCooldown(this.settings.model, provider);
 
                         const execCb = async (toolCalls: OpenAITool[]) => {
@@ -2115,8 +2112,8 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                 { temperature: getModelTemperature(this.settings.model, this.settings), maxTokens: 8192, topP: getModelTopP(this.settings.model, this.settings) });
                             consolidatedAnswer = res.text;
                         }
-                    } catch (synthErr) {
-                                                
+                    } catch {
+                                                 
                         consolidatedAnswer = combinedServerContent;
                     }
 
@@ -2238,8 +2235,6 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                 
                 for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
                     const chunk = chunks[chunkIdx];
-                    const chunkLabel = isChunked ? `[batch ${chunkIdx + 1}/${chunks.length}]` : '';
-
                     try {
                         let chunkResult: { content: string; totalTokens?: number };
 
@@ -2756,7 +2751,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                         if (args?.selected_tools && Array.isArray(args.selected_tools)) {
                                             extractedTools = args.selected_tools;
                                         }
-                                    } catch (e) {
+                                    } catch {
                                                                             }
                                 }
                             }
@@ -2800,8 +2795,8 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                                 planCreated = true;
                         break; 
                         
-                    } catch (planErr) {
-                                                
+                    } catch {
+                                                 
                     }
                 }
                 
@@ -4148,16 +4143,6 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                     const isAuthError  = errMsgLower.includes('401') || errMsgLower.includes('unauthorized') ||
                                          errMsgLower.includes('invalid api key') || errMsgLower.includes('api key not valid');
 
-                    let logLabel = 'Unknown error';
-                    if (isTimeout)         logLabel = 'Timeout';
-                    else if (isBlank)      logLabel = 'Blank response';
-                    else if (isRateLimit)  logLabel = 'Rate limit';
-                    else if (isTokenLimit) logLabel = 'Token limit';
-                    else if (isHardFail)   logLabel = 'Hard fail (skipping instantly)';
-                    else if (isUnavail)    logLabel = 'Unavailable';
-
-                    
-                    
                     if (isRateLimit) {
                         setModelCooldown(modelEntry.modelId, modelEntry.provider);
                     }
@@ -4229,7 +4214,7 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                                         providerName: chunkModel.provider
                                     };
                                 }
-                            } catch (chunkErr) {
+                            } catch {
                                                             }
                         }
 

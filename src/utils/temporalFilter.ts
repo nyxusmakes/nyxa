@@ -537,7 +537,7 @@ JSON:`;
                         openRouterSuccess = true;
                         break;
                     }
-                                    } catch (modelErr) {
+                                    } catch {
                                     }
             }
             
@@ -571,7 +571,7 @@ JSON:`;
                         groqSuccess = true;
                         break;
                     }
-                                    } catch (modelErr) {
+                                    } catch {
                                     }
             }
             

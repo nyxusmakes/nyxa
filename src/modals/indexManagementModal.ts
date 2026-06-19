@@ -1,5 +1,5 @@
 import { App, Modal, Setting, Notice, setIcon } from 'obsidian';
-import { AISettings, CustomEmbeddingModel } from '../settings';
+import { AISettings } from '../settings';
 
 export interface IndexConfig {
     id: string;

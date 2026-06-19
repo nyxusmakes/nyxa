@@ -1,6 +1,5 @@
 import { App, TAbstractFile, ItemView, WorkspaceLeaf, TFile, ButtonComponent, Notice, MarkdownRenderer, Component, Modal, Setting, setIcon, normalizePath, Platform } from 'obsidian';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { AISettings, Provider, getModelsGroupedByProvider, getModelDisplayName, getProviderForModel } from '../settings';
+import { AISettings, getModelsGroupedByProvider, getModelDisplayName, getProviderForModel } from '../settings';
 import { DirectorySuggester } from '../utils/directorySuggester';
 import { NotebookManager, Notebook } from '../managers/notebookManager'; 
 import { NotebookFormModal } from '../modals/notebookModals'; 
@@ -9,11 +8,11 @@ import { TokenEstimator } from '../utils/tokenEstimator';
 import AIPlugin from '../main'; 
 
 
-import { QnAManager, QASettingsModal as QnASettingsModal, Question as QnAQuestion, QASettings as QnASettings } from '../tools/createQnA';
-import { MCQManager, MCQSettingsModal as MCQModal, MCQ as MCQItem, MCQSettings as MCQSett } from '../tools/createMCQs';
+import { QnAManager } from '../tools/createQnA';
+import { MCQManager } from '../tools/createMCQs';
 import { ConceptMapManager, ConceptMapModal, SavedConceptMap, ConceptMapData } from '../tools/createConceptMaps';
 import { SlideManager, SlideshowSettingsModal, SavedSlideshow, SlideshowVoiceSettingsModal } from '../tools/createSlides';
-import { MultimodalInput, processFileForMultimodal, isMultimodalSupported, getFileIcon, isTextFile } from '../utils/multimodalUtils';
+import { isMultimodalSupported } from '../utils/multimodalUtils';
 
 interface OpenAIErrorResponse {
   error: {
@@ -51,9 +50,9 @@ interface NotebookChatViewLike {
   externalInvalidateContextCache?: () => void;
 }
 
-interface MindmapNode {
+interface _MindmapNode {
   content: string;
-  children?: MindmapNode[];
+  children?: _MindmapNode[];
 }
 
 interface QASettings {
@@ -251,7 +250,7 @@ export class NoteSuggester {
       if (file && file instanceof TFile) {
         const noteChip = this.selectedNotesContainer.createDiv({ cls: 'note-chip' });
         noteChip.createSpan({ text: file.basename, cls: 'note-chip-text' });
-        const removeBtn = new ButtonComponent(noteChip)
+        const _removeBtn = new ButtonComponent(noteChip)
           .setClass('note-chip-remove')
           .setIcon('x')
           .setTooltip('Remove')
@@ -414,7 +413,7 @@ export class FolderSuggester {
     this.selectedFolders.forEach(folder => {
       const folderChip = this.selectedFoldersContainer.createDiv({ cls: 'folder-chip' });
       folderChip.createSpan({ text: folder, cls: 'folder-chip-text' });
-      const removeBtn = new ButtonComponent(folderChip)
+      const _removeBtn = new ButtonComponent(folderChip)
         .setClass('folder-chip-remove')
         .setIcon('x')
         .setTooltip('Remove')
@@ -603,7 +602,7 @@ export class AITutorView extends ItemView {
     
     
     const spinnerContainer = buttonContainer.createDiv({ cls: 'spinner-container' });
-    const loadingSpinner = spinnerContainer.createDiv({ cls: 'loading-spinner' });
+    const _loadingSpinner = spinnerContainer.createDiv({ cls: 'loading-spinner' });
 
     
     const startQAButton = new ButtonComponent(buttonContainer)
@@ -1017,7 +1016,7 @@ export class AITutorView extends ItemView {
         try {
           const content = await this.app.vault.read(file);
           currentTokens += tokenEstimator['countTokens'](content);
-        } catch (e) {
+        } catch {
                   }
       }
     }
@@ -1596,7 +1595,7 @@ export class AITutorView extends ItemView {
     
     const buttons = content.createDiv({ cls: 'mcq-error-buttons' });
     
-    const retryBtn = new ButtonComponent(buttons)
+    const _retryBtn = new ButtonComponent(buttons)
       .setButtonText('Re-check')
       .setCta()
       .onClick(() => {
@@ -1604,7 +1603,7 @@ export class AITutorView extends ItemView {
         this.evaluateMCQs();
       });
     
-    const cancelBtn = new ButtonComponent(buttons)
+    const _cancelBtn = new ButtonComponent(buttons)
       .setButtonText('Cancel')
       .onClick(() => {
         overlay.remove();
@@ -2058,7 +2057,7 @@ export class AITutorView extends ItemView {
     const after = text.substring(index + query.length);
     
     if (before) element.appendChild(this.document.createTextNode(before));
-    const highlight = element.createEl('mark', { text: match, cls: 'search-highlight' });
+    const _highlight = element.createEl('mark', { text: match, cls: 'search-highlight' });
     if (after) element.appendChild(this.document.createTextNode(after));
   }
 
@@ -2107,7 +2106,7 @@ export class AITutorView extends ItemView {
       
       
       await this.conceptMapManager.openConceptMapVisualization(conceptMapData, conceptMap.name);
-    } catch (error) {
+    } catch {
       new Notice('Error opening concept map');
           }
   }
@@ -2240,7 +2239,7 @@ export class AITutorView extends ItemView {
       
       const zenData = await this.slideManager.loadZenSlideshow(slideshow.filePath);
       await this.slideManager.openZenSlideshowVisualization(zenData);
-    } catch (error) {
+    } catch {
 
       new Notice('Error opening slideshow');
           }
@@ -2297,7 +2296,7 @@ export class AITutorView extends ItemView {
         });
       }).open();
       
-    } catch (error) {
+    } catch {
       new Notice('Error loading slideshow voice settings');
           }
   }
@@ -2350,7 +2349,7 @@ export class AITutorView extends ItemView {
         if (!dirPath) {
           try {
             await this.app.vault.createFolder(dir);
-          } catch (error) {
+          } catch {
             new Notice(`Failed to create directory: ${dir}`);
             return;
           }
@@ -2664,7 +2663,7 @@ class QASettingsModal extends Modal {
                     this.filename = value.trim();
                 }));
 
-        let directoryInput: HTMLInputElement;
+        let _directoryInput: HTMLInputElement;
         new Setting(contentEl)
             .setName('Save Directory')
             .setDesc('Optional: Directory to save the session. Defaults to settings directory.')
@@ -2858,7 +2857,7 @@ class MCQSettingsModal extends Modal {
   }
 }
 
-class MindmapSettingsModal extends Modal {
+class _MindmapSettingsModal extends Modal {
   private initialSelectedPaths: Set<string>;
   private onSubmit: (settings: { customPrompt: string; saveDirectory: string }) => void;
   private settings: AISettings;

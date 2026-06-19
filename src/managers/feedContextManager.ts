@@ -1,5 +1,4 @@
 import { App, Modal, ButtonComponent, Notice } from 'obsidian';
-import { AISettings } from '../settings';
 import { parseFeed, ParsedFeedEntry } from '../parsing/feedParsing';
 
 export interface FeedMeta {
@@ -92,7 +91,7 @@ export class FeedEntrySelectModal extends Modal {
       if (!entry.title || !entry.link) return;
       const item = entriesListContainer.createDiv({ cls: 'feed-entry-card' });
       // Title
-      const titleEl = item.createEl('div', { text: entry.title, cls: 'entry-title' });
+      const _titleEl = item.createEl('div', { text: entry.title, cls: 'entry-title' });
       // Metadata Line (Author and Date)
       const metadataLine = item.createDiv({ cls: 'entry-metadata-line' });
       if (entry.author) {

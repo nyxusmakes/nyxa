@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice, setIcon } from 'obsidian';
+import { App, Modal, setIcon } from 'obsidian';
 import { MCPServerConfig } from '../settings';
 import { MCPService, MCPResource, MCPTool } from '../mcp/mcpService';
 
@@ -138,7 +138,7 @@ export class MCPServerSelectionModal extends Modal {
             });
 
             const details = serverItem.createEl('details', { cls: 'mcp-server-details' });
-            const summary = details.createEl('summary', { text: 'Resources & Tools' });
+            const _summary = details.createEl('summary', { text: 'Resources & Tools' });
 
             const resourcesSection = details.createDiv({ cls: 'mcp-section' });
             resourcesSection.createEl('h4', { text: 'Resources' });
