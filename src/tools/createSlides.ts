@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile, ButtonComponent, MarkdownRenderer, Component, ToggleComponent, setIcon, normalizePath, Setting } from 'obsidian';
+import { App, Modal, Notice, TFile, ButtonComponent, setIcon, normalizePath, Setting } from 'obsidian';
 import { AISettings } from '../settings';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GroqService, ChatMessage } from '../services/groqService';
@@ -475,7 +475,7 @@ Output ONLY the outline in the exact format shown above. No explanations or prea
       if (!parentDirPath) {
         try {
           await this.app.vault.adapter.mkdir(parentDir);
-        } catch (error) {
+        } catch {
                   }
       }
 
@@ -484,7 +484,7 @@ Output ONLY the outline in the exact format shown above. No explanations or prea
       if (!dirPath) {
         try {
           await this.app.vault.adapter.mkdir(dir);
-        } catch (error) {
+        } catch {
                   }
       }
     }
@@ -1068,7 +1068,7 @@ export class ZenSlideshowModal extends Modal {
     const progressFill = progressBar.createDiv({ cls: 'zen-progress-fill' });
     progressFill.id = 'zen-progress-fill';
 
-    const slideCounter = progressWrapper.createDiv({ cls: 'slide-counter zen-counter' });
+    const _slideCounter = progressWrapper.createDiv({ cls: 'slide-counter zen-counter' });
      // Force flush
 
     // Do async work in setTimeout to avoid blocking UI
@@ -1076,7 +1076,7 @@ export class ZenSlideshowModal extends Modal {
        // Force flush
       try {
         this.setupWheelNavigation(modalEl);
-              } catch (e) {
+              } catch {
               }
       
       this.initializeVoices().then(() => {
@@ -1206,7 +1206,7 @@ export class ZenSlideshowModal extends Modal {
     const mindmapContainer = slideWrapper.createDiv({ cls: 'zen-mindmap-container' });
     const treeContainer = mindmapContainer.createDiv({ cls: 'zen-mindmap-tree' });
     
-    const rootNode = this.renderMindmapNode(treeContainer, slide.titleNode, true);
+    const _rootNode = this.renderMindmapNode(treeContainer, slide.titleNode, true);
     
     if (slide.titleNode.children && slide.titleNode.children.length > 0) {
       const connector = treeContainer.createDiv({ cls: 'zen-connector' });
@@ -1237,7 +1237,7 @@ export class ZenSlideshowModal extends Modal {
     for (const child of children) {
       const branchItem = container.createDiv({ cls: 'zen-branch-item' });
       
-      const nodeEl = this.renderMindmapNode(branchItem, child, false);
+      const _nodeEl = this.renderMindmapNode(branchItem, child, false);
       
       if (child.children && child.children.length > 0) {
         const connector = branchItem.createDiv({ cls: 'zen-connector' });

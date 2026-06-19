@@ -1,4 +1,4 @@
-import { App, Modal, Editor, Notice, ButtonComponent, Setting, MarkdownView, EditorPosition } from 'obsidian';
+import { App, Modal, Editor, Notice, ButtonComponent, MarkdownView, EditorPosition } from 'obsidian';
 import { AISettings } from './settings';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GroqService, ChatMessage, GroqApiError } from './services/groqService';
@@ -71,14 +71,14 @@ export class EditSelectionModal extends Modal {
         // Proceed button
         const buttonContainer = contentEl.createDiv({ cls: 'edit-selection-button-container' });
         
-        const proceedButton = new ButtonComponent(buttonContainer)
+        const _proceedButton = new ButtonComponent(buttonContainer)
             .setButtonText('Proceed')
             .setCta()
             .onClick(async () => {
                 await this.handleProceed();
             });
 
-        const cancelButton = new ButtonComponent(buttonContainer)
+        const _cancelButton = new ButtonComponent(buttonContainer)
             .setButtonText('Cancel')
             .onClick(() => {
                 this.close();
@@ -335,12 +335,12 @@ function createInlineDiffWidget(originalText: string, editedText: string, diffId
     // Button container
     const buttonContainer = container.createDiv({ cls: 'edit-selection-diff-buttons' });
     
-    const acceptBtn = buttonContainer.createEl('button', {
+    const _acceptBtn = buttonContainer.createEl('button', {
         cls: 'edit-selection-accept-btn',
         text: '✓ Accept Changes'
     });
     
-    const rejectBtn = buttonContainer.createEl('button', {
+    const _rejectBtn = buttonContainer.createEl('button', {
         cls: 'edit-selection-reject-btn',
         text: '✗ Reject Changes'
     });

@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { requestUrl } from 'obsidian';
 import { AISettings } from '../settings';
 

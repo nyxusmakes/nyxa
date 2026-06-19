@@ -1,7 +1,6 @@
 import { ItemView, WorkspaceLeaf, App, TextComponent, ButtonComponent, Setting, Notice, ExtraButtonComponent, Modal, Menu } from 'obsidian';
 import AIPlugin from '../main'; 
-import { parseFeed, ParsedFeed } from '../parsing/feedParsing'; 
-import { VIEW_TYPE_NEXUS_FEED_ENTRIES } from './feedEntryView'; 
+import { parseFeed } from '../parsing/feedParsing';
 
 export const VIEW_TYPE_NEXUS_FEED = 'NEXUS_FEED_VIEW';
 
@@ -202,7 +201,7 @@ export class FeedView extends ItemView {
                 
                  try {
                      new URL(url);
-                 } catch (e) {
+                 } catch {
                      new Notice('Please enter a valid URL.');
                      return;
                  }
@@ -290,7 +289,7 @@ export class FeedView extends ItemView {
             folderCard.setCssProps({ '--folder-border-color':  folder.color });
             
             const folderHeader = folderCard.createDiv({ cls: 'feed-folder-header' });
-            const folderName = folderHeader.createEl('h3', { text: folder.name });
+            folderHeader.createEl('h3', { text: folder.name });
 
             
             folderCard.addEventListener('contextmenu', (event) => {

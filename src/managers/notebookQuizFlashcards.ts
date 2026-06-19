@@ -1,5 +1,4 @@
-import { App, Notice, MarkdownRenderer, Component, setIcon } from 'obsidian';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { App, MarkdownRenderer, Component, setIcon } from 'obsidian';
 import { AISettings, getModelTemperature, getModelTopP } from '../settings';
 import { GroqService, ChatMessage } from '../services/groqService';
 import { OpenRouterService, ChatMessage as OpenRouterChatMessage } from '../services/openRouterService';
@@ -199,7 +198,7 @@ Generate the MCQs now:`;
     let match;
     let index = 0;
     while ((match = mcqRegex.exec(text)) !== null) {
-      const [_, question, optA, optB, optC, optD, correct] = match;
+      const [__unused, question, optA, optB, optC, optD, correct] = match;
       const correctIndex = correct.toUpperCase().trim().charCodeAt(0) - 'A'.charCodeAt(0);
       
       mcqs.push({
@@ -369,7 +368,7 @@ Generate the flashcards now:`;
     let match;
     let index = 0;
     while ((match = cardRegex.exec(text)) !== null) {
-      const [_, front, back] = match;
+      const [__unused, front, back] = match;
       flashcards.push({
         id: `fc-${Date.now()}-${index}`,
         front: front.trim(),
@@ -788,7 +787,7 @@ export class QuizRenderer {
             this.renderExplanationContent(explanationBox, explanation);
             explanationBox.removeClass('hidden');
             
-          } catch (error) {
+          } catch {
             explanationBox.empty();
             explanationBox.createEl('p', { text: 'Failed to generate explanation. Please try again.', cls: 'quiz-explanation-error' });
             explanationBox.removeClass('hidden');
@@ -837,7 +836,7 @@ export class QuizRenderer {
           copyBtn.createEl('span', { text: 'Copy' });
           copyBtn.removeClass('copied');
         }, 2000);
-      } catch (err) {
+      } catch {
         
       }
     };
@@ -928,7 +927,7 @@ export class FlashcardRenderer {
       this.state.currentIndex = visibleCards.length - 1;
     }
 
-    const counterSpan = header.createEl('span', { 
+    const _counterSpan = header.createEl('span', { 
       text: `${this.state.currentIndex + 1} / ${visibleCards.length}`,
       cls: 'flashcard-counter'
     });

@@ -6,7 +6,7 @@
  */
 
 import { requestUrl } from 'obsidian';
-import { CustomModel, CustomEmbeddingModel, Provider, AISettings } from '../settings';
+import { CustomModel, CustomEmbeddingModel, AISettings } from '../settings';
 import { validateOpenRouterApiKey } from './openRouterService';
 import { validateNvidiaApiKey } from './nvidiaService';
 
@@ -126,7 +126,8 @@ export async function verifyModel(model: CustomModel, settings: AISettings): Pro
         const data = response.json as Record<string, unknown>;
         const errObj = data.error as Record<string, unknown> | undefined;
         errorMsg = ((errObj?.message ?? data.message) as string) || errorMsg;
-      } catch {}
+      } catch { // Intentionally ignored
+      }
       return { success: false, error: errorMsg };
     }
   } catch (error) {
@@ -212,7 +213,8 @@ export async function verifyEmbeddingModel(model: CustomEmbeddingModel, settings
         const data = response.json as Record<string, unknown>;
         const errObj = data.error as Record<string, unknown> | undefined;
         errorMsg = ((errObj?.message ?? data.message) as string) || errorMsg;
-      } catch {}
+      } catch { // Intentionally ignored
+      }
       return { success: false, error: errorMsg };
     }
   } catch (error) {
@@ -422,7 +424,7 @@ async function fetchOpenRouterModels(apiKey: string): Promise<ModelDiscoveryResu
             isFree: m.pricing && (m.pricing.prompt === "0" || m.pricing.prompt === 0) && (m.pricing.completion === "0" || m.pricing.completion === 0)
           }));
       }
-    } catch (e) {
+    } catch {
           }
 
     return { provider: 'openrouter', models, embeddingModels };
@@ -514,7 +516,7 @@ async function fetchOllamaModels(baseUrl: string, apiKey?: string): Promise<Mode
             tokenLimit = showData.model_info[contextKey] || showData.model_info['general.context_length'] || 32000;
           }
         }
-      } catch (e) {
+      } catch {
               }
 
       models.push({
@@ -648,13 +650,6 @@ async function fetchNvidiaModels(apiKey: string): Promise<ModelDiscoveryResult> 
     const models: DiscoveredModel[] = [];
     const embeddingModels: DiscoveredModel[] = [];
 
-    // Debug: log the first few model entries from the raw response to inspect available fields
-    if (data.data && data.data.length > 0) {
-      const samples = data.data.slice(0, 3);
-      for (const sample of samples) {
-              }
-    }
-
     for (const m of data.data || []) {
       if (!m.id) continue;
 
@@ -750,7 +745,7 @@ async function fetchGroqModels(apiKey: string): Promise<ModelDiscoveryResult> {
             tokenLimit = parsedTPM;
           }
         }
-      } catch (e) {
+      } catch {
               }
 
       models.push({

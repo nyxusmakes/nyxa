@@ -26,7 +26,7 @@ export function getDomain(url: string): string {
     try {
         const parsedUrl = new URL(url);
         return parsedUrl.hostname;
-    } catch (e) {
+    } catch {
         return '';
     }
 }

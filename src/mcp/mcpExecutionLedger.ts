@@ -179,7 +179,7 @@ export function buildSynthesisFromLedger(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function markDependentsSkipped(
+function _markDependentsSkipped(
     steps: MCPPlanStep[],
     failedStepId: string,
     ledger: MCPExecutionLedger
@@ -190,12 +190,12 @@ function markDependentsSkipped(
             step.error = `Skipped: dependency "${failedStepId}" failed`;
             ledger.skippedSteps.push(step.stepId);
             // Recursively skip dependents of this skipped step
-            markDependentsSkipped(steps, step.stepId, ledger);
+            _markDependentsSkipped(steps, step.stepId, ledger);
         }
     }
 }
 
-function hasCircularDependency(steps: MCPPlanStep[]): boolean {
+function _hasCircularDependency(steps: MCPPlanStep[]): boolean {
     const visited = new Set<string>();
     const inStack = new Set<string>();
 

@@ -1,20 +1,18 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, ButtonComponent, TextAreaComponent, setIcon, Platform, App, type ViewStateResult } from 'obsidian';
 import { MarkdownRenderer, Component } from 'obsidian';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { AISettings, Provider, getModelsGroupedByProvider, getModelDisplayName, getProviderForModel, getModelTemperature, getModelTopP } from '../settings';
+import { AISettings, Provider, getModelsGroupedByProvider, getModelDisplayName, getModelTemperature, getModelTopP } from '../settings';
 import { Notebook, NotebookChatHistoryManager, NotebookChatSession, NotebookChatSessionMeta } from '../managers/notebookManager';
 import AIPlugin from '../main';
 import { Modal, Setting } from 'obsidian';
 
 import { normalizePath } from 'obsidian';
 import { SaveNoteModal } from '../modals/saveNoteModal';
-import { PLATFORM_FEATURES } from '../utils/platformFeatures';
 import { GroqService, ChatMessage as GroqChatMessage, GroqApiError } from '../services/groqService';
 import { OpenRouterService, ChatMessage as OpenRouterChatMessage, OpenRouterApiError } from '../services/openRouterService';
 import { OllamaService, ChatMessage as OllamaChatMessage, OllamaApiError } from '../services/ollamaService';
 import { NvidiaService, ChatMessage as NvidiaChatMessage, NvidiaApiError } from '../services/nvidiaService';
 import { RateLimitManager } from '../utils/rateLimitManager';
-import { GeminiService } from '../services/geminiService';
 import { UnifiedProviderManager, UnifiedMessage } from '../services/unifiedProviderManager';
 import { WebSearchService } from '../services/webSearch';
 import {
@@ -23,9 +21,7 @@ import {
   QuizRenderer,
   FlashcardRenderer,
   QuizState,
-  FlashcardState,
-  NotebookMCQ,
-  NotebookFlashcard
+  FlashcardState
 } from '../managers/notebookQuizFlashcards';
 import { NotebookBM25Manager, NotebookSourceStatus as BM25SourceStatus } from '../managers/notebookBM25Manager';
 
@@ -125,12 +121,13 @@ export class NotebookChatView extends ItemView {
         const json = await this.app.vault.adapter.read(cachePath);
         this.contextCache = JSON.parse(json) as NotebookContextCache;
       }
-    } catch (e) {
+    } catch {
       
     }
   }
 
   
+
   private async savePersistentCache(): Promise<void> {
     try {
       
@@ -140,19 +137,18 @@ export class NotebookChatView extends ItemView {
       }
       const cachePath = this.getCacheFilePath();
       await this.app.vault.adapter.write(cachePath, JSON.stringify(this.contextCache));
-    } catch (e) {
+    } catch {
       
     }
   }
+
+  
 
   
   private async getCachedContext(): Promise<string> {
     
     const effectivePaths = this.getEffectiveSourcePaths();
     const selectedPaths = effectivePaths.filter(p => this.selectedSourcePaths.has(p));
-    
-    const effectiveWebSources = await this.getEffectiveWebSources();
-    const selectedWebs = effectiveWebSources.filter(web => this.selectedSourcePaths.has(`web:${web.url}`));
     
     if (
       !this.contextCache ||
@@ -175,7 +171,7 @@ export class NotebookChatView extends ItemView {
             
             fileContents.push(`--- File: ${file.basename} ---\n${content}\n`);
             noteMeta.push({ path, mtime: file.stat.mtime });
-          } catch (e) {
+          } catch {
             new Notice(`Could not read file: ${file.basename}`);
           }
         }
@@ -222,7 +218,7 @@ export class NotebookChatView extends ItemView {
             }
           }
         }
-      } catch (error) {
+      } catch {
         
       }
     }
@@ -343,7 +339,7 @@ Rules:
         const paraphrases = parsed.paraphrases || [];
         result.expanded = [query, ...paraphrases].join(' | ');
       }
-    } catch (error) {
+    } catch {
       
       result.keyTerms = this.extractKeyTerms(query);
     }
@@ -495,7 +491,7 @@ Rules:
       this.currentSourceMapping = sourcePathMapping;
 
       return fileContents.join('\n');
-    } catch (error) {
+    } catch {
       new Notice('Error retrieving context. Falling back to full context.');
       return await this.getCachedContext();
     }
@@ -511,10 +507,12 @@ Rules:
       if (exists) {
         await this.app.vault.adapter.remove(cachePath);
       }
-    } catch (e) {
+    } catch {
       
     }
   }
+
+  
 
   
   private async getNoteMeta(): Promise<{ path: string; mtime: number }[]> {
@@ -625,7 +623,7 @@ Rules:
               }
             });
           }
-        } catch (error) {
+        } catch {
           
         }
       }
@@ -861,7 +859,7 @@ Rules:
       } else {
         await this.renderSessionList();
       }
-    } catch (e) {
+    } catch {
       new Notice('Failed to delete session.');
     }
   }
@@ -960,7 +958,7 @@ Rules:
       'Keyword based → For facts use this. Keyword-filled query excels, fast'
     ];
     let promptIndex = 0;
-    let placeholderInterval: number | null = null;
+    let _placeholderInterval: number | null = null;
     let isInputActive = false;
     const setNextPlaceholder = () => {
       if (!isInputActive && this.document.activeElement !== this.chatInput.inputEl) {
@@ -970,7 +968,7 @@ Rules:
         }
       }
     };
-    placeholderInterval = window.setInterval(setNextPlaceholder, 3500);
+    _placeholderInterval = window.setInterval(setNextPlaceholder, 3500);
     this.chatInput.inputEl.addEventListener('focus', () => {
       isInputActive = true;
     });
@@ -1243,7 +1241,7 @@ Rules:
       
       try {
         this.sourceStatuses = await this.notebookBM25Manager.getSourcesStatus();
-      } catch (error) {
+      } catch {
                 this.sourceStatuses = [];
       }
     } else {
@@ -1289,7 +1287,7 @@ Rules:
     const sourcesHeader = this.sourcesContainer.createDiv({ cls: 'mobile-sources-header' });
 
     
-    const backBtn = new ButtonComponent(sourcesHeader)
+    const _backBtn = new ButtonComponent(sourcesHeader)
       .setIcon('arrow-left')
       .setTooltip('Back to sessions')
       .setClass('mobile-back-btn')
@@ -1974,7 +1972,6 @@ Rules:
 
     
     this.notebookBM25Manager.getChunkCount().then(async chunkCount => {
-      const fileCount = await this.notebookBM25Manager!.getIndexedFileCount();
       const hasChanges = this.sourceStatuses.some(s => s.hasChanges || !s.isIndexed);
       const needsIndexing = chunkCount === 0 || hasChanges;
 
@@ -2065,7 +2062,7 @@ Rules:
       
       this.sourceStatuses = await this.notebookBM25Manager.getSourcesStatus();
       new Notice('Keyword index built successfully!');
-    } catch (error) {
+    } catch {
       new Notice('Failed to build keyword index.');
     } finally {
       this.isIndexing = false;
@@ -2319,7 +2316,7 @@ Rules:
           if (exists) {
             await this.app.vault.adapter.remove(filePath);
           }
-        } catch (e) {
+        } catch {
           
         }
         this.saveCurrentSession();
@@ -2369,7 +2366,7 @@ Rules:
           if (exists) {
             await this.app.vault.adapter.remove(filePath);
           }
-        } catch (e) {
+        } catch {
           
         }
         this.saveCurrentSession();
@@ -2431,7 +2428,7 @@ Rules:
           if (exists) {
             await this.app.vault.adapter.remove(filePath);
           }
-        } catch (e) {
+        } catch {
           
         }
         this.saveCurrentSession();
@@ -2485,7 +2482,7 @@ Rules:
           if (exists) {
             await this.app.vault.adapter.remove(filePath);
           }
-        } catch (e) {
+        } catch {
           
         }
         this.saveCurrentSession();
@@ -2510,7 +2507,7 @@ Rules:
       }
       const filePath = normalizePath(`${cacheDir}/${key}.json`);
       await this.app.vault.adapter.write(filePath, JSON.stringify(state));
-    } catch (e) {
+    } catch {
       
     }
   }
@@ -2525,7 +2522,7 @@ Rules:
         const json = await this.app.vault.adapter.read(filePath);
         return JSON.parse(json) as QuizState;
       }
-    } catch (e) {
+    } catch {
       
     }
     return null;
@@ -2541,7 +2538,7 @@ Rules:
       }
       const filePath = normalizePath(`${cacheDir}/${key}.json`);
       await this.app.vault.adapter.write(filePath, JSON.stringify(state));
-    } catch (e) {
+    } catch {
       
     }
   }
@@ -2556,7 +2553,7 @@ Rules:
         const json = await this.app.vault.adapter.read(filePath);
         return JSON.parse(json) as FlashcardState;
       }
-    } catch (e) {
+    } catch {
       
     }
     return null;
@@ -2721,7 +2718,7 @@ Rules:
           timestamp: Date.now()
         };
 
-        const messageContainer = this.addQuizMessage(quizState);
+        const _messageContainer = this.addQuizMessage(quizState);
         return;
       }
 
@@ -2785,7 +2782,7 @@ Rules:
           timestamp: Date.now()
         };
 
-        const messageContainer = this.addFlashcardMessage(flashcardState);
+        const _messageContainer = this.addFlashcardMessage(flashcardState);
         return;
       }
 
@@ -3298,7 +3295,6 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
       notesSection += cachedContext;
     } else {
       
-      const vaultName = this.app.vault.getName();
       const effectivePaths = this.getEffectiveSourcePaths();
       const selectedPaths = effectivePaths.filter(p => this.selectedSourcePaths.has(p));
       const fileContents = cachedContext.split(/--- File: .*? ---\n/).filter(c => c.trim().length > 0);
@@ -3317,7 +3313,8 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
     
     
-    let contextLength = isRagMode 
+    
+    let contextLength = isRagMode
       ? (this.notebook.contextLength !== undefined ? this.notebook.contextLength : 2)
       : this.cagHistoryContextLength;
     
@@ -3466,7 +3463,6 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
       notesSection += cachedContext;
     } else {
       
-      const vaultName = this.app.vault.getName();
       const effectivePaths = this.getEffectiveSourcePaths();
       const selectedPaths = effectivePaths.filter(p => this.selectedSourcePaths.has(p));
       const fileContents = cachedContext.split(/--- File: .*? ---\n/).filter(c => c.trim().length > 0);
@@ -4072,7 +4068,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
   
   private animateTokenBarReset() {
     const steps = 20;
-    const interval = 50; 
+    const _interval = 50; 
     const initialDynamic = this.dynamicTokens;
     const initialOutput = this.outputTokens;
     let step = 0;
@@ -4213,7 +4209,7 @@ class SessionSelectModal extends Modal {
 }
 
 
-class SearchResultsModal extends Modal {
+class _SearchResultsModal extends Modal {
   private results: Array<{ title: string; link: string; snippet: string }>;
   private onAdd: (results: Array<{ title: string; link: string; snippet: string }>) => void;
   private isLoading: boolean;

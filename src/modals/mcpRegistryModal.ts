@@ -100,11 +100,11 @@ export class MCPRegistryModal extends Modal {
 
       const cardHeader = card.createDiv({ cls: 'mcp-registry-card-header' });
       cardHeader.createEl('span', { text: entry.name, cls: 'mcp-registry-card-name' });
-      const badge = cardHeader.createEl('span', {
+      const _badge = cardHeader.createEl('span', {
         text: entry.transport.toUpperCase(),
         cls: `mcp-registry-badge mcp-badge-${entry.transport}`,
       });
-      const catBadge = cardHeader.createEl('span', {
+      const _catBadge = cardHeader.createEl('span', {
         text: entry.category,
         cls: 'mcp-registry-badge mcp-badge-category',
       });
@@ -147,7 +147,7 @@ export class MCPRegistryModal extends Modal {
         card.createEl('span', { text: '✓ No API key needed', cls: 'mcp-registry-no-key' });
       }
 
-      const needsWizard = (entry.envVarSpecs && entry.envVarSpecs.length > 0) ||
+      const _needsWizard = (entry.envVarSpecs && entry.envVarSpecs.length > 0) ||
                           (entry.pathSpecs && entry.pathSpecs.length > 0);
 
       const addBtn = card.createEl('button', { text: 'Configure →', cls: 'mod-cta mcp-registry-add-btn' });
@@ -253,7 +253,7 @@ class MCPEnvVarWizard extends Modal {
 
         if (spec.isVaultPath && autoValue) {
           input.classList.add('mcp-wizard-input-autofilled');
-          const note = fieldGroup.createEl('span', {
+          const _note = fieldGroup.createEl('span', {
             text: '✓ Detected from your current vault. Edit if needed.',
             cls: 'mcp-wizard-autofill-note',
           });

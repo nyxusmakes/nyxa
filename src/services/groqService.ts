@@ -806,7 +806,7 @@ export class GroqService {
             }
           }
         }
-      } catch (error) {
+      } catch {
               }
     }
     
@@ -908,7 +908,7 @@ export class GroqService {
                       }
         } else {
                   }
-      } catch (parseError) {
+      } catch {
                 
       }
     }

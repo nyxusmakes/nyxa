@@ -1,6 +1,5 @@
-import { App, TFile, Notice, Vault, requestUrl } from 'obsidian';
-import { AISettings, CustomEmbeddingModel, getProviderForEmbeddingModel } from '../settings';
-import { extractTextFromPdf } from '../utils/pdfExtractor';
+import { App, TFile, Notice, requestUrl } from 'obsidian';
+import { AISettings, getProviderForEmbeddingModel } from '../settings';
 import { parseTemporalQuery } from '../utils/temporalFilter';
 import { OramaWorkerManager } from '../utils/oramaWorkerManager';
 
@@ -207,7 +206,7 @@ export class EmbeddingsManager {
                         model = String(metadata.model || '');
                         fileCount = Number(metadata.fileCount || 0);
                         lastUpdated = Number(metadata.lastUpdated || Date.now());
-                    } catch (e) {
+                    } catch {
                                                 continue;
                     }
 
@@ -301,7 +300,7 @@ export class EmbeddingsManager {
             callbacks.forEach(cb => {
                 try {
                     cb(status);
-                } catch (e) {
+                } catch {
                                     }
             });
         }
@@ -320,7 +319,7 @@ export class EmbeddingsManager {
                                 return true;
             }
             return false;
-        } catch (error) {
+        } catch {
                         return false;
         }
     }
@@ -1144,7 +1143,7 @@ export class EmbeddingsManager {
             // Return unique file paths (remove duplicates from chunks)
             const uniquePaths = [...new Set(this.index.documents.map(doc => doc.path))];
             return uniquePaths;
-        } catch (error) {
+        } catch {
                         return [];
         }
     }
@@ -1161,7 +1160,7 @@ export class EmbeddingsManager {
             // Restore the tracking ID so the next vault/flash search reloads its own index
             this.loadedIndexId = previousLoadedId;
             return paths;
-        } catch (error) {
+        } catch {
                         return [];
         }
     }
@@ -1187,7 +1186,7 @@ export class EmbeddingsManager {
             }
 
             return uniqueFilesWithEmbeddings.size;
-        } catch (error) {
+        } catch {
                         return 0;
         }
     }
@@ -1213,7 +1212,7 @@ export class EmbeddingsManager {
             }
 
             return uniquePaths.size;
-        } catch (error) {
+        } catch {
                         return 0;
         }
     }
@@ -1272,9 +1271,6 @@ export class EmbeddingsManager {
             // Temporarily override the embedding model in settings
             const originalEmbeddingModel = this.settings.embeddingModel;
             this.settings.embeddingModel = embeddingModel;
-            
-            // Determine if we should use batch processing
-            const provider = getProviderForEmbeddingModel(embeddingModel, this.settings);
             
             // Batching is now supported and recommended for all providers
             const useBatchProcessing = true;
@@ -1849,15 +1845,16 @@ export class EmbeddingsManager {
                     }
                     continue;
                 }
+            
+            // Read file content
+            let content = '';
+            try {
+                content = await this.app.vault.read(file);
+            } catch {
+                                processed++;
+                continue;
+            }
 
-                // Read file content
-                let content = '';
-                try {
-                    content = await this.app.vault.read(file);
-                } catch (error) {
-                                        processed++;
-                    continue;
-                }
 
                 // Remove old chunks from both main thread and Orama worker
                 this.index.documents = this.index.documents.filter(doc => doc.path !== file.path);
@@ -2047,7 +2044,7 @@ export class EmbeddingsManager {
                 modifiedFiles,
                 deletedFiles
             };
-        } catch (error) {
+        } catch {
                         return { hasChanges: false, newFiles: 0, modifiedFiles: 0, deletedFiles: 0 };
         }
     }
@@ -2150,7 +2147,7 @@ export class EmbeddingsManager {
                     cleanQuery: temporalQuery.cleanQuery
                 } : undefined
             };
-        } catch (error: unknown) {
+        } catch {
                         return { results: [], temporalContext: undefined };
         }
     }
@@ -2316,7 +2313,7 @@ export class EmbeddingsManager {
                 window.setTimeout(() => restoreNotice?.hide(), 2000);
             }
 
-        } catch (error) {
+        } catch {
                         if (restoreNotice) {
                 restoreNotice.setMessage(`[Nexus] ${label.charAt(0).toUpperCase() + label.slice(1)} restoration failed.`);
                 window.setTimeout(() => restoreNotice?.hide(), 3000);
@@ -2364,7 +2361,7 @@ export class EmbeddingsManager {
             }
 
             await adapter.writeBinary(indexPath, compressed.buffer as ArrayBuffer);
-                    } catch (error) {
+                    } catch {
                     }
     }
     async findSimilarContent(query: string, limit: number = 5, hybridEnabled: boolean = true): Promise<{results: Array<{path: string, content: string, similarity: number, chunkIndex?: number}>, temporalContext?: {startDate: number | null, endDate: number | null, cleanQuery: string}}> {
@@ -2393,7 +2390,6 @@ export class EmbeddingsManager {
 
             // Determine effective search mode
             // hybridEnabled=false forces embedding-only even when BM25 index is selected
-            const useHybrid = hybridEnabled && embeddingIndexEnabled && bm25IndexEnabled;
             const useEmbeddingOnly = embeddingIndexEnabled && (!bm25IndexEnabled || !hybridEnabled);
             const useBM25Only = !embeddingIndexEnabled && bm25IndexEnabled;
 
@@ -2644,9 +2640,6 @@ export class EmbeddingsManager {
                     return true;
                 });
                 
-                // Count unique files
-                const uniqueFiles = new Set(documentsToSearch.map(doc => doc.path));
-                                                
                 if (documentsToSearch.length === 0) {
                                         return [];
                 }

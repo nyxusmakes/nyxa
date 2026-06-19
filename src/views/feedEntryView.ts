@@ -1,6 +1,6 @@
-import { ItemView, WorkspaceLeaf, App, Setting, ButtonComponent, Notice, ExtraButtonComponent } from 'obsidian';
+import { ItemView, WorkspaceLeaf, ExtraButtonComponent } from 'obsidian';
 import AIPlugin from '../main';
-import { ParsedFeed, ParsedFeedEntry } from '../parsing/feedParsing'; 
+import { ParsedFeed } from '../parsing/feedParsing';
 
 export const VIEW_TYPE_NEXUS_FEED_ENTRIES = 'NEXUS_FEED_ENTRIES_VIEW';
 
@@ -131,9 +131,9 @@ export class FeedEntryView extends ItemView {
                      thumbnailContainer.createEl('img', {
                          attr: { src: entry.thumbnail, alt: entry.title || 'Feed entry thumbnail' }
                      });
-                 } catch (e) {
+                 } catch {
                       
-                                            thumbnailContainer.createDiv({ text: entry.contentSnippet || 'No description available.', cls: 'feed-entry-description-placeholder' });
+                                             thumbnailContainer.createDiv({ text: entry.contentSnippet || 'No description available.', cls: 'feed-entry-description-placeholder' });
                  }
 
             } else {
@@ -168,7 +168,7 @@ export class FeedEntryView extends ItemView {
                             cls: 'entry-date' 
                         });
                     }
-                } catch (e) {
+                } catch {
                                     }
             } else if (!entry.author) {
                 

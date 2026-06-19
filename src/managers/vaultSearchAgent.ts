@@ -3,11 +3,10 @@ import { AISettings, getGeminiThinkingConfig, getModelTemperature, getModelTopP 
 import { GoogleGenerativeAI, type Part } from '@google/generative-ai';
 import { MultimodalInput } from '../utils/multimodalUtils';
 import { GroqService, GroqApiError, convertChatHistoryForGroq, ChatMessage as GroqChatMessage, GeminiHistoryMessage, GroqStreamEvent, GROQ_VISION_MODEL, GroqContentPart } from '../services/groqService';
-import { OpenRouterService, OpenRouterApiError, ChatMessage as OpenRouterChatMessage } from '../services/openRouterService';
+import { OpenRouterService, ChatMessage as OpenRouterChatMessage } from '../services/openRouterService';
 import { OllamaService, OllamaApiError, ChatMessage as OllamaChatMessage } from '../services/ollamaService';
-import { NvidiaService, NvidiaApiError, ChatMessage as NvidiaChatMessage } from '../services/nvidiaService';
+import { NvidiaService, ChatMessage as NvidiaChatMessage } from '../services/nvidiaService';
 import { RateLimitManager } from '../utils/rateLimitManager';
-import { GeminiService } from '../services/geminiService';
 import { UnifiedProviderManager, UnifiedMessage } from '../services/unifiedProviderManager';
 
 interface GeminiStreamChunk {
@@ -322,7 +321,6 @@ export class VaultSearchAgent {
         
         const allScores = sortedDocs.map(d => d.similarity);
         const medianScore = allScores[Math.floor(allScores.length / 2)];
-        const scoreRange = topScore - (sortedDocs[sortedDocs.length - 1]?.similarity || 0);
         
         let highThreshold: number;
         let mediumThreshold: number;
@@ -424,7 +422,7 @@ export class VaultSearchAgent {
         
         
         
-        const { filtered: tokenFilteredContent, totalTokens: vaultContentTokens, reason: filterReason } = 
+        const { filtered: tokenFilteredContent } = 
             this.filterResultsByTokenBudget(filteredRelevantContent, maxResults, dynamicThresholds, isFileListQuery || hasTemporalFilter);
         
         
@@ -445,14 +443,7 @@ export class VaultSearchAgent {
             }
         });
 
-        const estimatedQueryTokens = this._estimateTokens(query);
-        const estimatedOverheadTokens = 3000; 
-        const totalEstimatedTokens = estimatedContentTokens + estimatedQueryTokens + estimatedOverheadTokens;
-
         
-        
-        
-
 
         let finalAnswer = "";
         
@@ -952,7 +943,7 @@ RESPONSE QUALITY CHECKLIST:
                         );
                         
                         this.snippetUpdateCallback('Generating response...', finalAnswer);
-                    } catch (streamError) {
+                    } catch {
                         
                                                 finalAnswer = await nvidiaService.generateContentStream(
                             this.settings.model,

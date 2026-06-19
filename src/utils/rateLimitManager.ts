@@ -296,8 +296,7 @@ export class RateLimitManager {
         const delay = this.calculateDelay(provider, model, estimatedTokens);
         
         if (delay > 0) {
-            const waitSeconds = Math.ceil(delay / 1000);
-                        await new Promise(resolve => window.setTimeout(resolve, delay));
+            await new Promise(resolve => window.setTimeout(resolve, delay));
         }
     }
     

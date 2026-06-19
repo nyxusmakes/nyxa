@@ -2239,17 +2239,6 @@ await this.plugin.saveSettings();
         }, indexConfig.id);
       }
 
-      // Update index metadata
-      const allFiles = this.app.vault.getMarkdownFiles();
-      let nonExcludedFiles: TFile[];
-      if (indexConfig.type === 'embedding') {
-        nonExcludedFiles = allFiles.filter(file =>
-          !this.plugin.embeddingsManager.isFileExcluded(file.path, indexConfig.id)
-        );
-      } else {
-        nonExcludedFiles = allFiles;
-      }
-      
       // Get actual file count from the index based on type
       let indexedFileCount: number;
       if (indexConfig.type === 'embedding') {
@@ -2906,7 +2895,7 @@ if (this.validatePath(normalizedPath)) {
         value: (model.temperature ?? 0.7).toString()
       }
     });
-    const tempDesc = tempContainer.createEl('div', { 
+    const _tempDesc = tempContainer.createEl('div', { 
       cls: 'setting-item-description',
       text: 'Controls randomness. Lower values make output more focused and deterministic. (0.0-2.0)'
     });
@@ -2932,7 +2921,7 @@ if (this.validatePath(normalizedPath)) {
         value: (model.topP ?? 0.95).toString()
       }
     });
-    const topPDesc = topPContainer.createEl('div', { 
+    const _topPDesc = topPContainer.createEl('div', { 
       cls: 'setting-item-description',
       text: 'Controls diversity via nucleus sampling. Lower values make output more focused. (0.0-1.0)'
     });
@@ -3442,8 +3431,8 @@ if (this.validatePath(normalizedPath)) {
       if (selectedId) {
         await this.plugin.embeddingsManager.detectChanges(selectedId);
       }
-    } catch (error) {
-          }
+    } catch {
+    }
   }
 
 
@@ -3648,7 +3637,7 @@ if (this.validatePath(normalizedPath)) {
     
     // Status cell
     const statusCell = row.createEl('td');
-    const statusBadge = statusCell.createEl('span', { 
+    const _statusBadge = statusCell.createEl('span', { 
       cls: `mcp-status-badge ${server.disabled ? 'disabled' : 'enabled'}`,
       text: server.disabled ? 'Disabled' : 'Enabled'
     });
@@ -3994,7 +3983,7 @@ class MCPServerModal extends Modal {
       const currentConfig = this.getCurrentConfigFromFields();
       if (currentConfig) {
         // Strip out ID and disabled state for cleaner schema view
-        const { id, disabled, name, ...schemaFields } = currentConfig as unknown as MCPServerConfig;
+        const { id: _id, disabled: _disabled, name: _name, ...schemaFields } = currentConfig as unknown as MCPServerConfig;
         this.schemaInput.value = JSON.stringify(schemaFields, null, 2);
       }
     } else {
@@ -4049,7 +4038,7 @@ class MCPServerModal extends Modal {
       if (parsed.env && typeof parsed.env === 'object') {
         this.envInput.value = JSON.stringify(parsed.env, null, 2);
       }
-    } catch (e) {
+    } catch {
       // Silently fail if JSON is invalid during switch
     }
   }
@@ -4074,7 +4063,8 @@ class MCPServerModal extends Modal {
     if (envStr) {
       try {
         config.env = JSON.parse(envStr) as Record<string, string>;
-      } catch (e) {}
+      } catch {
+      }
     }
     
     return config;
@@ -4108,7 +4098,7 @@ class MCPServerModal extends Modal {
     if (envStr) {
       try {
         env = JSON.parse(envStr) as Record<string, string>;
-      } catch (error) {
+      } catch {
         new Notice('Invalid JSON for environment variables');
         return;
       }

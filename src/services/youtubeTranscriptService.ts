@@ -70,7 +70,7 @@ export class YouTubeTranscriptService {
                     return oembedRes.json.title as string;
                 }
             }
-        } catch (_) {
+        } catch {
             // fall through
         }
         return 'YouTube Video';

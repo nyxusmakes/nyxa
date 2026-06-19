@@ -203,7 +203,7 @@ export async function processFileForMultimodal(
         }
 
         return null;
-    } catch (error) {
+    } catch {
                 return null;
     }
 }

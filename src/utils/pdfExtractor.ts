@@ -1,8 +1,8 @@
 // This file will contain functionality for extracting text from PDF files using PDF.js.
 
-import { TFile, Vault, Notice, Platform, App, Modal, Setting, ButtonComponent } from 'obsidian';
+import { TFile, Vault, Notice, Platform, App, Modal, ButtonComponent } from 'obsidian';
 import { DirectorySuggester } from './directorySuggester';
-import type { PdfjsLib, PdfDocumentProxy, PdfPageProxy, PdfTextItem, PdfOutlineItem } from '../types/pdf';
+import type { PdfjsLib, PdfDocumentProxy, PdfTextItem, PdfOutlineItem } from '../types/pdf';
 
 // Assuming pdfjsLib is available globally or imported correctly via build process
 // You might need to import it like this if your build process supports it:
@@ -422,7 +422,7 @@ export class PdfExtractOptionsModal extends Modal {
         };
         await page.render(renderContext).promise;
       }
-    } catch (error) {
+    } catch {
             if (this.previewPageInfo) {
         this.previewPageInfo.setText('Preview unavailable');
       }
@@ -447,7 +447,7 @@ export class PdfExtractOptionsModal extends Modal {
       const listContainer = this.tocContainer.createEl('ul', { cls: 'pdf-toc-list' });
       await this.renderOutlineItems(outline, listContainer);
       
-    } catch (error) {
+    } catch {
             loading.setText('Failed to load Table of Contents.');
     }
   }
@@ -483,7 +483,7 @@ export class PdfExtractOptionsModal extends Modal {
             pageNum = pageIndex + 1;
           }
         }
-      } catch (e) {
+      } catch {
         // Silently fail for individual items
       }
 

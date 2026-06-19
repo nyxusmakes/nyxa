@@ -242,7 +242,7 @@ export class NotebookBM25Manager {
                     };
                 });
             }
-        } catch (error) {
+        } catch {
                     }
         return [];
     }
@@ -315,7 +315,7 @@ export class NotebookBM25Manager {
                     }
                 }
                 this.indexLoaded = true;
-            } catch (error) {
+            } catch {
                 // Failed to load index
                 if (restoreNotice) {
                     restoreNotice.setMessage(`[Nexus] Notebook index restoration failed.`);
@@ -349,7 +349,7 @@ export class NotebookBM25Manager {
             const response = await OramaWorkerManager.getInstance().save(this.notebookId, true, metadata);
             const compressed = response.data as Uint8Array;
             await this.app.vault.adapter.writeBinary(indexPath, compressed.buffer as ArrayBuffer);
-        } catch (error) {
+        } catch {
             // Failed to save index
         }
     }

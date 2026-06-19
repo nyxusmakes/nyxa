@@ -9,7 +9,7 @@ import { NvidiaService, ChatMessage as NvidiaChatMessage } from '../services/nvi
 import { MultimodalInput, processFileForMultimodal, isTextFile } from '../utils/multimodalUtils';
 import { UnifiedProviderManager } from '../services/unifiedProviderManager';
 
-interface OpenAIErrorResponse {
+interface _OpenAIErrorResponse {
   error: {
     message: string;
   };
@@ -462,7 +462,7 @@ ${mcqSettings.customPrompt ? `Additional context: ${mcqSettings.customPrompt}` :
     
     let match;
     while ((match = mcqRegex.exec(text)) !== null) {
-      const [_, question, optA, optB, optC, optD, correct] = match;
+      const [__unused, question, optA, optB, optC, optD, correct] = match;
       const correctIndex = correct.charCodeAt(0) - 'A'.charCodeAt(0);
       
       mcqs.push({
@@ -578,7 +578,7 @@ ${mcqSettings.customPrompt ? `Additional context: ${mcqSettings.customPrompt}` :
         });
         return resp.json.choices[0].message.content.trim();
       }
-    } catch (error) {
+    } catch {
             return 'Explanation unavailable';
     }
   }

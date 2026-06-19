@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, setIcon, Platform } from 'obsidian';
+import { ItemView, WorkspaceLeaf, setIcon } from 'obsidian';
 import AIPlugin from '../main';
 import { PLATFORM_FEATURES } from '../utils/platformFeatures';
 

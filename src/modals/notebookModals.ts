@@ -1,4 +1,4 @@
-import { App, Modal, Setting, ButtonComponent, Notice, TFile } from 'obsidian';
+import { App, Modal, Setting, ButtonComponent, Notice } from 'obsidian';
 import { Notebook, NotebookMode } from '../managers/notebookManager';
 import { NoteSuggester, FolderSuggester } from '../views/view'; // Import FolderSuggester
 import AIPlugin from '../main';
@@ -119,7 +119,7 @@ export class NotebookFormModal extends Modal {
 
     // --- Add Source Folders Section ---
     scrollableContainer.createEl('h3', { text: 'Add Source Folders' });
-    const folderDescription = scrollableContainer.createEl('p', { 
+    const _folderDescription = scrollableContainer.createEl('p', { 
       cls: 'folder-description',
       text: 'Select folders to automatically include all their files as sources. New files added to these folders will be available when you reopen the notebook.'
     });
@@ -179,7 +179,7 @@ export class NotebookFormModal extends Modal {
 
     // --- Add Feed Sources Section ---
     scrollableContainer.createEl('h3', { text: 'Add Feed Sources' });
-    const feedDescription = scrollableContainer.createEl('p', {
+    const _feedDescription = scrollableContainer.createEl('p', {
       cls: 'feed-description',
       text: 'Select RSS/Atom feeds from your saved feeds. Recent entries (based on duration) will be added as web sources.'
     });
