@@ -262,7 +262,7 @@ export class PdfExtractOptionsModal extends Modal {
     // TOC Section (Moved to top)
     leftPanel.createEl('label', { text: 'Table of Contents:' });
     this.tocContainer = leftPanel.createDiv({ cls: 'pdf-extract-toc-container' });
-    this.loadAndRenderOutline();
+    void this.loadAndRenderOutline();
 
     // Page range row
     const rangeRow = leftPanel.createDiv({ cls: 'pdf-extract-range-row' });
@@ -278,7 +278,7 @@ export class PdfExtractOptionsModal extends Modal {
     
     const updatePreview = () => {
       this.currentPreviewPage = this.fromPage;
-      this.renderPreview();
+      void this.renderPreview();
     };
     
     fullBtn.onclick = () => {
@@ -356,14 +356,14 @@ export class PdfExtractOptionsModal extends Modal {
     this.previewNavPrev.onclick = () => {
       if (this.currentPreviewPage > this.fromPage) {
         this.currentPreviewPage--;
-        this.renderPreview();
+        void this.renderPreview();
       }
     };
     
     this.previewNavNext.onclick = () => {
       if (this.currentPreviewPage < this.toPage) {
         this.currentPreviewPage++;
-        this.renderPreview();
+        void this.renderPreview();
       }
     };
     
@@ -372,7 +372,7 @@ export class PdfExtractOptionsModal extends Modal {
     this.previewCanvas = this.previewContainer.createEl('canvas', { cls: 'pdf-preview-canvas' });
     
     // Initial render
-    this.renderPreview();
+    void this.renderPreview();
   }
 
   private async renderPreview() {
@@ -493,7 +493,7 @@ export class PdfExtractOptionsModal extends Modal {
         itemEl.onclick = (e) => {
           // Update preview
           this.currentPreviewPage = pageNum!;
-          this.renderPreview();
+          void this.renderPreview();
           
           // Sync with page range
           this.fromPage = pageNum!;

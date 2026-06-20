@@ -476,7 +476,8 @@ Output ONLY the outline in the exact format shown above. No explanations or prea
         try {
           await this.app.vault.adapter.mkdir(parentDir);
         } catch {
-                  }
+          // Directory may already exist - safe to ignore
+        }
       }
 
       // Create subdirectory if needed
@@ -485,7 +486,8 @@ Output ONLY the outline in the exact format shown above. No explanations or prea
         try {
           await this.app.vault.adapter.mkdir(dir);
         } catch {
-                  }
+          // Directory may already exist - safe to ignore
+        }
       }
     }
     
@@ -1076,8 +1078,9 @@ export class ZenSlideshowModal extends Modal {
        // Force flush
       try {
         this.setupWheelNavigation(modalEl);
-              } catch {
-              }
+      } catch {
+        // Event handler error - safe to ignore
+      }
       
       this.initializeVoices().then(() => {
                 return this.startPresentation();
@@ -1091,9 +1094,9 @@ export class ZenSlideshowModal extends Modal {
         const wheelHandler = (e: WheelEvent) => {
       e.preventDefault();
       if (e.deltaY > 0) {
-        this.skipToNext();
+        void this.skipToNext();
       } else if (e.deltaY < 0) {
-        this.previousSlide();
+        void this.previousSlide();
       }
     };
     
@@ -1167,7 +1170,8 @@ export class ZenSlideshowModal extends Modal {
 
   private async renderSlide() {
                 if (this.slideContainer) {
-          }
+          // Intentionally empty
+        }
     
     this.slideContainer.empty();
         
@@ -1418,7 +1422,7 @@ export class ZenSlideshowModal extends Modal {
       const newSlideIndex = this.getSlideIndexForNavIndex(this.currentNavIndex);
       if (newSlideIndex !== this.currentSlideIndex) {
         this.currentSlideIndex = newSlideIndex;
-        this.renderSlide();
+        void this.renderSlide();
       } else {
         this.updateActiveHeadingId();
       }
@@ -1427,7 +1431,7 @@ export class ZenSlideshowModal extends Modal {
       
       window.setTimeout(() => {
         if (!this.isPaused) {
-          this.narrateCurrentNode();
+          void this.narrateCurrentNode();
         }
       }, 500);
     } else {
@@ -1456,7 +1460,7 @@ export class ZenSlideshowModal extends Modal {
       this.currentNode = this.navigationSequence[this.currentNavIndex];
       this.updateActiveHeadingId();
       this.updateProgress();
-      this.narrateCurrentNode();
+      void this.narrateCurrentNode();
     } else {
       this.handlePresentationEnd();
     }
@@ -1468,7 +1472,7 @@ export class ZenSlideshowModal extends Modal {
     if (this.currentNavIndex < this.navigationSequence.length) {
       this.currentNode = this.navigationSequence[this.currentNavIndex];
       this.updateActiveHeadingId();
-      this.narrateCurrentNode();
+      void this.narrateCurrentNode();
     } else {
       this.handlePresentationEnd();
     }
@@ -1502,7 +1506,7 @@ export class ZenSlideshowModal extends Modal {
       this.updatePauseButtonDisplay(false);
       // If we paused during transition or there's nothing to resume
       if (!this.synth.speaking && !this.isPlaying) {
-        this.narrateCurrentNode();
+        void this.narrateCurrentNode();
       } else {
         this.synth.resume();
       }

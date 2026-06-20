@@ -113,7 +113,7 @@ export class FileCreationReviewModal extends Modal {
         pathInfo.addClass('nl-font-weight-bold');
         pathInfo.createSpan({ text: 'Target Path: ' });
         const linkSpan = pathInfo.createSpan();
-        MarkdownRenderer.render(this.app, `[[${targetPath}]]`, linkSpan, '', this as unknown as Component);
+        void MarkdownRenderer.render(this.app, `[[${targetPath}]]`, linkSpan, '', this as unknown as Component);
     }
 
     const footer = contentEl.createDiv({ cls: 'file-preview-footer' });
@@ -223,7 +223,7 @@ export class FileCreationReviewModal extends Modal {
         if (file.extension === 'md') {
           // Render markdown content
           const component = new Component();
-          MarkdownRenderer.render(this.app, file.content, contentPreview, '', component);
+          void MarkdownRenderer.render(this.app, file.content, contentPreview, '', component);
         } else {
           // Show as code block
           const codeBlock = contentPreview.createEl('pre');
@@ -310,14 +310,14 @@ export async function handleFileCreationPrompt(
   try {
     // Try to find the file view header or fallback to workspace container
     const view = app.workspace.getActiveViewOfType(View);
-    const doc = (view && 'containerEl' in view) ? (view as { containerEl: HTMLElement }).containerEl.ownerDocument : document;
+    const doc = view?.containerEl.ownerDocument ?? app.workspace.activeLeaf?.view.containerEl.ownerDocument ?? document;
     const workspace = doc.querySelector('.workspace') || doc.body;
     spinner = doc.createElement('div');
-    spinner!.className = 'loading-spinner visible';
-    spinner!.addClass('nl-position-fixed');
-    spinner!.addClass('nl-top-18px');
-    spinner!.addClass('nl-right-32px');
-    spinner!.addClass('nl-z-index-9999');
+    spinner.className = 'loading-spinner visible';
+    spinner.addClass('nl-position-fixed');
+    spinner.addClass('nl-top-18px');
+    spinner.addClass('nl-right-32px');
+    spinner.addClass('nl-z-index-9999');
     workspace.appendChild(spinner);
 
     // Create enhanced context for file creation
@@ -1283,35 +1283,35 @@ function convertToExcalidrawJSON(layout: { nodes: DiagramNode[]; edges: Array<Di
         const fromNode = layout.nodes.find(n => n.id === e.from);
         const toNode = layout.nodes.find(n => n.id === e.to);
 
-        if (fromNode && toNode) {
+        if (fromNode && toNode && fromNode.x != null && fromNode.y != null && fromNode.width != null && fromNode.height != null && toNode.x != null && toNode.y != null && toNode.width != null && toNode.height != null) {
             let startX, startY, endX, endY, points;
 
             if (fromNode.layoutType === 'sideways') {
                 // Sideways: Right of Parent to Left of Child
-                startX = fromNode.x! + fromNode.width!;
-                startY = fromNode.y! + fromNode.height! / 2;
-                endX = toNode.x!;
-                endY = toNode.y! + toNode.height! / 2;
+                startX = fromNode.x + fromNode.width;
+                startY = fromNode.y + fromNode.height / 2;
+                endX = toNode.x;
+                endY = toNode.y + toNode.height / 2;
                 const midX = e.hGap / 2;
                 // Path: Right -> MidX -> Vertical to ChildY -> Right to ChildX
-                points = [[0, 0], [midX, 0], [midX, endY! - startY], [endX! - startX, endY! - startY]];
+                points = [[0, 0], [midX, 0], [midX, endY - startY], [endX - startX, endY - startY]];
             } else if (fromNode.layoutType === 'timeline') {
                 // Timeline: Right of Parent to Left of Child
-                startX = fromNode.x! + fromNode.width!;
-                startY = fromNode.y! + fromNode.height! / 2;
-                endX = toNode.x!;
-                endY = toNode.y! + toNode.height! / 2;
+                startX = fromNode.x + fromNode.width;
+                startY = fromNode.y + fromNode.height / 2;
+                endX = toNode.x;
+                endY = toNode.y + toNode.height / 2;
                 const midX = e.hGap / 2;
-                points = [[0, 0], [midX, 0], [midX, endY! - startY], [endX! - startX, endY! - startY]];
+                points = [[0, 0], [midX, 0], [midX, endY - startY], [endX - startX, endY - startY]];
             } else {
                 // Tree: Bottom of Parent to Top of Child
-                startX = fromNode.x! + fromNode.width! / 2;
-                startY = fromNode.y! + fromNode.height!;
-                endX = toNode.x! + toNode.width! / 2;
-                endY = toNode.y!;
-                const midY = (e.vGap - fromNode.height!) / 2;
+                startX = fromNode.x + fromNode.width / 2;
+                startY = fromNode.y + fromNode.height;
+                endX = toNode.x + toNode.width / 2;
+                endY = toNode.y;
+                const midY = (e.vGap - fromNode.height) / 2;
                 // Path: Down -> MidY -> Horizontal to ChildX -> Down to ChildY
-                points = [[0, 0], [0, midY], [endX! - startX, midY], [endX! - startX, endY! - startY]];
+                points = [[0, 0], [0, midY], [endX - startX, midY], [endX - startX, endY - startY]];
             }
 
             elements.push({
@@ -1399,7 +1399,8 @@ async function createFilesFromPlan(app: App, plan: FileCreationPlan): Promise<vo
             const templateContent = await app.vault.read(templateFile);
             finalContent = templateContent + '\n\n' + finalContent;
           } catch {
-                      }
+            // File may not exist or be accessible - safe to ignore
+          }
         }
       }
 

@@ -106,8 +106,8 @@ export class YouTubeTranscriptService {
     }
 
     private extractCaptionTrackUrl(playerResponse: YouTubePlayerResponse, lang: string): string {
-        const captions = playerResponse?.captions as PlayerCaptions | undefined;
-        const tracks = captions?.playerCaptionsTracklistRenderer?.captionTracks as CaptionTrack[] | undefined;
+        const captions = playerResponse?.captions;
+        const tracks = captions?.playerCaptionsTracklistRenderer?.captionTracks;
         if (!tracks || tracks.length === 0) {
             throw new Error('No captions available for this video');
         }
@@ -164,8 +164,8 @@ export class YouTubeTranscriptService {
 
         const playerResponse = await this.getPlayerResponse(videoId);
 
-        const captions = playerResponse?.captions as PlayerCaptions | undefined;
-        const tracks = captions?.playerCaptionsTracklistRenderer?.captionTracks as CaptionTrack[] | undefined;
+        const captions = playerResponse?.captions;
+        const tracks = captions?.playerCaptionsTracklistRenderer?.captionTracks;
         if (!tracks || tracks.length === 0) {
             throw new Error('No captions available for this video');
         }
@@ -194,8 +194,8 @@ export class YouTubeTranscriptService {
 
         const playerResponse = await this.getPlayerResponse(videoId);
 
-        const captions = playerResponse?.captions as PlayerCaptions | undefined;
-        const tracks = captions?.playerCaptionsTracklistRenderer?.captionTracks as CaptionTrack[] | undefined;
+        const captions = playerResponse?.captions;
+        const tracks = captions?.playerCaptionsTracklistRenderer?.captionTracks;
         if (!tracks || tracks.length === 0) {
             throw new Error('No captions available for this video');
         }

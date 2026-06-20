@@ -80,7 +80,7 @@ export class NotebookManager {
       contextLength: 0, 
     };
     this.notebooks.push(newNotebook);
-    this.saveNotebooks();
+    void this.saveNotebooks();
     new Notice(`Notebook "${name}" created.`);
     return newNotebook;
   }
@@ -109,7 +109,7 @@ export class NotebookManager {
     const index = this.notebooks.findIndex(nb => nb.id === id);
     if (index !== -1) {
       const deletedNotebook = this.notebooks.splice(index, 1)[0];
-      this.saveNotebooks();
+      void this.saveNotebooks();
       new Notice(`Notebook "${deletedNotebook.name}" deleted.`);
     }
   }

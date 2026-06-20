@@ -439,7 +439,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
   // Gemini models group - only user-configured models
   const geminiCustomModels = settings.customModels
     .filter(m => m.provider === 'gemini' && m.enabled !== false)
-    .map(m => ({ id: m.id, name: m.name, provider: m.provider as Provider, capabilities: m.capabilities }));
+    .map(m => ({ id: m.id, name: m.name, provider: m.provider, capabilities: m.capabilities }));
 
   if (geminiCustomModels.length > 0) {
     groups.push({
@@ -452,7 +452,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
   // Groq models group - only user-configured models (no defaults)
   const groqModels: ModelOption[] = settings.customModels
     .filter(m => m.provider === 'groq' && m.enabled !== false)
-    .map(m => ({ id: m.id, name: m.name, provider: m.provider as Provider }));
+    .map(m => ({ id: m.id, name: m.name, provider: m.provider }));
   
   if (groqModels.length > 0) {
     groups.push({
@@ -465,7 +465,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
   // OpenRouter models group - only user-configured models (no defaults)
   const openRouterModels: ModelOption[] = settings.customModels
     .filter(m => m.provider === 'openrouter' && m.enabled !== false)
-    .map(m => ({ id: m.id, name: m.name, provider: m.provider as Provider }));
+    .map(m => ({ id: m.id, name: m.name, provider: m.provider }));
   
   if (openRouterModels.length > 0) {
     groups.push({
@@ -478,7 +478,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
   // Ollama models group - only user-configured models (no defaults)
   const ollamaModels: ModelOption[] = settings.customModels
     .filter(m => m.provider === 'ollama' && m.enabled !== false)
-    .map(m => ({ id: m.id, name: m.name, provider: m.provider as Provider, capabilities: m.capabilities }));
+    .map(m => ({ id: m.id, name: m.name, provider: m.provider, capabilities: m.capabilities }));
   
   if (ollamaModels.length > 0) {
     groups.push({
@@ -491,7 +491,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
   // OpenCode models group - only user-configured models (no defaults)
   const openCodeModels: ModelOption[] = settings.customModels
     .filter(m => m.provider === 'opencode' && m.enabled !== false)
-    .map(m => ({ id: m.id, name: m.name, provider: m.provider as Provider }));
+    .map(m => ({ id: m.id, name: m.name, provider: m.provider }));
   
   if (openCodeModels.length > 0) {
     groups.push({
@@ -504,7 +504,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
   // NVIDIA models group - only user-configured models (no defaults)
   const nvidiaModels: ModelOption[] = settings.customModels
     .filter(m => m.provider === 'nvidia' && m.enabled !== false)
-    .map(m => ({ id: m.id, name: m.name, provider: m.provider as Provider }));
+    .map(m => ({ id: m.id, name: m.name, provider: m.provider }));
   
   if (nvidiaModels.length > 0) {
     groups.push({
@@ -519,7 +519,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
     settings.customProviders.forEach(cp => {
       const customModels: ModelOption[] = settings.customModels
         .filter(m => m.provider === cp.id && m.enabled !== false)
-        .map(m => ({ id: m.id, name: m.name, provider: m.provider as Provider }));
+        .map(m => ({ id: m.id, name: m.name, provider: m.provider }));
       
       if (customModels.length > 0) {
         groups.push({
@@ -1436,7 +1436,7 @@ await this.plugin.saveSettings();
       new Setting(containerEl).setName('Index management').setHeading();
 
       // Run change detection silently (result used by AI chat indicator, not displayed here)
-      this.checkIndexChanges();
+      void this.checkIndexChanges();
 
       // Render index management inline (no modal)
       this.renderIndexManagement(containerEl);
@@ -2269,7 +2269,8 @@ await this.plugin.saveSettings();
         indexConfig.lastUpdated = Date.now();
         await this.plugin.saveSettings();
       } catch {
-              }
+        // Save settings failed after index update - index state may be stale
+      }
       
       throw error;
     } finally {
@@ -2640,7 +2641,7 @@ if (this.validatePath(normalizedPath)) {
           });
           verifyBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Don't collapse/expand
-            this.plugin.verifyProviderModels(providerInfo.id, () => {
+            void this.plugin.verifyProviderModels(providerInfo.id, () => {
               // Refresh UI when complete if still in settings
               this.display();
             });
@@ -2859,7 +2860,7 @@ if (this.validatePath(normalizedPath)) {
     };
     
     this.plugin.settings.customModels.push(newModel);
-    this.plugin.saveSettings();
+    void this.plugin.saveSettings();
     this.display(); // Refresh to show new row
   }
 
@@ -3030,7 +3031,7 @@ if (this.validatePath(normalizedPath)) {
             });
             verifyBtn.addEventListener('click', (e) => {
               e.stopPropagation(); // Don't collapse/expand
-              this.plugin.verifyProviderEmbeddingModels(providerInfo.id, () => {
+              void this.plugin.verifyProviderEmbeddingModels(providerInfo.id, () => {
                 // Refresh UI when complete if still in settings
                 this.display();
               });
@@ -3199,7 +3200,7 @@ if (this.validatePath(normalizedPath)) {
     };
     
     this.plugin.settings.customEmbeddingModels.push(newModel);
-    this.plugin.saveSettings();
+    void this.plugin.saveSettings();
     this.display(); // Refresh to show new row
   }
 
@@ -3432,6 +3433,7 @@ if (this.validatePath(normalizedPath)) {
         await this.plugin.embeddingsManager.detectChanges(selectedId);
       }
     } catch {
+      // Embeddings change detection failed - settings still saved
     }
   }
 
@@ -3504,7 +3506,7 @@ if (this.validatePath(normalizedPath)) {
             return;
           }
           // Use Node's child_process — available in Electron/Obsidian desktop
-          const { execSync } = window.require!('child_process');
+          const { execSync } = window.require('child_process');
           const version = execSync(cmd, { timeout: 5000, encoding: 'utf8' }).trim();
 
           statusEl.textContent = `✅ Installed — ${version}`;
@@ -4064,6 +4066,7 @@ class MCPServerModal extends Modal {
       try {
         config.env = JSON.parse(envStr) as Record<string, string>;
       } catch {
+        // Failed to parse environment JSON - keep default env
       }
     }
     

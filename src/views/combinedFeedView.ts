@@ -70,7 +70,7 @@ export class CombinedFeedView extends ItemView {
         this.entriesContainer = container.createDiv({ cls: 'combined-entries-list' });
 
         
-        this.fetchAndRenderCombinedFeeds();
+        void this.fetchAndRenderCombinedFeeds();
     }
 
     
@@ -216,7 +216,8 @@ export class CombinedFeedView extends ItemView {
                         });
                     }
                 } catch {
-                                    }
+                  // Failed to parse - keep previous value
+                }
             } else if (!entry.author) {
                 metadataLine.createEl('span', { text: 'No Date', cls: 'entry-date' });
             }

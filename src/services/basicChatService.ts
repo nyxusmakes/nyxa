@@ -480,10 +480,9 @@ Instructions:
                             
                             if (webResults.length > 0) {
                                 responseText = this.formatGroqWebCitations(responseText, result.webSources);
-                                                            } else {
-                                
-                                
-                                                            }
+                            } else {
+                                // No web results to cite
+                            }
                         } else {
                             
                                                         updateProcessingUI(generationStep, totalSteps, 'Generating response with Groq...', `Input query: ${enhancedQuery}`);
@@ -1648,7 +1647,8 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                             extractedTools = args.selected_tools;
                                         }
                                     } catch {
-                                                                            }
+                                        // Failed to parse - keep previous value
+                                    }
                                 }
                             }
                             return toolCalls.map(() => ({ success: true, content: 'Selection received.' }));
@@ -1688,13 +1688,14 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                             }).filter(tn => toolNames.includes(tn));
                             
                                                     }
-                    } catch {
-                                            }
+                                    } catch {
+                                        // Failed to parse - keep previous value
+                                    }
                 }
 
                 
                 const toolsToUse = plannedTools
-                    ? mcpTools.filter((t: OpenAITool) => plannedTools!.includes(t.function?.name || ''))
+                    ? mcpTools.filter((t: OpenAITool) => plannedTools.includes(t.function?.name || ''))
                     : mcpTools;
 
                 
@@ -1712,10 +1713,10 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                             for (const t of tools) {
                                 const name = t.function?.name;
                                 if (!name) continue;
-                                const idx = plannedTools!.indexOf(name);
+                                const idx = plannedTools.indexOf(name);
                                 if (idx !== -1 && idx < minIdx) minIdx = idx;
                             }
-                            return minIdx === Infinity ? plannedTools!.length : minIdx;
+                            return minIdx === Infinity ? plannedTools.length : minIdx;
                         };
                         return firstIndexOf(a) - firstIndexOf(b);
                     });
@@ -1906,7 +1907,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                             } else if (UnifiedProviderManager.getInstance().hasProvider(provider)) {
                                 const unifiedProvider = UnifiedProviderManager.getInstance().getProvider(provider)!;
                                 if (unifiedProvider.generateContentWithTools) {
-                                    chunkResult = await unifiedProvider.generateContentWithTools!(
+                                    chunkResult = await unifiedProvider.generateContentWithTools(
                                         this.settings.model,
                                         messages as unknown as UnifiedMessage[],
                                         chunk as ProviderTool[],
@@ -1990,7 +1991,8 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                             if (serverResult.content) {
                                 allResults.push(`## ${serverName}\n\n${serverResult.content}`);
                             } else {
-                                                            }
+                                // No content returned from server
+                            }
                         } catch (serverErr) {
                             if (serverErr instanceof DOMException && serverErr.name === 'AbortError') {
                                 throw serverErr;
@@ -2152,7 +2154,8 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                 const isChunked = chunks.length > 1;
 
                 if (isChunked) {
-                                    }
+                    // Tools are chunked - will be processed in batches
+                }
 
                 
                 messages.length = 0;
@@ -2276,7 +2279,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                         } else if (UnifiedProviderManager.getInstance().hasProvider(provider)) {
                             const unifiedProvider = UnifiedProviderManager.getInstance().getProvider(provider)!;
                             if (unifiedProvider.generateContentWithTools) {
-                                chunkResult = await unifiedProvider.generateContentWithTools!(
+                                chunkResult = await unifiedProvider.generateContentWithTools(
                                     this.settings.model,
                                     messages as unknown as UnifiedMessage[],
                                     chunk as ProviderTool[],
@@ -2496,7 +2499,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
 
                             
                             if (!isLast && i < resultChunks.length - 1) {
-                                
+                                // Not the last chunk - continue processing
                             }
 
                         } catch (synthErr) {
@@ -2514,11 +2517,12 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                 }
                                 i--; 
                             } else if (isTPMError) {
-                                
+                                // TPM error - skip this chunk
                                                                 updateProcessingUI(2, 3, `TPM error, skipping this chunk...`);
                                 
                             } else {
-                                                            }
+                                // Skip failed item, continue processing
+                            }
                         }
                     }
 
@@ -2526,7 +2530,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                     if (synthesizedAnswers.length > 0) {
                         finalContent = synthesizedAnswers.join('\n\n');
                                             } else if (finalContent.trim()) {
-                        
+                        // Keep existing finalContent
                                             }
                 }
 
@@ -2743,7 +2747,8 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                             extractedTools = args.selected_tools;
                                         }
                                     } catch {
-                                                                            }
+                                        // Failed to parse - keep previous value
+                                    }
                                 }
                             }
                             return toolCalls.map(() => ({ success: true, content: 'Selection received.' }));
@@ -2787,20 +2792,22 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                         break; 
                         
                     } catch {
-                                                 
+                        // Planning API call failed - fallback logic follows
                     }
                 }
                 
                 if (!planCreated) {
-                                    }
+                    // Planning failed - use fallback plan
+                }
             } else if (toolNames.length > PLANNING_TOOL_LIMIT) {
-                            }
+                // Too many tools for planning - use fallback
+            }
 
             
             if (!ledger) {
                 const fallbackPlan = buildFallbackPlan(enhancedQuery, mcpTools);
                 ledger = createLedger(fallbackPlan);
-                            }
+            }
 
             
             
@@ -2888,6 +2895,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
 
             
             const executeToolsViaModel = async (toolCalls: OpenAITool[], passLabel: string) => {
+                if (!ledger) throw new Error('Ledger not initialized');
                 const results = new Array(toolCalls.length);
                 const promises = toolCalls.map(async (toolCall, i) => {
                     if (passAbandoned) {
@@ -2900,9 +2908,9 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                     try {
                         if (!passAbandoned) {
                             updateSnippetUI(`Executing ${label}...`);
-                            const completedCount = ledger!.plan.steps.filter(s => s.status === 'completed').length;
+                            const completedCount = ledger.plan.steps.filter(s => s.status === 'completed').length;
                             
-                            const mcpTotalSteps = 1 + ledger!.plan.steps.length + 1;
+                            const mcpTotalSteps = 1 + ledger.plan.steps.length + 1;
                             updateProcessingUI(1 + completedCount, mcpTotalSteps, `Running: ${toolName}`);
                         }
                         const result = await executeToolCallback(toolCall);
@@ -2914,13 +2922,13 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                         updateSnippetUI(`✓ ${label}`, String(snippet));
 
                         
-                        const existingStep = ledger!.plan.steps.find(
+                        const existingStep = ledger.plan.steps.find(
                             s => s.toolName === toolName && s.status === 'pending'
                         );
                         if (existingStep) {
                             existingStep.status = 'completed';
                             existingStep.result = String(result?.content || snippet);
-                            ledger!.completedSteps.push(existingStep.stepId);
+                            ledger.completedSteps.push(existingStep.stepId);
                         } else {
                             const dynId = `dyn_${toolName}_${Date.now()}_${i}`;
                             const dynStep = {
@@ -2938,8 +2946,8 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                 retryCount: 0,
                                 maxRetries: 2
                             };
-                            ledger!.plan.steps.push(dynStep);
-                            ledger!.completedSteps.push(dynId);
+                            ledger.plan.steps.push(dynStep);
+                            ledger.completedSteps.push(dynId);
                         }
                         results[i] = result;
                     } catch (err) {
@@ -2967,6 +2975,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                 toolChoice: 'auto' | 'required' | 'none',
                 signal?: AbortSignal
             ): Promise<{ content: string; totalTokens?: number }> => {
+                if (!ledger) throw new Error('Ledger not initialized');
                 const execCb = (toolCalls: OpenAITool[]) => executeToolsViaModel(toolCalls, passLabel);
 
                 const effectiveSignal = signal || abortSignal;
@@ -3021,7 +3030,7 @@ ${mcpContext}`;
                 
                 
                 
-                const allCompletedSteps = ledger!.plan.steps.filter(step => step.status === 'completed');
+                const allCompletedSteps = ledger.plan.steps.filter(step => step.status === 'completed');
 
                 if (allCompletedSteps.length > 0) {
                     
@@ -3155,7 +3164,7 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                 } else if (UnifiedProviderManager.getInstance().hasProvider(provider)) {
                     const unifiedProvider = UnifiedProviderManager.getInstance().getProvider(provider)!;
                     if (unifiedProvider.generateContentWithTools) {
-                        return unifiedProvider.generateContentWithTools!(
+                        return unifiedProvider.generateContentWithTools(
                             modelId,
                             passMessages as unknown as UnifiedMessage[],
                             passTools as ProviderTool[],
@@ -3217,7 +3226,7 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                         }
                     }
 
-                    const allPlannedStepsCompleted = ledger!.plan.steps.length > 0 && ledger!.plan.steps.every(s => s.status === 'completed' || s.status === 'failed' || s.status === 'skipped');
+                    const allPlannedStepsCompleted = ledger.plan.steps.length > 0 && ledger.plan.steps.every(s => s.status === 'completed' || s.status === 'failed' || s.status === 'skipped');
                     if (allPlannedStepsCompleted) {
                                                 
                         
@@ -3240,7 +3249,8 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                     const isChunked = chunks.length > 1;
 
                     if (isChunked) {
-                                            }
+                        // Tools are chunked - will be processed in batches
+                    }
 
                     let lastChunkResult: { content: string; totalTokens?: number } | null = null;
                     let chunkFailed = false;
@@ -3450,9 +3460,10 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                     
                     
                     
-                    const completedCount = ledger!.completedSteps.length;
+                    if (!ledger) throw new Error('Ledger not initialized');
+                    const completedCount = ledger.completedSteps.length;
                     if (completedCount > 0) {
-                                                
+                        // Completed steps exist - continue with next pass
                     } else {
                         
                                                 return await this.process(query, enhancedQuery, mcpContext, chatHistory, false, updateProcessingUI, false, updateSnippetUI, [], '');
@@ -3465,9 +3476,8 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                     earlyReturnedFromToolPass = true;
                     return buildEarlyReturnFromToolPass(lastPassResult);
                 } else {
-                    
-                    
-                                    }
+                    // Tool pass did not produce final answer - continue processing
+                }
             }
 
             
@@ -4171,7 +4181,8 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                         }
                         const nextModel = modelsToTry[attempt + 1];
                         if (nextModel) {
-                                                    }
+                            // Next model available for retry
+                        }
                         updateSnippetUI(nextRecoveryMessage());
                         
                         
@@ -4202,8 +4213,9 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                                         providerName: chunkModel.provider
                                     };
                                 }
-                            } catch {
-                                                            }
+                                    } catch {
+                                        // Failed to parse - keep previous value
+                                    }
                         }
 
                         

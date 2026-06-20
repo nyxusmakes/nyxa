@@ -325,8 +325,10 @@ function parseTemporalQueryRegex(query: string, referenceDate: Date): TemporalQu
     };
     
     if (result.hasTemporalFilter) {
-                                    } else {
-            }
+        // Intentionally empty
+    } else {
+        // Intentionally empty
+    }
     
     return result;
 }
@@ -537,8 +539,9 @@ JSON:`;
                         openRouterSuccess = true;
                         break;
                     }
-                                    } catch {
-                                    }
+                    } catch {
+                      // API call failed - fallback logic follows
+                    }
             }
             
             if (!openRouterSuccess) {
@@ -571,8 +574,9 @@ JSON:`;
                         groqSuccess = true;
                         break;
                     }
-                                    } catch {
-                                    }
+                    } catch {
+                      // API call failed - fallback logic follows
+                    }
             }
             
             if (!groqSuccess) {
@@ -639,8 +643,10 @@ JSON:`;
         };
 
         if (result.hasTemporalFilter) {
-                                                        } else {
-                    }
+            // Intentionally empty
+        } else {
+            // Intentionally empty
+        }
 
         return result;
 

@@ -122,7 +122,7 @@ export class NotebookChatView extends ItemView {
         this.contextCache = JSON.parse(json) as NotebookContextCache;
       }
     } catch {
-      
+      // Cache corruption or missing data - will be regenerated on next access
     }
   }
 
@@ -138,7 +138,7 @@ export class NotebookChatView extends ItemView {
       const cachePath = this.getCacheFilePath();
       await this.app.vault.adapter.write(cachePath, JSON.stringify(this.contextCache));
     } catch {
-      
+      // File may not exist or be accessible - safe to ignore
     }
   }
 
@@ -219,7 +219,7 @@ export class NotebookChatView extends ItemView {
           }
         }
       } catch {
-        
+        // Failed to parse - keep previous value
       }
     }
     
@@ -508,7 +508,7 @@ Rules:
         await this.app.vault.adapter.remove(cachePath);
       }
     } catch {
-      
+      // File may not exist or be accessible - safe to ignore
     }
   }
 
@@ -624,7 +624,7 @@ Rules:
             });
           }
         } catch {
-          
+          // Failed to parse - keep previous value
         }
       }
     }
@@ -667,9 +667,9 @@ Rules:
       }
 
       
-      this.loadSourcesAsync();
+      void this.loadSourcesAsync();
     }
-    super.setState(state, result);
+    void super.setState(state, result);
   }
 
   
@@ -854,7 +854,7 @@ Rules:
       if (this.currentSession && this.currentSession.id === sessionId) {
         this.currentSession = null;
         this.messages = [];
-        await this.invalidateContextCache(); 
+        await void this.invalidateContextCache(); 
         await this.renderSessionSelector();
       } else {
         await this.renderSessionList();
@@ -1015,12 +1015,12 @@ Rules:
     this.chatInput.inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        this.handleSendMessage();
+        void this.handleSendMessage();
       }
     });
 
     
-    this.updateContextBar();
+    void this.updateContextBar();
   }
 
   
@@ -1151,7 +1151,7 @@ Rules:
     this.chatInput.inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        this.handleSendMessage();
+        void this.handleSendMessage();
       }
     });
 
@@ -1166,7 +1166,7 @@ Rules:
     this.renderModeToggle(modelRow);
 
     
-    this.updateContextBar();
+    void void this.updateContextBar();
   }
 
   
@@ -1193,7 +1193,7 @@ Rules:
     cagCheckbox.addEventListener('change', () => {
       if (cagCheckbox.checked) {
         ragCheckbox.checked = false;
-        this.switchMode('cag');
+        void this.switchMode('cag');
       } else {
         cagCheckbox.checked = true; 
       }
@@ -1202,7 +1202,7 @@ Rules:
     ragCheckbox.addEventListener('change', () => {
       if (ragCheckbox.checked) {
         cagCheckbox.checked = false;
-        this.switchMode('rag');
+        void this.switchMode('rag');
       } else {
         ragCheckbox.checked = true; 
       }
@@ -1250,7 +1250,7 @@ Rules:
 
     
     this.renderSourcesPanel();
-    this.updateContextBar();
+    void void this.updateContextBar();
     new Notice(`Switched to ${newMode === 'cag' ? 'Full context' : 'Keyword based'}`);
   }
 
@@ -1334,7 +1334,7 @@ Rules:
           this.settings.notebookProvider = this.previousModel.provider as Provider;
           await this.plugin.saveSettings();
           this.modelSelectButton.setButtonText(getModelDisplayName(this.settings.notebookModel, this.settings));
-          this.updateContextBar();
+          void this.updateContextBar();
           this.previousModel = null; 
         }
         
@@ -1364,7 +1364,7 @@ Rules:
             this.settings.notebookProvider = webCapableModels[0].provider;
             await this.plugin.saveSettings();
             this.modelSelectButton.setButtonText(getModelDisplayName(this.settings.notebookModel, this.settings));
-            this.updateContextBar();
+            void void this.updateContextBar();
 
             
             new Notice(`Switched to ${webCapableModels[0].name} (Web sources require Gemini or Ollama models)`);
@@ -1439,9 +1439,9 @@ Rules:
         }
       }
 
-      this.invalidateContextCache();
+      void this.invalidateContextCache();
       this.renderMobileSourcesPanel();
-      this.updateContextBar();
+      void this.updateContextBar();
     });
 
     
@@ -1484,9 +1484,9 @@ Rules:
           } else {
             this.selectedSourcePaths.delete(path);
           }
-          this.invalidateContextCache();
+          void this.invalidateContextCache();
           this.renderMobileSourcesPanel();
-          this.updateContextBar();
+          void this.updateContextBar();
         });
         label.appendChild(checkbox);
         const nameSpan = this.document.createElement('span');
@@ -1531,8 +1531,8 @@ Rules:
             } else {
               this.selectedSourcePaths.delete(webKey);
             }
-            this.invalidateContextCache();
-            this.updateContextBar();
+            void this.invalidateContextCache();
+            void this.updateContextBar();
             this.renderMobileSourcesPanel();
           });
           label.appendChild(checkbox);
@@ -1689,7 +1689,7 @@ Rules:
           this.settings.notebookProvider = this.previousModel.provider as Provider;
           await this.plugin.saveSettings();
           this.modelSelectButton.setButtonText(getModelDisplayName(this.settings.notebookModel, this.settings));
-          this.updateContextBar();
+          void this.updateContextBar();
           this.previousModel = null; 
         }
         
@@ -1723,7 +1723,7 @@ Rules:
             this.settings.notebookProvider = webCapableModels[0].provider;
             await this.plugin.saveSettings();
             this.modelSelectButton.setButtonText(getModelDisplayName(this.settings.notebookModel, this.settings));
-            this.updateContextBar();
+            void this.updateContextBar();
 
             
             new Notice(`Switched to ${webCapableModels[0].name} (Web sources require Gemini or Ollama models)`);
@@ -1804,11 +1804,11 @@ Rules:
         }
       }
 
-      this.invalidateContextCache();
+      void this.invalidateContextCache();
       this.renderSourcesPanel();
       const newListWrapper = this.sourcesContainer.querySelector('.sources-list-wrapper');
       if (newListWrapper) newListWrapper.scrollTop = prevScroll;
-      this.updateContextBar();
+      void this.updateContextBar();
     });
 
     
@@ -1841,7 +1841,7 @@ Rules:
       const val = parseInt((e.target as HTMLInputElement).value);
       this.cagHistoryContextLength = val;
       sliderLabel.setText(`History: ${val === 20 ? 'All' : val}`);
-      this.updateContextBar();
+      void this.updateContextBar();
     });
 
     
@@ -1886,8 +1886,8 @@ Rules:
           } else {
             this.selectedSourcePaths.delete(path);
           }
-          this.invalidateContextCache();
-          this.updateContextBar(); 
+          void this.invalidateContextCache();
+          void this.updateContextBar(); 
         });
         label.appendChild(checkbox);
         
@@ -1935,8 +1935,8 @@ Rules:
             } else {
               this.selectedSourcePaths.delete(webKey);
             }
-            this.invalidateContextCache();
-            this.updateContextBar();
+            void this.invalidateContextCache();
+            void this.updateContextBar();
           });
           label.appendChild(checkbox);
           const nameSpan = this.document.createElement('span');
@@ -1970,7 +1970,7 @@ Rules:
     }
 
     
-    this.notebookBM25Manager.getChunkCount().then(async chunkCount => {
+    void this.notebookBM25Manager.getChunkCount().then(async chunkCount => {
       const hasChanges = this.sourceStatuses.some(s => s.hasChanges || !s.isIndexed);
       const needsIndexing = chunkCount === 0 || hasChanges;
 
@@ -2150,7 +2150,7 @@ Rules:
         .setIcon('copy')
         .setClass('response-action-btn')
         .setTooltip('Copy to clipboard')
-        .onClick(() => navigator.clipboard.writeText(displayContent));
+        .onClick(() => { void navigator.clipboard.writeText(displayContent); });
       new ButtonComponent(actionsContainer)
         .setIcon('edit')
         .setClass('response-action-btn')
@@ -2161,13 +2161,13 @@ Rules:
     } else {
       
       const processedContent = this.processFootnoteReferences(displayContent);
-      this.renderMarkdown(processedContent, contentEl);
+      void this.renderMarkdown(processedContent, contentEl);
       const actionsContainer = messageContainer.createDiv({ cls: 'response-actions' });
       new ButtonComponent(actionsContainer)
         .setIcon('copy')
         .setClass('response-action-btn')
         .setTooltip('Copy to clipboard')
-        .onClick(() => navigator.clipboard.writeText(displayContent));
+        .onClick(() => { void navigator.clipboard.writeText(displayContent); });
 
       new ButtonComponent(actionsContainer)
         .setIcon('clipboard-minus')
@@ -2175,7 +2175,7 @@ Rules:
         .setTooltip('Copy without citations')
         .onClick(() => {
           const cleanedText = this.removeCitations(displayContent);
-          navigator.clipboard.writeText(cleanedText);
+          void navigator.clipboard.writeText(cleanedText);
           new Notice('Message copied to clipboard (no citations)');
         });
 
@@ -2186,10 +2186,11 @@ Rules:
         .onClick(() => {
           let cleanedText = this.removeCitations(displayContent);
           cleanedText = this.convertToPlainTextKeepTables(cleanedText);
-          navigator.clipboard.writeText(cleanedText);
+          void navigator.clipboard.writeText(cleanedText);
           new Notice('Message copied to clipboard (plain text)');
         });
       if (this.messages[this.messages.length - 1] === this.messages.find(m => m.content === displayContent)) {
+        // Intentionally empty
       }
       new ButtonComponent(actionsContainer)
         .setIcon('trash')
@@ -2198,7 +2199,7 @@ Rules:
         .onClick(() => {
           messageContainer.remove();
           this.messages = this.messages.filter(msg => msg.content !== displayContent);
-          if (save) this.saveCurrentSession();
+          if (save) void this.saveCurrentSession();
         });
     }
 
@@ -2213,8 +2214,8 @@ Rules:
       this.messages.push(message);
     }
     this.responsesContainer.scrollTop = this.responsesContainer.scrollHeight;
-    this.updateContextBar();
-    if (save && pushToMessages) this.saveCurrentSession();
+    void this.updateContextBar();
+    if (save && pushToMessages) void this.saveCurrentSession();
     return messageContainer;
   }
 
@@ -2259,7 +2260,7 @@ Rules:
             }
             this.responsesContainer.empty();
             this.messages.forEach(msg => this.addMessage(msg.role, msg.content, false, [], false, msg.sourceMapping));
-            if (saveSession) this.saveCurrentSession();
+            if (saveSession) void this.saveCurrentSession();
 
             this.chatInput.setValue(editedQuery);
             await this.handleSendMessage();
@@ -2279,14 +2280,14 @@ Rules:
     quizContainer.setAttribute('data-quiz-key', quizKey);
 
     
-    this.loadQuizState(quizKey).then(quizState => {
+    void this.loadQuizState(quizKey).then(quizState => {
       if (quizState) {
         const renderer = new QuizRenderer(
           this.app,
           quizContainer,
           quizState,
           (updatedState) => {
-            this.saveQuizState(quizKey, updatedState);
+            void this.saveQuizState(quizKey, updatedState);
           },
           this.settings,
           (question: string) => this.getContextForExplanation(question),
@@ -2316,16 +2317,16 @@ Rules:
             await this.app.vault.adapter.remove(filePath);
           }
         } catch {
-          
+          // File may not exist or be accessible - safe to ignore
         }
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
       });
 
     if (pushToMessages) {
       this.messages.push({ role: 'assistant', content });
     }
     this.responsesContainer.scrollTop = this.responsesContainer.scrollHeight;
-    this.updateContextBar();
+    void this.updateContextBar();
     return messageContainer;
   }
 
@@ -2337,10 +2338,10 @@ Rules:
     flashcardContainer.setAttribute('data-flashcard-key', flashcardKey);
 
     
-    this.loadFlashcardState(flashcardKey).then(flashcardState => {
+    void this.loadFlashcardState(flashcardKey).then(flashcardState => {
       if (flashcardState) {
         const renderer = new FlashcardRenderer(this.app, flashcardContainer, flashcardState, (updatedState) => {
-          this.saveFlashcardState(flashcardKey, updatedState);
+          void this.saveFlashcardState(flashcardKey, updatedState);
         });
         renderer.render();
       } else {
@@ -2366,16 +2367,16 @@ Rules:
             await this.app.vault.adapter.remove(filePath);
           }
         } catch {
-          
+          // File may not exist or be accessible - safe to ignore
         }
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
       });
 
     if (pushToMessages) {
       this.messages.push({ role: 'assistant', content });
     }
     this.responsesContainer.scrollTop = this.responsesContainer.scrollHeight;
-    this.updateContextBar();
+    void this.updateContextBar();
     return messageContainer;
   }
 
@@ -2387,7 +2388,7 @@ Rules:
 
     
     const quizStateKey = `quiz-${this.currentSession?.id}-${quizState.timestamp}`;
-    this.saveQuizState(quizStateKey, quizState);
+    void this.saveQuizState(quizStateKey, quizState);
 
     
     const quizContainer = contentEl.createDiv({ cls: 'notebook-quiz-container' });
@@ -2399,7 +2400,7 @@ Rules:
       quizContainer,
       quizState,
       (updatedState) => {
-        this.saveQuizState(quizStateKey, updatedState);
+        void this.saveQuizState(quizStateKey, updatedState);
       },
       this.settings,
       (question: string) => this.getContextForExplanation(question),
@@ -2428,16 +2429,16 @@ Rules:
             await this.app.vault.adapter.remove(filePath);
           }
         } catch {
-          
+          // File may not exist or be accessible - safe to ignore
         }
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
       });
 
     this.messages.push({ role: 'assistant', content: quizContent });
 
     this.responsesContainer.scrollTop = this.responsesContainer.scrollHeight;
-    this.updateContextBar();
-    this.saveCurrentSession();
+    void this.updateContextBar();
+    void this.saveCurrentSession();
 
     return messageContainer;
   }
@@ -2449,7 +2450,7 @@ Rules:
 
     
     const flashcardStateKey = `flashcard-${this.currentSession?.id}-${flashcardState.timestamp}`;
-    this.saveFlashcardState(flashcardStateKey, flashcardState);
+    void this.saveFlashcardState(flashcardStateKey, flashcardState);
 
     
     const flashcardContainer = contentEl.createDiv({ cls: 'notebook-flashcard-container' });
@@ -2457,7 +2458,7 @@ Rules:
 
     
     const renderer = new FlashcardRenderer(this.app, flashcardContainer, flashcardState, (updatedState) => {
-      this.saveFlashcardState(flashcardStateKey, updatedState);
+      void this.saveFlashcardState(flashcardStateKey, updatedState);
     });
     renderer.render();
 
@@ -2482,16 +2483,16 @@ Rules:
             await this.app.vault.adapter.remove(filePath);
           }
         } catch {
-          
+          // File may not exist or be accessible - safe to ignore
         }
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
       });
 
     this.messages.push({ role: 'assistant', content: flashcardContent });
 
     this.responsesContainer.scrollTop = this.responsesContainer.scrollHeight;
-    this.updateContextBar();
-    this.saveCurrentSession();
+    void this.updateContextBar();
+    void this.saveCurrentSession();
 
     return messageContainer;
   }
@@ -2507,7 +2508,7 @@ Rules:
       const filePath = normalizePath(`${cacheDir}/${key}.json`);
       await this.app.vault.adapter.write(filePath, JSON.stringify(state));
     } catch {
-      
+      // File may not exist or be accessible - safe to ignore
     }
   }
 
@@ -2522,7 +2523,7 @@ Rules:
         return JSON.parse(json) as QuizState;
       }
     } catch {
-      
+      // Cache corruption or missing data - will be regenerated on next access
     }
     return null;
   }
@@ -2538,7 +2539,7 @@ Rules:
       const filePath = normalizePath(`${cacheDir}/${key}.json`);
       await this.app.vault.adapter.write(filePath, JSON.stringify(state));
     } catch {
-      
+      // File may not exist or be accessible - safe to ignore
     }
   }
 
@@ -2553,7 +2554,7 @@ Rules:
         return JSON.parse(json) as FlashcardState;
       }
     } catch {
-      
+      // Cache corruption or missing data - will be regenerated on next access
     }
     return null;
   }
@@ -3521,7 +3522,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
             event.preventDefault();
             const linkText = link.getAttr('data-href');
             if (linkText) {
-              this.app.workspace.openLinkText(linkText, '', false);
+              void this.app.workspace.openLinkText(linkText, '', false);
             }
           });
         }
@@ -3857,7 +3858,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
           this.settings.notebookProvider = model.provider;
           await this.plugin.saveSettings();
           this.modelSelectButton.setButtonText(model.name);
-          this.updateContextBar();
+          void this.updateContextBar();
           menuEl.remove();
         };
         menuEl.appendChild(menuItem);
@@ -4033,7 +4034,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
   private updateDynamicTokens(ragChunkTokens: number, responseTokens: number = 0) {
     this.dynamicTokens = ragChunkTokens;
     this.outputTokens = responseTokens;
-    this.updateContextBar();
+    void this.updateContextBar();
   }
 
   
@@ -4048,7 +4049,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
       this.tokenBarResetTimeout = null;
     }
 
-    this.updateContextBar();
+    void this.updateContextBar();
   }
 
   
@@ -4056,7 +4057,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
     this.isGenerating = false;
     this.dynamicTokens = ragChunkTokens;
     this.outputTokens = responseTokens;
-    this.updateContextBar();
+    void this.updateContextBar();
 
     
     this.tokenBarResetTimeout = window.setTimeout(() => {
@@ -4079,14 +4080,14 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
       this.dynamicTokens = Math.round(initialDynamic * (1 - easeOut));
       this.outputTokens = Math.round(initialOutput * (1 - easeOut));
-      this.updateContextBar();
+      void this.updateContextBar();
 
       if (step < steps) {
         requestAnimationFrame(animate);
       } else {
         this.dynamicTokens = 0;
         this.outputTokens = 0;
-        this.updateContextBar();
+        void this.updateContextBar();
       }
     };
 
@@ -4099,7 +4100,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
   
   public async externalInvalidateContextCache() {
-    await this.invalidateContextCache();
+    await void this.invalidateContextCache();
   }
 
     

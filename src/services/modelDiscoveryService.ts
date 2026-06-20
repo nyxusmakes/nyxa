@@ -425,7 +425,8 @@ async function fetchOpenRouterModels(apiKey: string): Promise<ModelDiscoveryResu
           }));
       }
     } catch {
-          }
+        // API call failed - fallback logic follows
+    }
 
     return { provider: 'openrouter', models, embeddingModels };
   } catch (error) {
@@ -517,7 +518,8 @@ async function fetchOllamaModels(baseUrl: string, apiKey?: string): Promise<Mode
           }
         }
       } catch {
-              }
+        // API call failed - fallback logic follows
+      }
 
       models.push({
         id: modelId,
@@ -746,7 +748,8 @@ async function fetchGroqModels(apiKey: string): Promise<ModelDiscoveryResult> {
           }
         }
       } catch {
-              }
+        // API call failed - fallback logic follows
+      }
 
       models.push({
         id: m.id,
@@ -825,7 +828,7 @@ function extractGenericTokenLimit(m: Record<string, unknown>): number | null {
   const v = (m.context_window ?? m.max_model_len ?? m.context_length ?? m.max_model_length) as number | undefined;
   const meta = m.metadata as Record<string, unknown> | undefined;
   const mv = meta ? (meta.context_window ?? meta.max_model_len ?? meta.context_length ?? meta.max_model_length) as number | undefined : undefined;
-  return (v ?? mv ?? null) as number | null;
+  return v ?? mv ?? null;
 }
 
 /**

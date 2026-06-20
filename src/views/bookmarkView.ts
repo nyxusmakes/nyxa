@@ -91,7 +91,8 @@ export class BookmarkView extends ItemView {
                         });
                     }
                 } catch {
-                                    }
+                  // Failed to parse - keep previous value
+                }
             } else if (!entry.author) {
                 metadataLine.createEl('span', { text: 'No Date', cls: 'entry-date' });
             }

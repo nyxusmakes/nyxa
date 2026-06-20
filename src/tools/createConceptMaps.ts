@@ -28,7 +28,7 @@ const highlightOverlayMap = new WeakMap<HTMLElement, HTMLElement>();
 export class ConceptMapManager {
   private get doc(): Document {
     const view = this.app.workspace.getActiveViewOfType(View);
-    return (view && 'document' in view ? (view as { document: Document }).document : document);
+    return view?.containerEl.ownerDocument ?? this.app.workspace.activeLeaf?.view.containerEl.ownerDocument ?? document;
   }
 
   private settings: AISettings;
@@ -1923,7 +1923,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   private renderMarkdownTooltip(text: string, container: HTMLElement) {
     container.empty();
     // Use Obsidian's MarkdownRenderer for safe rendering
-    MarkdownRenderer.render(this.app, text, container, '', null as unknown as Component);
+    void MarkdownRenderer.render(this.app, text, container, '', null as unknown as Component);
   }
 
   private checkTooltipNodeOverlap(
@@ -2987,7 +2987,7 @@ export class ConceptMapVisualizationModal extends Modal {
     `.trim();
 
     { const _comp = new Component();
-    MarkdownRenderer.render(this.app, helpContent, this.helpContainer, '', _comp);
+    void MarkdownRenderer.render(this.app, helpContent, this.helpContainer, '', _comp);
     _comp.load(); }
   }
 

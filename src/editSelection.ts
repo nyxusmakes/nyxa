@@ -300,7 +300,7 @@ function showInlineDiff(
     const diffId = `edit-diff-${Date.now()}`;
     
     // Create the HTML structure for the diff
-    const diffHtml = createInlineDiffWidget(originalText, editedText, diffId);
+    const diffHtml = createInlineDiffWidget(originalText, editedText, diffId, view.containerEl.ownerDocument);
     
     // Insert a marker at the selection position
     const marker = `[DIFF_${diffId}]`;
@@ -313,8 +313,8 @@ function showInlineDiff(
 /**
  * Create the inline diff widget HTML structure
  */
-function createInlineDiffWidget(originalText: string, editedText: string, diffId: string): HTMLElement {
-    const wrapper = document.createElement('div');
+function createInlineDiffWidget(originalText: string, editedText: string, diffId: string, doc?: Document): HTMLElement {
+    const wrapper = (doc ?? document).createElement('div');
     
     // Add header
     const header = wrapper.createDiv({ cls: 'edit-selection-diff-header' });
