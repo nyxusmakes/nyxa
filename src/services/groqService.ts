@@ -382,26 +382,29 @@ export class GroqService {
     if (options?.thinkingLevel) {
       body.reasoning_effort = options.thinkingLevel;
     }
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+    const response = await requestUrl({
+      url: `${this.baseUrl}/chat/completions`,
       method: 'POST',
-      signal: options?.abortSignal,
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      throw: false
     });
 
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
+    if (response.status >= 400) {
+      await this.handleErrorResponse(response.status, response.json as GroqErrorResponse);
     }
 
     
     if (this.onHeadersReceived) {
-      this.onHeadersReceived(response.headers);
+      const h = new Headers();
+      Object.entries(response.headers).forEach(([k, v]) => h.set(k, Array.isArray(v) ? v.join(', ') : v));
+      this.onHeadersReceived(h);
     }
 
-    const data = await response.json() as GroqChatCompletionResponse;
+    const data = response.json as GroqChatCompletionResponse;
     return data.choices?.[0]?.message?.content || '';
   }
 
@@ -611,7 +614,7 @@ export class GroqService {
         this.onHeadersReceived(h);
       }
       if (resp.status >= 400) {
-        const errorData: GroqErrorResponse = typeof resp.json === 'object' ? resp.json : { error: { message: `HTTP ${resp.status}` } };
+        const errorData = (typeof resp.json === 'object' ? resp.json : { error: { message: `HTTP ${resp.status}` } }) as GroqErrorResponse;
         throw new GroqApiError(errorData.error?.message || `Groq API error: ${resp.status}`, resp.status);
       }
       const data = resp.json as GroqChatCompletionResponse;
@@ -627,15 +630,20 @@ export class GroqService {
 
     
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      const response = await requestUrl({
+        url: `${this.baseUrl}/chat/completions`,
         method: 'POST',
-        signal: options?.abortSignal,
         headers,
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        throw: false
       });
-      if (!response.ok) await this.handleErrorResponse(response);
-      if (this.onHeadersReceived) this.onHeadersReceived(response.headers);
-      const data = await response.json() as GroqChatCompletionResponse;
+      if (response.status >= 400) await this.handleErrorResponse(response.status, response.json as GroqErrorResponse);
+      if (this.onHeadersReceived) {
+        const h = new Headers();
+        Object.entries(response.headers).forEach(([k, v]) => h.set(k, Array.isArray(v) ? v.join(', ') : v));
+        this.onHeadersReceived(h);
+      }
+      const data = response.json as GroqChatCompletionResponse;
       const message = data.choices?.[0]?.message;
       const reasoning = message?.reasoning_content || message?.reasoning || '';
       if (reasoning) onEvent({ type: 'thinking', text: reasoning });
@@ -700,26 +708,29 @@ export class GroqService {
       requestBody.tool_choice = 'required';
     }
 
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+    const response = await requestUrl({
+      url: `${this.baseUrl}/chat/completions`,
       method: 'POST',
-      signal: options?.abortSignal,
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
+      throw: false
     });
 
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
+    if (response.status >= 400) {
+      await this.handleErrorResponse(response.status, response.json as GroqErrorResponse);
     }
 
     
     if (this.onHeadersReceived) {
-      this.onHeadersReceived(response.headers);
+      const h = new Headers();
+      Object.entries(response.headers).forEach(([k, v]) => h.set(k, Array.isArray(v) ? v.join(', ') : v));
+      this.onHeadersReceived(h);
     }
 
-    const data = await response.json() as GroqChatCompletionResponse;
+    const data = response.json as GroqChatCompletionResponse;
         
     const choice = data.choices?.[0];
     if (!choice) {
@@ -853,7 +864,7 @@ export class GroqService {
     }
     
     
-    const markdownPattern = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
+    const markdownPattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
     while ((match = markdownPattern.exec(output)) !== null) {
       sources.push({
         title: match[1].trim(),
@@ -931,20 +942,19 @@ export class GroqService {
    * @param response - The fetch Response object
    * @throws GroqApiError with user-friendly message
    */
-  private async handleErrorResponse(response: Response): Promise<never> {
+  private async handleErrorResponse(status: number, errorData?: GroqErrorResponse): Promise<never> {
     let errorMessage: string;
     let errorType = 'api_error';
 
     try {
-      const errorData: GroqErrorResponse = await response.json();
-      errorMessage = errorData.error?.message || 'Unknown error occurred';
-      errorType = errorData.error?.type || 'api_error';
+      errorMessage = errorData?.error?.message || 'Unknown error occurred';
+      errorType = errorData?.error?.type || 'api_error';
     } catch {
-      errorMessage = `HTTP error ${response.status}`;
+      errorMessage = `HTTP error ${status}`;
     }
 
     
-    switch (response.status) {
+    switch (status) {
       case 401:
         throw new GroqApiError(
           'Invalid API key. Please check your Groq API key in settings.',
@@ -964,14 +974,14 @@ export class GroqService {
           'model_not_found'
         );
       default:
-        if (response.status >= 500) {
+        if (status >= 500) {
           throw new GroqApiError(
             'Groq service is temporarily unavailable. Please try again later.',
-            response.status,
+            status,
             'server_error'
           );
         }
-        throw new GroqApiError(errorMessage, response.status, errorType);
+        throw new GroqApiError(errorMessage, status, errorType);
     }
   }
 
@@ -1015,9 +1025,9 @@ export class GroqService {
     
     while (true) {
       if (options.abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      const response = await requestUrl({
+        url: `${this.baseUrl}/chat/completions`,
         method: 'POST',
-        signal: options?.abortSignal,
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
@@ -1031,11 +1041,12 @@ export class GroqService {
           ...(options.maxTokens !== undefined ? { max_tokens: options.maxTokens } : {}),
           top_p: options.topP ?? 1,
           stream: false
-        })
+        }),
+        throw: false
       });
 
-      if (!response.ok) {
-        const errorData = await response.json() as { error?: { message?: string; type?: string } };
+      if (response.status >= 400) {
+        const errorData = response.json as { error?: { message?: string; type?: string } };
         throw new GroqApiError(
           errorData.error?.message || 'Groq API request failed',
           response.status,
@@ -1043,7 +1054,7 @@ export class GroqService {
         );
       }
 
-      const data = await response.json() as GroqChatCompletionResponse;
+      const data = response.json as GroqChatCompletionResponse;
       
       if (data.usage) {
         totalTokens += (data.usage.total_tokens || 0);

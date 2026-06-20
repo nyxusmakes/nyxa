@@ -94,7 +94,7 @@ export class SaveNoteModal extends Modal {
 
     private validatePath(path: string): boolean {
         // Simple validation: should not contain '..' or invalid characters
-        if (path.includes('..') || /[<>:"|?*\x00-\x1F]/g.test(path)) {
+        if (path.includes('..') || /[<>:"|?*\u0000-\u001F]/g.test(path)) {
             return false;
         }
         return true;

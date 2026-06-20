@@ -117,15 +117,11 @@ function buildSchema(dimension: number = 0) {
 }
 
 async function initInstance(instanceId: string, schema: AnySchema) {
-    try {
-        const db = await createDb(schema);
-        instances.set(instanceId, db);
-        schemas.set(instanceId, schema);
-        shadowDocsMap.set(instanceId, []);
-        return db;
-    } catch (e) {
-                throw e;
-    }
+    const db = createDb(schema);
+    instances.set(instanceId, db);
+    schemas.set(instanceId, schema);
+    shadowDocsMap.set(instanceId, []);
+    return db;
 }
 
 ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
@@ -146,7 +142,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 if (!payload) throw new Error('Missing payload for LOAD');
                 try {
                     let binaryData: ArrayBuffer | Array<Record<string, unknown>> | undefined = payload.data as unknown as ArrayBuffer | Array<Record<string, unknown>>;
-                    if (payload.compressed) binaryData = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer));
+                    if (payload.compressed) binaryData = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer)).buffer as ArrayBuffer;
                     
                     let decoded: DecodedLoadPayload;
                     
@@ -167,8 +163,8 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                         const dimension = metadata.dimension || 0;
                         const schema = buildSchema(dimension);
                         
-                        const newDb = await createDb(schema);
-                        await load(newDb, decoded.state as Parameters<typeof load>[1]);
+                        const newDb = createDb(schema);
+                        load(newDb, decoded.state as Parameters<typeof load>[1]);
                         
                         instances.set(instanceId, newDb);
                         schemas.set(instanceId, schema);
@@ -231,10 +227,10 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 }
                 break;
 
-            case 'SAVE':
+            case 'SAVE': {
                 if (!db) throw new Error(`Instance not found`);
                 if (!payload) throw new Error('Missing payload for SAVE');
-                const state = await save(db);
+                const state = save(db);
                 const savePayload = payload as unknown as OramaSavePayload;
                 const metadata: OramaMetadata = { ...(savePayload.metadata || metadatas.get(instanceId) || {}) } as OramaMetadata;
                 
@@ -255,7 +251,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 let output = serialized;
                 
                 if (payload?.compress) {
-                    output = fflate.zlibSync(serialized);
+                    output = fflate.zlibSync(serialized) as Uint8Array;
                 }
                 
                 ctx.postMessage({ 
@@ -263,8 +259,9 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                     payload: { data: output, compressed: !!payload?.compress, metadata } 
                 }, [output.buffer]);
                 break;
+            }
 
-            case 'SEARCH':
+            case 'SEARCH': {
                 if (!db) throw new Error(`Instance not found`);
                 if (!payload) throw new Error('Missing payload for SEARCH');
                 const searchPayload = payload as unknown as OramaSearchPayload;
@@ -285,8 +282,9 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 const searchResults = await search(db, (searchPayload.params || searchPayload) as Parameters<typeof search>[1]);
                 ctx.postMessage({ success: true, instanceId, id, payload: { results: searchResults } });
                 break;
+            }
 
-            case 'INSERT_BATCH':
+            case 'INSERT_BATCH': {
                 if (!payload) throw new Error('Missing payload for INSERT_BATCH');
                 if (!db) {
                     let dim = 0;
@@ -310,6 +308,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 shadowDocsMap.set(instanceId, currentShadow);
                 ctx.postMessage({ success: true, instanceId, id });
                 break;
+            }
 
             case 'REMOVE':
                 if (db && payload) {
@@ -323,12 +322,13 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 ctx.postMessage({ success: true, instanceId, id });
                 break;
 
-            case 'CLEAR':
+            case 'CLEAR': {
                 const schema = schemas.get(instanceId);
                 if (schema) await initInstance(instanceId, schema);
                 else { instances.delete(instanceId); schemas.delete(instanceId); shadowDocsMap.delete(instanceId); }
                 ctx.postMessage({ success: true, instanceId, id });
                 break;
+            }
 
             case 'CLEAR_FILE':
                 if (db && payload) {

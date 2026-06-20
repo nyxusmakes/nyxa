@@ -575,9 +575,9 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
           })
         });
 
-        const data = resp.json;
-        responseText = data.choices[0].message.content;
-        let finishReason = data.choices[0].finish_reason;
+        const data = resp.json as OpenAIChatCompletionResponse;
+        responseText = data.choices?.[0]?.message?.content || '';
+        let finishReason = data.choices?.[0]?.finish_reason || '';
         
         // If truncated due to length, continue
         while (finishReason === 'length' && continuationAttempts < maxContinuations) {
@@ -607,9 +607,9 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
             })
           });
           
-          const continuationData = resp.json;
-          const continuation = continuationData.choices[0].message.content;
-          finishReason = continuationData.choices[0].finish_reason;
+          const continuationData = resp.json as OpenAIChatCompletionResponse;
+          const continuation = continuationData.choices?.[0]?.message?.content || '';
+          finishReason = continuationData.choices?.[0]?.finish_reason || '';
           // Smart append: avoid duplicate section headers
           const cleanContinuation = this.cleanContinuation(responseText, continuation);
           responseText += '\n' + cleanContinuation;

@@ -253,7 +253,7 @@ export class SlideManager {
     // Read all notes
     let combinedContent = '';
     for (const path of notePaths) {
-      const file = this.app.vault.getAbstractFileByPath(path) as TFile;
+      const file = this.app.vault.getFileByPath(path);
       if (file) {
         const content = await this.app.vault.read(file);
         combinedContent += `\n\n--- ${file.basename} ---\n\n${content}`;
@@ -493,25 +493,17 @@ Output ONLY the outline in the exact format shown above. No explanations or prea
     
     const jsonContent = JSON.stringify(zenData, null, 2);
     
-    try {
-      await this.app.vault.adapter.write(filePath, jsonContent);
-      if (!existingPath) {
-        new Notice(`Zen slideshow saved: ${zenData.name}`);
-      }
-      return filePath;
-    } catch (error) {
-            throw error;
+    await this.app.vault.adapter.write(filePath, jsonContent);
+    if (!existingPath) {
+      new Notice(`Zen slideshow saved: ${zenData.name}`);
     }
+    return filePath;
   }
 
   async loadZenSlideshow(filePath: string): Promise<ZenSlideshowData> {
-    try {
-      const content = await this.app.vault.adapter.read(filePath);
-      const zenData: ZenSlideshowData = JSON.parse(content);
-      return zenData;
-    } catch (error) {
-            throw error;
-    }
+    const content = await this.app.vault.adapter.read(filePath);
+    const zenData = JSON.parse(content) as ZenSlideshowData;
+    return zenData;
   }
 
   async openZenSlideshowVisualization(zenData: ZenSlideshowData) {
@@ -1019,7 +1011,7 @@ export class ZenSlideshowModal extends Modal {
     this.synth = window.speechSynthesis;
   }
 
-  async onOpen() {
+  onOpen() {
                 
     const { contentEl, modalEl } = this;
     contentEl.empty();

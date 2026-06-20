@@ -180,7 +180,7 @@ export class QnAManager {
           },
         });
 
-        const response = await result.response;
+        const response = result.response;
         onProgress?.(90, 'Parsing and formatting response...');
         questions = response.text()
           .split('\n')
@@ -189,7 +189,7 @@ export class QnAManager {
             line.length > 0 && 
             !line.toLowerCase().includes('here are') &&
             !line.toLowerCase().includes('questions:') &&
-            !line.match(/^\d+[\.\)]/) &&
+            !line.match(/^\d+[.)]/) &&
             !line.match(/^[a-zA-Z]\.\s/) &&
             !line.match(/^[-*+]\s/)
           )
@@ -238,11 +238,11 @@ ${qaSettings.customPrompt ? `Additional context: ${qaSettings.customPrompt}` : '
           .split(/\n+/)
           .filter((q: string) => 
             q.trim().length > 0 &&
-            !q.match(/^\d+[\.\)]/) &&
+            !q.match(/^\d+[.)]/) &&
             !q.match(/^[a-zA-Z]\.\s/) &&
             !q.match(/^[-*+]\s/)
           )
-          .map((q: string) => q.replace(/^\d+[\.\)]\s*/, '').trim());
+          .map((q: string) => q.replace(/^\d+[.)]\s*/, '').trim());
 
         if (questions.length < qaSettings.numQuestions) {
           throw new Error('Please change the AI model and try again');
@@ -287,11 +287,11 @@ ${qaSettings.customPrompt ? `Additional context: ${qaSettings.customPrompt}` : '
           .split(/\n+/)
           .filter((q: string) => 
             q.trim().length > 0 &&
-            !q.match(/^\d+[\.\)]/) &&
+            !q.match(/^\d+[.)]/) &&
             !q.match(/^[a-zA-Z]\.\s/) &&
             !q.match(/^[-*+]\s/)
           )
-          .map((q: string) => q.replace(/^\d+[\.\)]\s*/, '').trim());
+          .map((q: string) => q.replace(/^\d+[.)]\s*/, '').trim());
 
         if (questions.length < qaSettings.numQuestions) {
           throw new Error('Please change the AI model and try again');
@@ -336,11 +336,11 @@ ${qaSettings.customPrompt ? `Additional context: ${qaSettings.customPrompt}` : '
           .split(/\n+/)
           .filter((q: string) => 
             q.trim().length > 0 &&
-            !q.match(/^\d+[\.\)]/) &&
+            !q.match(/^\d+[.)]/) &&
             !q.match(/^[a-zA-Z]\.\s/) &&
             !q.match(/^[-*+]\s/)
           )
-          .map((q: string) => q.replace(/^\d+[\.\)]\s*/, '').trim());
+          .map((q: string) => q.replace(/^\d+[.)]\s*/, '').trim());
 
         if (questions.length < qaSettings.numQuestions) {
           throw new Error('Please change the AI model and try again');
@@ -385,11 +385,11 @@ ${qaSettings.customPrompt ? `Additional context: ${qaSettings.customPrompt}` : '
           .split(/\n+/)
           .filter((q: string) => 
             q.trim().length > 0 &&
-            !q.match(/^\d+[\.\)]/) &&
+            !q.match(/^\d+[.)]/) &&
             !q.match(/^[a-zA-Z]\.\s/) &&
             !q.match(/^[-*+]\s/)
           )
-          .map((q: string) => q.replace(/^\d+[\.\)]\s*/, '').trim());
+          .map((q: string) => q.replace(/^\d+[.)]\s*/, '').trim());
 
         if (questions.length < qaSettings.numQuestions) {
           throw new Error('Please change the AI model and try again');
@@ -436,11 +436,11 @@ ${qaSettings.customPrompt ? `Additional context: ${qaSettings.customPrompt}` : '
           .split(/\n+/)
           .filter((q: string) => 
             q.trim().length > 0 &&
-            !q.match(/^\d+[\.\)]/) &&
+            !q.match(/^\d+[.)]/) &&
             !q.match(/^[a-zA-Z]\.\s/) &&
             !q.match(/^[-*+]\s/)
           )
-          .map((q: string) => q.replace(/^\d+[\.\)]\s*/, '').trim());
+          .map((q: string) => q.replace(/^\d+[.)]\s*/, '').trim());
 
         if (questions.length < qaSettings.numQuestions) {
           throw new Error('Please change the AI model and try again');
@@ -470,16 +470,16 @@ ${qaSettings.customPrompt ? `Additional context: ${qaSettings.customPrompt}` : '
           })
         });
         
-        const data = resp.json;
-        questions = (data.choices[0].message.content || '')
+        const data = resp.json as OpenAIChatCompletionResponse;
+        questions = (data.choices?.[0]?.message?.content || '')
           .split(/\n+/)
           .filter((q: string) => 
             q.trim().length > 0 &&
-            !q.match(/^\d+[\.\)]/) &&
+            !q.match(/^\d+[.)]/) &&
             !q.match(/^[a-zA-Z]\.\s/) &&
             !q.match(/^[-*+]\s/)
           )
-          .map((q: string) => q.replace(/^\d+[\.\)]\s*/, '').trim());
+          .map((q: string) => q.replace(/^\d+[.)]\s*/, '').trim());
         
         if (questions.length < qaSettings.numQuestions) {
           throw new Error('Please change the AI model and try again');
@@ -515,7 +515,7 @@ ${qaSettings.customPrompt ? `Additional context: ${qaSettings.customPrompt}` : '
       const genAI = new GoogleGenerativeAI(this.getApiKey());
       const model = genAI.getGenerativeModel({ model: modelId });
       const result = await model.generateContent(evaluationPrompt);
-      const response = await result.response;
+      const response = result.response;
       const responseText = response.text();
       
       // Extract score and feedback
@@ -686,7 +686,7 @@ SCORE: [number]
         })
       });
 
-      const responseText = resp.json.choices[0].message.content;
+      const responseText = (resp.json as OpenAIChatCompletionResponse).choices?.[0]?.message?.content || '';
       const scoreMatch = responseText.match(/SCORE:\s*(\d+)/);
       if (scoreMatch) {
         relevanceScore = Math.min(100, Math.max(0, parseInt(scoreMatch[1])));

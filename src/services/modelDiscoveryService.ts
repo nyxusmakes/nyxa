@@ -306,7 +306,7 @@ function formatModelName(id: string): string {
   // Handle Gemini names like "models/gemini-1.5-flash"
   const cleanId = id.startsWith('models/') ? id.substring(7) : id;
   return cleanId
-    .replace(/[/:\-]/g, ' ')
+    .replace(/[\/:-]/g, ' ')
     .replace(/\s+/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase())
     .trim();

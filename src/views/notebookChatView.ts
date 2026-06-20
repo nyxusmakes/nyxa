@@ -331,7 +331,7 @@ Rules:
       
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed: QueryExpansionResult = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]) as QueryExpansionResult;
         result.subQueries = parsed.subQueries || [];
         result.keyTerms = parsed.keyTerms || [];
 
@@ -3797,13 +3797,12 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
           this.document.addEventListener('click', closeMenuNotice);
         }, 0);
 
-        const self = this;
-        function closeMenuNotice(event: MouseEvent) {
+        const closeMenuNotice = (event: MouseEvent) => {
           if (!menuEl.contains(event.target as Node) && event.target !== modelBtn) {
             menuEl.remove();
-            self.document.removeEventListener('click', closeMenuNotice);
+            this.document.removeEventListener('click', closeMenuNotice);
           }
-        }
+        };
         return;
       }
     }
@@ -3895,13 +3894,12 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
     window.setTimeout(() => {
       this.document.addEventListener('click', closeMenu);
     }, 0);
-    const self = this;
-    function closeMenu(event: MouseEvent) {
+    const closeMenu = (event: MouseEvent) => {
       if (!menuEl.contains(event.target as Node) && event.target !== modelBtn) {
         menuEl.remove();
-        self.document.removeEventListener('click', closeMenu);
+        this.document.removeEventListener('click', closeMenu);
       }
-    }
+    };
   }
 
   private async updateContextBar() {
@@ -4083,7 +4081,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
       void this.updateContextBar();
 
       if (step < steps) {
-        requestAnimationFrame(animate);
+        window.requestAnimationFrame(animate);
       } else {
         this.dynamicTokens = 0;
         this.outputTokens = 0;
@@ -4091,7 +4089,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
       }
     };
 
-    requestAnimationFrame(animate);
+    window.requestAnimationFrame(animate);
   }
 
   async onClose() {

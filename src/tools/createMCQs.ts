@@ -186,7 +186,7 @@ ${mcqSettings.customPrompt ? `Additional context for MCQ generation: ${mcqSettin
           },
         });
 
-        const response = await result.response;
+        const response = result.response;
         onProgress?.(90, 'Parsing and formatting response...');
         const mcqs = this.parseMCQs(response.text());
         
@@ -435,7 +435,7 @@ ${mcqSettings.customPrompt ? `Additional context: ${mcqSettings.customPrompt}` :
           })
         });
 
-        const mcqs = this.parseMCQs(resp.json.choices[0].message.content);
+        const mcqs = this.parseMCQs((resp.json as OpenAIChatCompletionResponse).choices?.[0]?.message?.content || '');
         
         if (mcqs.length === 0) {
           throw new Error('Failed to generate valid MCQs');
@@ -570,7 +570,7 @@ ${mcqSettings.customPrompt ? `Additional context: ${mcqSettings.customPrompt}` :
             ]
           })
         });
-        return resp.json.choices[0].message.content.trim();
+        return ((resp.json as OpenAIChatCompletionResponse).choices?.[0]?.message?.content || '').trim();
       }
     } catch {
             return 'Explanation unavailable';

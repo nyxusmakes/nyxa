@@ -235,7 +235,7 @@ export class OllamaService {
       }
 
       if (response.status >= 400) {
-        const errorData: OllamaErrorResponse = typeof response.json === 'object' ? response.json : { error: 'Unknown error' };
+        const errorData = (typeof response.json === 'object' ? response.json : { error: 'Unknown error' }) as OllamaErrorResponse;
         throw new OllamaApiError(errorData.error || `Ollama API error: ${response.status}`, response.status);
       }
 
@@ -243,24 +243,27 @@ export class OllamaService {
       return data.message?.content || '';
     } else {
       
-      const response = await fetch(`${this.baseUrl}/api/chat`, {
+      const response = await requestUrl({
+        url: `${this.baseUrl}/api/chat`,
         method: 'POST',
-        signal: options?.abortSignal,
         headers,
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
+        throw: false
       });
 
       
       if (this.onHeadersReceived) {
-        this.onHeadersReceived(response.headers);
+        const h = new Headers();
+        Object.entries(response.headers).forEach(([k, v]) => h.set(k, Array.isArray(v) ? v.join(', ') : v));
+        this.onHeadersReceived(h);
       }
 
-      if (!response.ok) {
-        const errorData: OllamaErrorResponse = await response.json().catch(() => ({ error: 'Unknown error' }));
+      if (response.status >= 400) {
+        const errorData = (await Promise.resolve(response.json).catch(() => ({ error: 'Unknown error' }))) as OllamaErrorResponse;
         throw new OllamaApiError(errorData.error || `Ollama API error: ${response.status}`, response.status);
       }
 
-      const data = await response.json() as OllamaChatResponse;
+      const data = response.json as OllamaChatResponse;
       return data.message?.content || '';
     }
   }
@@ -364,7 +367,7 @@ export class OllamaService {
       });
 
       if (response.status >= 400) {
-        const errorData: OllamaErrorResponse = typeof response.json === 'object' ? response.json : { error: 'Unknown error' };
+        const errorData = (typeof response.json === 'object' ? response.json : { error: 'Unknown error' }) as OllamaErrorResponse;
         throw new OllamaApiError(errorData.error || `Ollama API error: ${response.status}`, response.status);
       }
 
@@ -372,17 +375,19 @@ export class OllamaService {
       return data.models?.map((m: OllamaModelInfo) => m.name) || [];
     } else {
 
-      const response = await fetch(`${this.baseUrl}/api/tags`, {
+      const response = await requestUrl({
+        url: `${this.baseUrl}/api/tags`,
         method: 'GET',
-        headers
+        headers,
+        throw: false
       });
 
-      if (!response.ok) {
-        const errorData: OllamaErrorResponse = await response.json().catch(() => ({ error: 'Unknown error' }));
+      if (response.status >= 400) {
+        const errorData = (await Promise.resolve(response.json).catch(() => ({ error: 'Unknown error' }))) as OllamaErrorResponse;
         throw new OllamaApiError(errorData.error || `Ollama API error: ${response.status}`, response.status);
       }
 
-      const data = await response.json() as { models?: Array<{ name: string; size?: number; modified_at?: string }> };
+      const data = response.json as { models?: Array<{ name: string; size?: number; modified_at?: string }> };
       return data.models?.map((m: OllamaModelInfo) => m.name) || [];
     }
   }
@@ -444,7 +449,7 @@ export class OllamaService {
     }
 
     if (response.status >= 400) {
-      const errorData: OllamaErrorResponse = typeof response.json === 'object' ? response.json : { error: 'Unknown error' };
+      const errorData = (typeof response.json === 'object' ? response.json : { error: 'Unknown error' }) as OllamaErrorResponse;
       
       
       if (response.status === 401) {
@@ -521,7 +526,7 @@ export class OllamaService {
     }
 
     if (response.status >= 400) {
-      const errorData: OllamaErrorResponse = typeof response.json === 'object' ? response.json : { error: 'Unknown error' };
+      const errorData = (typeof response.json === 'object' ? response.json : { error: 'Unknown error' }) as OllamaErrorResponse;
       
       
       if (response.status === 401) {
@@ -613,27 +618,30 @@ export class OllamaService {
 
         data = response.json as OllamaChatResponse;
       } else {
-        const response = await fetch(`${this.baseUrl}/api/chat`, {
+        const response = await requestUrl({
+          url: `${this.baseUrl}/api/chat`,
           method: 'POST',
-          signal: options.abortSignal,
           headers: {
             'Content-Type': 'application/json',
             ...(this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {})
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
+          throw: false
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
+        if (response.status >= 400) {
+          const errorText = response.text;
           throw new OllamaApiError(`Ollama API error (${response.status}): ${errorText}`, response.status);
         }
 
         
         if (this.onHeadersReceived) {
-          this.onHeadersReceived(response.headers);
+          const h = new Headers();
+          Object.entries(response.headers).forEach(([k, v]) => h.set(k, Array.isArray(v) ? v.join(', ') : v));
+          this.onHeadersReceived(h);
         }
 
-        data = await response.json() as OllamaChatResponse;
+        data = response.json as OllamaChatResponse;
       }
       
       if (data.prompt_eval_count || data.eval_count) {

@@ -330,3 +330,52 @@ interface Window {
 interface OllamaTagsResponse {
     models?: Array<{ name: string; size?: number; modified_at?: string }>;
 }
+
+// ===== Embedding Response Types =====
+interface GeminiEmbeddingResponse {
+    embeddings: Array<{ values: number[] }>;
+}
+
+interface OpenAIEmbeddingResponse {
+    data: Array<{ embedding: number[] }>;
+    error?: { message?: string };
+}
+
+interface OllamaEmbedResponse {
+    embeddings: number[][];
+    error?: string;
+}
+
+// ===== Gemini Upload Types =====
+interface GeminiUploadResponse {
+    file: { uri: string };
+}
+
+// ===== YouTube oEmbed Types =====
+interface YouTubeOEmbedResponse {
+    title: string;
+    [key: string]: unknown;
+}
+
+// ===== Ollama Error Types =====
+interface OllamaErrorResponse {
+    error?: string;
+    message?: string;
+}
+
+// ===== Groq Error Types =====
+interface GroqErrorResponse {
+    error?: { message?: string; type?: string; code?: string };
+}
+
+// ===== Plan File Types =====
+interface PlanFile {
+    name?: string;
+    content?: string;
+    extension?: string;
+}
+
+interface PlanData {
+    folderName?: string;
+    files?: PlanFile[];
+}

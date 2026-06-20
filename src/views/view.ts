@@ -468,7 +468,7 @@ export class AITutorView extends ItemView {
   private _mcqSubmitBtn?: ButtonComponent;
   private _mcqProgressDialog?: HTMLElement;
   private _mcqEvaluationInProgress: boolean = false;
-  private _progressIntervalMap = new WeakMap<HTMLElement, ReturnType<typeof setInterval>>();
+  private _progressIntervalMap = new WeakMap<HTMLElement, number>();
 
   constructor(leaf: WorkspaceLeaf, settings: AISettings, plugin: AIPlugin) {
     super(leaf);
@@ -806,6 +806,7 @@ export class AITutorView extends ItemView {
   }
 
   private handleDeleteNotebook(notebookId: string) {
+    // eslint-disable-next-line no-restricted-globals
     if (confirm('Are you sure you want to delete this notebook?')) {
       
       (this.document.activeElement as HTMLElement)?.blur();
@@ -1403,7 +1404,9 @@ export class AITutorView extends ItemView {
     if (this.timerActive && this.timerType === 'mcq') {
       this.timerActive = false;
       this.timerEndTime = undefined;
-      this.timerInterval && window.clearInterval(this.timerInterval);
+      if (this.timerInterval) {
+        window.clearInterval(this.timerInterval);
+      }
       if (this.timerContainer) {
         const timerDisplay = this.timerContainer.querySelector('.timer-countdown') as HTMLElement;
         if (timerDisplay) timerDisplay.textContent = '00:00';
@@ -1515,7 +1518,7 @@ export class AITutorView extends ItemView {
     
     
     let progress = 0;
-    const progressInterval = setInterval(() => {
+    const progressInterval = window.setInterval(() => {
       progress += Math.random() * 15;
       if (progress > 90) progress = 90;
       progressFill.setCssProps({ '--progress-width':  `${progress}%` });
@@ -1529,7 +1532,7 @@ export class AITutorView extends ItemView {
     if (this._mcqProgressDialog) {
       const interval = this._progressIntervalMap.get(this._mcqProgressDialog);
       if (interval) {
-        clearInterval(interval);
+        window.clearInterval(interval);
       }
       this._progressIntervalMap.delete(this._mcqProgressDialog);
       
@@ -2207,6 +2210,7 @@ export class AITutorView extends ItemView {
   }
 
   private deleteSavedConceptMap(id: string) {
+    // eslint-disable-next-line no-restricted-globals
     if (confirm('Are you sure you want to delete this concept map from the saved list?')) {
       
       (this.document.activeElement as HTMLElement)?.blur();
@@ -2292,6 +2296,7 @@ export class AITutorView extends ItemView {
   }
 
   private deleteSavedSlideshow(id: string) {
+    // eslint-disable-next-line no-restricted-globals
     if (confirm('Are you sure you want to delete this slideshow from the saved list?')) {
       (this.document.activeElement as HTMLElement)?.blur();
       this.state.savedSlideshows = this.state.savedSlideshows.filter(s => s.id !== id);
@@ -2425,7 +2430,7 @@ export class AITutorView extends ItemView {
     
     
     if (this.timerInterval) {
-      clearInterval(this.timerInterval);
+      window.clearInterval(this.timerInterval);
       this.timerInterval = undefined;
     }
     
@@ -2545,7 +2550,9 @@ export class AITutorView extends ItemView {
     this.timerEndTime = Date.now() + ms;
     timerDisplay.addClass('nl-display-');
     this.updateTimerDisplay(timerDisplay);
-    this.timerInterval && window.clearInterval(this.timerInterval);
+    if (this.timerInterval) {
+      window.clearInterval(this.timerInterval);
+    }
     this.timerInterval = window.setInterval(() => {
       this.updateTimerDisplay(timerDisplay);
       if (this.timerEndTime && Date.now() >= this.timerEndTime) {
@@ -2566,7 +2573,9 @@ export class AITutorView extends ItemView {
     if (!this.timerActive) return;
     this.timerActive = false;
     this.timerEndTime = undefined;
-    this.timerInterval && window.clearInterval(this.timerInterval);
+    if (this.timerInterval) {
+      window.clearInterval(this.timerInterval);
+    }
     if (this.timerType === 'mcq') {
       this.evaluateMCQs();
       if (!this.timerNoticeShown) {

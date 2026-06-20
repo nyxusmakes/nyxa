@@ -16,7 +16,7 @@ export interface OramaResponse {
 export class OramaWorkerManager {
     private static instance: OramaWorkerManager;
     private worker: Worker | null = null;
-    private pendingRequests: Map<string, { resolve: Function, reject: Function }> = new Map();
+    private pendingRequests: Map<string, { resolve: (value: unknown) => void, reject: (reason?: unknown) => void }> = new Map();
 
     private constructor() {}
 

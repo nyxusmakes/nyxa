@@ -605,7 +605,7 @@ export default class AIPlugin extends Plugin {
 
     async saveSettings() {
         if (this.bookmarkedEntriesSet) {
-            this.settings.bookmarkedEntries = Array.from(this.bookmarkedEntriesSet.values()).map(jsonString => JSON.parse(jsonString));
+            this.settings.bookmarkedEntries = Array.from(this.bookmarkedEntriesSet.values()).map(jsonString => JSON.parse(jsonString) as Record<string, unknown>);
         }
         await this.saveData(this.settings);
 
@@ -1014,8 +1014,8 @@ export default class AIPlugin extends Plugin {
                     url: 'https://openrouter.ai/api/v1/credits',
                     headers: { 'Authorization': `Bearer ${this.settings.openRouterApiKey}` }
                 });
-                const data = response.json;
-                if (data && data.data) {
+                const data = response.json as { data?: { total_credits?: number; total_usage?: number } };
+                if (data?.data) {
                     const credits = data.data.total_credits ?? 0;
                     const usage = data.data.total_usage ?? 0;
                     if (credits - usage <= 0) {

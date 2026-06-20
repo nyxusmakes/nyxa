@@ -9,6 +9,14 @@ import { requestUrl } from 'obsidian';
  * 
  * Note: This uses the native Web Fetch API with FormData for robust cross-platform upload support.
  */
+interface GeminiErrorResponse {
+  error?: { message?: string };
+}
+
+interface GeminiUploadResponse {
+  file?: { uri?: string };
+}
+
 export class GeminiFileAPIService {
     private app: App;
     private settings: AISettings;
@@ -71,21 +79,19 @@ export class GeminiFileAPIService {
             formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
             formData.append('file', blob);
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${this.apiKey}`,
-                {
-                    method: 'POST',
-                    body: formData
-                }
-            );
+            const response = await requestUrl({
+                url: `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${this.apiKey}`,
+                method: 'POST',
+                body: formData as unknown as string
+            });
 
-            if (!response.ok) {
-                const errorData = await response.json();
+            if (response.status >= 400) {
+                const errorData = response.json as GeminiErrorResponse;
                 throw new Error(errorData.error?.message || `Upload failed with status ${response.status}`);
             }
 
-            const data = await response.json();
-            const fileUri = data.file.uri;
+            const data = response.json as GeminiUploadResponse;
+            const fileUri = data.file?.uri ?? '';
             
                         new Notice(`${file.name} uploaded successfully`);
 
@@ -147,7 +153,7 @@ export class GeminiFileAPIService {
                 url: `https://generativelanguage.googleapis.com/v1beta/files/${fileId}?key=${this.apiKey}`
             });
             
-            return response.json;
+            return response.json as Record<string, unknown>;
         } catch {
                         return null;
         }

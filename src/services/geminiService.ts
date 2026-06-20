@@ -6,6 +6,7 @@
  */
 
 import { GoogleGenerativeAI, GenerativeModel, ChatSession, GenerationConfig, Content } from '@google/generative-ai';
+import { requestUrl } from 'obsidian';
 
 interface OpenAIMessage {
   role: string;
@@ -117,23 +118,26 @@ export class GeminiService {
       requestBody.tools = tools;
     }
     
-    const response = await fetch(`${baseUrl}/models/${model}:generateContent?key=${apiKey}`, {
+    const response = await requestUrl({
+      url: `${baseUrl}/models/${model}:generateContent?key=${apiKey}`,
       method: 'POST',
-      signal: abortSignal,
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
+      throw: false
     });
     
-    if (!response.ok) {
-      const errorData = await response.json() as { error?: { message?: string } };
+    if (response.status >= 400) {
+      const errorData = response.json as { error?: { message?: string } };
       const errorMsg = errorData?.error?.message || `Gemini API error: ${response.status}`;
       throw new Error(typeof errorMsg === 'string' ? errorMsg : `Gemini API error: ${response.status}`);
     }
     
-    const data = await response.json() as GeminiApiResponse;
-    return { response: data, headers: response.headers };
+    const data = response.json as GeminiApiResponse;
+    const h = new Headers();
+    Object.entries(response.headers).forEach(([k, v]) => h.set(k, Array.isArray(v) ? v.join(', ') : v));
+    return { response: data, headers: h };
   }
   
   /**
@@ -445,8 +449,8 @@ export class GeminiService {
    * - additionalProperties
    * - $defs / definitions (not supported)
    */
-  private sanitizeSchemaForGemini(schema: unknown): Record<string, unknown> | unknown[] | unknown {
-    if (!schema || typeof schema !== 'object') return schema;
+  private sanitizeSchemaForGemini(schema: unknown): Record<string, unknown> | unknown[] | string | number | boolean | null {
+    if (!schema || typeof schema !== 'object') return schema as string | number | boolean | null;
     if (Array.isArray(schema)) return schema.map(item => this.sanitizeSchemaForGemini(item));
 
     const schemaObj = schema as Record<string, unknown>;

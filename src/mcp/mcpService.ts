@@ -249,13 +249,13 @@ export class MCPService {
                         connection.connected = true; 
                                                 settle();
                     })
-                    .catch((error) => {
+                    .catch((error: unknown) => {
                         connection.connected = false;
-                        settle(error);
+                        settle(error instanceof Error ? error : new Error(String(error)));
                     });
 
             } catch (error) {
-                                reject(error);
+                                reject(error instanceof Error ? error : new Error(String(error)));
             }
         });
     }
@@ -350,7 +350,7 @@ export class MCPService {
                     });
 
             } catch (error) {
-                reject(error);
+                reject(error instanceof Error ? error : new Error(String(error)));
             }
         });
     }
@@ -365,7 +365,7 @@ export class MCPService {
 
         while (Date.now() < deadline) {
             try {
-                await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
+                const response = await requestUrl({ url, method: 'GET', throw: false });
                 
                                 return;
             } catch (e: unknown) {
@@ -410,11 +410,11 @@ export class MCPService {
                     .catch((error) => {
                         
                         connection.connected = false;
-                        reject(error);
+                        reject(error instanceof Error ? error : new Error(String(error)));
                     });
 
             } catch (error) {
-                                reject(error);
+                                reject(error instanceof Error ? error : new Error(String(error)));
             }
         });
     }
@@ -493,7 +493,7 @@ export class MCPService {
                         })
                         .catch(error => {
                             connection.pendingRequests.delete(id);
-                            reject(error);
+                            reject(error instanceof Error ? error : new Error(String(error)));
                         });
                     return;
                 }
@@ -508,7 +508,7 @@ export class MCPService {
                     })
                     .catch(error => {
                         connection.pendingRequests.delete(id);
-                        reject(error);
+                        reject(error instanceof Error ? error : new Error(String(error)));
                     });
                 return;
             }
@@ -563,63 +563,59 @@ export class MCPService {
         }
 
         
-        try {
-            const headers: Record<string, string> = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json, text/event-stream',
-                'MCP-Protocol-Version': '2025-03-26',
-            };
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/event-stream',
+            'MCP-Protocol-Version': '2025-03-26',
+        };
 
-            if (config.apiKey && !url.includes('mcp.exa.ai')) {
-                
-                if (url.includes('composio.dev')) {
-                    headers['x-api-key'] = config.apiKey;
-                } else {
-                    headers['Authorization'] = `Bearer ${config.apiKey}`;
-                }
-            } else if (!config.apiKey && config.env) {
-                
-                const apiKeyEntry = Object.entries(config.env).find(([k]) =>
-                    k.toLowerCase().includes('api_key') || k.toLowerCase().includes('apikey') || k.toLowerCase().includes('token')
-                );
-                if (apiKeyEntry) {
-                    headers['Authorization'] = `Bearer ${apiKeyEntry[1]}`;
-                }
-            }
-
+        if (config.apiKey && !url.includes('mcp.exa.ai')) {
             
-            const response = await requestUrl({
-                url: effectiveUrl,
-                method: 'POST',
-                headers,
-                body: JSON.stringify(request),
-                throw: false,
-            });
-
-            if (response.status >= 400) {
-                                throw new Error(`HTTP ${response.status} - ${response.text}`);
+            if (url.includes('composio.dev')) {
+                headers['x-api-key'] = config.apiKey;
+            } else {
+                headers['Authorization'] = `Bearer ${config.apiKey}`;
             }
-
-            const contentType = response.headers['content-type'] || '';
-
+        } else if (!config.apiKey && config.env) {
             
-            if (contentType.includes('text/event-stream')) {
-                                return this.parseSSEBody(response.text, request.id as number, config.name);
+            const apiKeyEntry = Object.entries(config.env).find(([k]) =>
+                k.toLowerCase().includes('api_key') || k.toLowerCase().includes('apikey') || k.toLowerCase().includes('token')
+            );
+            if (apiKeyEntry) {
+                headers['Authorization'] = `Bearer ${apiKeyEntry[1]}`;
             }
-
-            
-            if (contentType.includes('application/json')) {
-                const result = response.json as JSONRPCResponse;
-                                if (result.error) {
-                    throw new Error(result.error.message || 'MCP request failed');
-                }
-                return result.result;
-            }
-
-            throw new Error(`Unexpected content type: ${contentType}`);
-        } catch (error) {
-                        throw error;
         }
+
+        
+        const response = await requestUrl({
+            url: effectiveUrl,
+            method: 'POST',
+            headers,
+            body: JSON.stringify(request),
+            throw: false,
+        });
+
+        if (response.status >= 400) {
+                            throw new Error(`HTTP ${response.status} - ${response.text}`);
+        }
+
+        const contentType = response.headers['content-type'] || '';
+
+        
+        if (contentType.includes('text/event-stream')) {
+                            return this.parseSSEBody(response.text, request.id as number, config.name);
+        }
+
+        
+        if (contentType.includes('application/json')) {
+            const result = response.json as JSONRPCResponse;
+                            if (result.error) {
+                throw new Error(result.error.message || 'MCP request failed');
+            }
+            return result.result;
+        }
+
+        throw new Error(`Unexpected content type: ${contentType}`);
     }
 
     /**
@@ -767,17 +763,10 @@ export class MCPService {
             throw new Error(`MCP server ${serverId} not connected`);
         }
 
-        
-        try {
-            const result = await this.sendRequest(serverId, 'tools/call', {
-                name: toolName,
-                arguments: args
-            });
-
-                        return result;
-        } catch (error) {
-                        throw error;
-        }
+        return this.sendRequest(serverId, 'tools/call', {
+            name: toolName,
+            arguments: args
+        });
     }
 
     /**
@@ -789,16 +778,9 @@ export class MCPService {
             throw new Error(`MCP server ${serverId} not connected`);
         }
 
-        
-        try {
-            const result = await this.sendRequest(serverId, 'resources/read', {
-                uri
-            });
-
-                        return result;
-        } catch (error) {
-                        throw error;
-        }
+        return this.sendRequest(serverId, 'resources/read', {
+            uri
+        });
     }
 
     /**

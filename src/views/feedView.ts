@@ -313,6 +313,7 @@ export class FeedView extends ItemView {
                     item.setTitle('Delete Folder')
                         .setIcon('trash')
                         .onClick(async () => {
+                            // eslint-disable-next-line no-restricted-globals
                             if (confirm(`Are you sure you want to delete the folder "${folder.name}" and all its feeds?`)) {
                                 this.plugin.settings.savedFeeds = this.plugin.settings.savedFeeds.filter(f => f.folderId !== folder.id);
                                 this.plugin.settings.feedFolders.splice(folderIndex, 1);
@@ -386,6 +387,7 @@ export class FeedView extends ItemView {
                                 item.setTitle('Delete Feed')
                                     .setIcon('trash')
                                     .onClick(async () => {
+                                        // eslint-disable-next-line no-restricted-globals
                                         if (confirm(`Are you sure you want to delete the feed "${feed.name}"?`)) {
                                             this.plugin.settings.savedFeeds = this.plugin.settings.savedFeeds.filter(f => f !== feed);
                                             await this.plugin.saveSettings();
