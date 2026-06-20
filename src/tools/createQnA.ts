@@ -9,12 +9,6 @@ import { NvidiaService, ChatMessage as NvidiaChatMessage } from '../services/nvi
 import { MultimodalInput, processFileForMultimodal, isTextFile } from '../utils/multimodalUtils';
 import { UnifiedProviderManager } from '../services/unifiedProviderManager';
 
-interface _OpenAIErrorResponse {
-  error: {
-    message: string;
-  };
-}
-
 interface GeminiPart {
   text?: string;
   inlineData?: {
@@ -705,7 +699,7 @@ SCORE: [number]
 
   async renderMarkdown(content: string, container: HTMLElement) {
     { const _comp = new Component();
-    await MarkdownRenderer.renderMarkdown(content, container, '.', _comp);
+    await MarkdownRenderer.render(this.app, content, container, '.', _comp);
     _comp.load(); }
   }
 }

@@ -71,14 +71,14 @@ export class EditSelectionModal extends Modal {
         // Proceed button
         const buttonContainer = contentEl.createDiv({ cls: 'edit-selection-button-container' });
         
-        const _proceedButton = new ButtonComponent(buttonContainer)
+        new ButtonComponent(buttonContainer)
             .setButtonText('Proceed')
             .setCta()
             .onClick(async () => {
                 await this.handleProceed();
             });
 
-        const _cancelButton = new ButtonComponent(buttonContainer)
+        new ButtonComponent(buttonContainer)
             .setButtonText('Cancel')
             .onClick(() => {
                 this.close();
@@ -335,12 +335,12 @@ function createInlineDiffWidget(originalText: string, editedText: string, diffId
     // Button container
     const buttonContainer = container.createDiv({ cls: 'edit-selection-diff-buttons' });
     
-    const _acceptBtn = buttonContainer.createEl('button', {
+    buttonContainer.createEl('button', {
         cls: 'edit-selection-accept-btn',
         text: '✓ Accept Changes'
     });
     
-    const _rejectBtn = buttonContainer.createEl('button', {
+    buttonContainer.createEl('button', {
         cls: 'edit-selection-reject-btn',
         text: '✗ Reject Changes'
     });

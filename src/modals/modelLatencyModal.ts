@@ -20,7 +20,7 @@ export class ModelLatencyModal extends Modal {
     
     // Header
     const headerContainer = contentEl.createDiv({ cls: 'latency-modal-header' });
-    const _title = headerContainer.createEl('h2', { text: `Model Latencies: ${this.providerId}` });
+    headerContainer.createEl('h2', { text: `Model Latencies: ${this.providerId}` });
     
     // Sort and filter models
     const latencyModels = this.models

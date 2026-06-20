@@ -112,7 +112,7 @@ export class MCPServerSelectionModal extends Modal {
                             connectBtn.remove();
                             this.loadServerResources(server.id, this.resourceContainers.get(server.id)!);
                             this.loadServerTools(server.id, this.toolContainers.get(server.id)!);
-                        } catch (err) {
+                        } catch {
                                                     connectBtn.disabled = false;
                             connectBtn.removeClass('mcp-connect-btn--loading');
                             setIcon(connectBtn, 'refresh-cw');
@@ -138,7 +138,7 @@ export class MCPServerSelectionModal extends Modal {
             });
 
             const details = serverItem.createEl('details', { cls: 'mcp-server-details' });
-            const _summary = details.createEl('summary', { text: 'Resources & Tools' });
+            details.createEl('summary', { text: 'Resources & Tools' });
 
             const resourcesSection = details.createDiv({ cls: 'mcp-section' });
             resourcesSection.createEl('h4', { text: 'Resources' });
@@ -219,7 +219,7 @@ export class MCPServerSelectionModal extends Modal {
                     }
                 });
             });
-        } catch (err) {
+        } catch {
             container.createEl('p', { text: 'Error loading resources', cls: 'mcp-error-hint' });
         }
     }
@@ -253,7 +253,7 @@ export class MCPServerSelectionModal extends Modal {
                     }
                 });
             });
-        } catch (err) {
+        } catch {
             container.createEl('p', { text: 'Error loading tools', cls: 'mcp-error-hint' });
         }
     }

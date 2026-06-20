@@ -1,4 +1,4 @@
-import { Notice, Modal, Setting, TFile, ButtonComponent, MarkdownRenderer, normalizePath, setIcon, Component, requestUrl, App } from 'obsidian';
+import { Notice, Modal, Setting, TFile, ButtonComponent, MarkdownRenderer, normalizePath, setIcon, Component, requestUrl, App, View } from 'obsidian';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AISettings, getModelTemperature, getModelTopP } from '../settings';
 import { GroqService, ChatMessage } from '../services/groqService';
@@ -7,12 +7,6 @@ import { OllamaService, ChatMessage as OllamaChatMessage } from '../services/oll
 import { NvidiaService, ChatMessage as NvidiaChatMessage } from '../services/nvidiaService';
 import { MultimodalInput, processFileForMultimodal, isTextFile } from '../utils/multimodalUtils';
 import { UnifiedProviderManager } from '../services/unifiedProviderManager';
-
-interface _OpenAIErrorResponse {
-  error: {
-    message: string;
-  };
-}
 
 export interface ConceptMapData {
   noteName: string;
@@ -33,7 +27,7 @@ const highlightOverlayMap = new WeakMap<HTMLElement, HTMLElement>();
 
 export class ConceptMapManager {
   private get doc(): Document {
-    const view = this.app.workspace.activeLeaf?.view;
+    const view = this.app.workspace.getActiveViewOfType(View);
     return (view && 'document' in view ? (view as { document: Document }).document : document);
   }
 
@@ -2993,7 +2987,7 @@ export class ConceptMapVisualizationModal extends Modal {
     `.trim();
 
     { const _comp = new Component();
-    MarkdownRenderer.renderMarkdown(helpContent, this.helpContainer, '', _comp);
+    MarkdownRenderer.render(this.app, helpContent, this.helpContainer, '', _comp);
     _comp.load(); }
   }
 

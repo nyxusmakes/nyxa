@@ -1,4 +1,4 @@
-import { App, Modal, TFile, Notice, ButtonComponent, MarkdownRenderer, Component, TFolder, normalizePath, Setting } from 'obsidian';
+import { App, Modal, TFile, Notice, ButtonComponent, MarkdownRenderer, Component, TFolder, normalizePath, Setting, View } from 'obsidian';
 import { AISettings, getModelTemperature, getModelTopP, getGeminiThinkingConfig } from '../settings';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { WebSearchService } from '../services/webSearch';
@@ -223,7 +223,7 @@ export class FileCreationReviewModal extends Modal {
         if (file.extension === 'md') {
           // Render markdown content
           const component = new Component();
-          MarkdownRenderer.renderMarkdown(file.content, contentPreview, '', component);
+          MarkdownRenderer.render(this.app, file.content, contentPreview, '', component);
         } else {
           // Show as code block
           const codeBlock = contentPreview.createEl('pre');
@@ -309,7 +309,7 @@ export async function handleFileCreationPrompt(
   let spinner: HTMLElement | null = null;
   try {
     // Try to find the file view header or fallback to workspace container
-    const view = app.workspace.activeLeaf?.view;
+    const view = app.workspace.getActiveViewOfType(View);
     const doc = (view && 'containerEl' in view) ? (view as { containerEl: HTMLElement }).containerEl.ownerDocument : document;
     const workspace = doc.querySelector('.workspace') || doc.body;
     spinner = doc.createElement('div');

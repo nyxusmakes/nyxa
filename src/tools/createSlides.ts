@@ -1068,7 +1068,7 @@ export class ZenSlideshowModal extends Modal {
     const progressFill = progressBar.createDiv({ cls: 'zen-progress-fill' });
     progressFill.id = 'zen-progress-fill';
 
-    const _slideCounter = progressWrapper.createDiv({ cls: 'slide-counter zen-counter' });
+    progressWrapper.createDiv({ cls: 'slide-counter zen-counter' });
      // Force flush
 
     // Do async work in setTimeout to avoid blocking UI
@@ -1206,7 +1206,7 @@ export class ZenSlideshowModal extends Modal {
     const mindmapContainer = slideWrapper.createDiv({ cls: 'zen-mindmap-container' });
     const treeContainer = mindmapContainer.createDiv({ cls: 'zen-mindmap-tree' });
     
-    const _rootNode = this.renderMindmapNode(treeContainer, slide.titleNode, true);
+    this.renderMindmapNode(treeContainer, slide.titleNode, true);
     
     if (slide.titleNode.children && slide.titleNode.children.length > 0) {
       const connector = treeContainer.createDiv({ cls: 'zen-connector' });
@@ -1237,7 +1237,7 @@ export class ZenSlideshowModal extends Modal {
     for (const child of children) {
       const branchItem = container.createDiv({ cls: 'zen-branch-item' });
       
-      const _nodeEl = this.renderMindmapNode(branchItem, child, false);
+      this.renderMindmapNode(branchItem, child, false);
       
       if (child.children && child.children.length > 0) {
         const connector = branchItem.createDiv({ cls: 'zen-connector' });

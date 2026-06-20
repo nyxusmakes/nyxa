@@ -190,7 +190,7 @@ export async function processFileForMultimodal(
         // For CSV and other text-based formats, read as text
         if (file.extension === 'csv' || isTextFile(file.name)) {
             const textContent = await app.vault.read(file);
-            const base64 = btoa(unescape(encodeURIComponent(textContent)));
+            const base64 = btoa(new TextEncoder().encode(textContent).reduce((s, b) => s + String.fromCharCode(b), ''));
             
             return {
                 type: 'inline',

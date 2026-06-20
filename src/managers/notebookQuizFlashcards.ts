@@ -198,7 +198,7 @@ Generate the MCQs now:`;
     let match;
     let index = 0;
     while ((match = mcqRegex.exec(text)) !== null) {
-      const [__unused, question, optA, optB, optC, optD, correct] = match;
+      const [, question, optA, optB, optC, optD, correct] = match;
       const correctIndex = correct.toUpperCase().trim().charCodeAt(0) - 'A'.charCodeAt(0);
       
       mcqs.push({
@@ -368,7 +368,7 @@ Generate the flashcards now:`;
     let match;
     let index = 0;
     while ((match = cardRegex.exec(text)) !== null) {
-      const [__unused, front, back] = match;
+      const [, front, back] = match;
       flashcards.push({
         id: `fc-${Date.now()}-${index}`,
         front: front.trim(),
@@ -927,7 +927,7 @@ export class FlashcardRenderer {
       this.state.currentIndex = visibleCards.length - 1;
     }
 
-    const _counterSpan = header.createEl('span', { 
+    header.createEl('span', { 
       text: `${this.state.currentIndex + 1} / ${visibleCards.length}`,
       cls: 'flashcard-counter'
     });

@@ -205,9 +205,6 @@ export class BasicChatService {
 
         const normalizedOllamaModelId = (currentModel || '').toLowerCase();
         const isOllamaGptOssModel = normalizedOllamaModelId.includes('gpt-oss');
-        const ollamaThinkOption = isOllamaGptOssModel
-            ? (this.settings.ollamaGptOssThinkingLevel || 'medium')
-            : !!this.settings.ollamaThinkingEnabled;
 
         
         
@@ -1749,12 +1746,6 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                     const key = `${cooldownModelId}:${cooldownProvider}`;
                     modelCooldownUntil.set(key, Date.now() + waitMs);
                                     };
-
-                const isModelOnCooldown = (mId: string, p: string): boolean => {
-                    const key = `${mId}:${p}`;
-                    const until = modelCooldownUntil.get(key) || 0;
-                    return until > Date.now();
-                };
 
                 const checkAndApplyCooldown = async (cooldownModelId: string, cooldownProvider: string): Promise<void> => {
                     if (!enableRateLimit) return;
@@ -4127,8 +4118,6 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                     const errMsg = lastError.message;
                     const errMsgLower = errMsg.toLowerCase();
 
-                    const isTimeout    = errMsg.includes('__MCP_TIMEOUT__');
-                    const isBlank      = errMsg.includes('__MCP_BLANK__');
                     const isRateLimit  = errMsgLower.includes('rate limit') || errMsgLower.includes('429');
                     const isTokenLimit = errMsgLower.includes('token') || errMsgLower.includes('context length') || errMsgLower.includes('maximum context') || errMsgLower.includes('413') || errMsgLower.includes('too large');
                     
@@ -4138,7 +4127,6 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                                          errMsgLower.includes('401') || errMsgLower.includes('not found') ||
                                          errMsgLower.includes('503') || errMsgLower.includes('tool call validation') ||
                                          errMsgLower.includes('not in request');
-                    const isUnavail    = errMsgLower.includes('unavailable') || isHardFail;
                     
                     const isAuthError  = errMsgLower.includes('401') || errMsgLower.includes('unauthorized') ||
                                          errMsgLower.includes('invalid api key') || errMsgLower.includes('api key not valid');

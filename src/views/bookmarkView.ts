@@ -61,7 +61,7 @@ export class BookmarkView extends ItemView {
                     thumbnailContainer.createEl('img', {
                         attr: { src: entry.thumbnail, alt: entry.title || 'Feed entry thumbnail' }
                     });
-                } catch (e) {
+                } catch {
                                         thumbnailContainer.createDiv({ text: entry.contentSnippet || 'No description available.', cls: 'feed-entry-description-placeholder' });
                 }
             } else {
@@ -71,7 +71,7 @@ export class BookmarkView extends ItemView {
             const content = card.createDiv({ cls: 'feed-entry-content' });
 
             
-            const _titleEl = content.createEl('h3', { text: entry.title || 'No Title' });
+            content.createEl('h3', { text: entry.title || 'No Title' });
             
 
             
@@ -90,7 +90,7 @@ export class BookmarkView extends ItemView {
                             cls: 'entry-date' 
                         });
                     }
-                } catch (e) {
+                } catch {
                                     }
             } else if (!entry.author) {
                 metadataLine.createEl('span', { text: 'No Date', cls: 'entry-date' });

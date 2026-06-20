@@ -39,14 +39,6 @@ interface OramaWorkerMessage {
     payload?: OramaWorkerPayload;
 }
 
-interface _OramaWorkerResponse {
-    success: boolean;
-    instanceId: string;
-    id?: string;
-    payload?: unknown;
-    error?: string;
-}
-
 interface OramaMetadata {
     dimension?: number;
     documents?: ShadowDoc[];

@@ -644,7 +644,7 @@ JSON:`;
 
         return result;
 
-    } catch (error) {
+    } catch {
                 // Fall back to no temporal filter on error
         return {
             cleanQuery: query,
