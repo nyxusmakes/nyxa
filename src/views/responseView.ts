@@ -7884,13 +7884,15 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             }
 
             
+            const comp = new Component();
             await MarkdownRenderer.render(
                 this.app,
                 previewText,
                 contentDiv,
                 file.path,
-                new Component()
+                comp
             );
+            comp.unload();
 
             
             if (this.contextMenuEl) {
