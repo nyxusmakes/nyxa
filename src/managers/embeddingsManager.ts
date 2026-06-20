@@ -702,7 +702,6 @@ export class EmbeddingsManager {
      * Get embeddings for multiple texts in a single batch request (Unified)
      */
     async getEmbeddingBatch(texts: string[], isQuery: boolean = false): Promise<number[][]> {
-        try {
             const { embeddingModel, geminiApiKey, openRouterApiKey, nvidiaApiKey } = this.settings;
             
             // Determine provider for the embedding model
@@ -731,16 +730,12 @@ export class EmbeddingsManager {
                 // Default to Gemini
                 return await this.getGeminiEmbeddingBatch(texts, embeddingModel, geminiApiKey);
             }
-        } catch (error) {
-                        throw error;
-        }
     }
 
     /**
      * Get embedding from a custom OpenAI-compatible provider
      */
     private async getCustomProviderEmbedding(text: string, modelId: string, provider: Record<string, unknown>): Promise<number[]> {
-        try {
                         
             const baseUrl = String(provider.baseUrl || '').replace(/\/+$/, '');
             const headers: Record<string, string> = {
@@ -774,16 +769,12 @@ export class EmbeddingsManager {
             }
             
             return resJson.data[0].embedding;
-        } catch (error) {
-                        throw error;
-        }
     }
 
     /**
      * Get embeddings from a custom OpenAI-compatible provider in batch
      */
     private async getCustomProviderEmbeddingBatch(texts: string[], modelId: string, provider: Record<string, unknown>): Promise<number[][]> {
-        try {
                         
             const baseUrl = String(provider.baseUrl || '').replace(/\/+$/, '');
             const headers: Record<string, string> = {
@@ -817,9 +808,6 @@ export class EmbeddingsManager {
             }
             
             return resJson.data.map((item: { embedding: number[] }) => item.embedding);
-        } catch (error) {
-                        throw error;
-        }
     }
 
     /**
@@ -846,7 +834,7 @@ export class EmbeddingsManager {
                 }]
             })
         });
-        return response.json.embeddings[0].values;
+        return (response.json as GeminiEmbeddingResponse).embeddings[0].values;
     }
 
     /**
@@ -869,11 +857,13 @@ export class EmbeddingsManager {
             })
         });
 
-        if (!response.json || !response.json.embeddings) {
+        const body = response.json as GeminiEmbeddingResponse;
+
+        if (!body || !body.embeddings) {
             throw new Error('Invalid response from Gemini batch API');
         }
 
-        return response.json.embeddings.map((emb: { values: number[] }) => emb.values);
+        return body.embeddings.map(emb => emb.values);
     }
 
     /**
@@ -881,7 +871,6 @@ export class EmbeddingsManager {
      * OpenRouter uses OpenAI-compatible embeddings endpoint
      */
     private async getOpenRouterEmbedding(text: string, modelId: string, apiKey: string): Promise<number[]> {
-        try {
                         
             const response = await requestUrl({
                 url: 'https://openrouter.ai/api/v1/embeddings',
@@ -899,19 +888,18 @@ export class EmbeddingsManager {
                 throw: false
             });
             
+            const body = response.json as OpenAIEmbeddingResponse;
+
                         
             if (response.status >= 400) {
-                                throw new Error(`OpenRouter API error: ${response.json?.error?.message || response.status}`);
+                                throw new Error(`OpenRouter API error: ${body.error?.message || response.status}`);
             }
             
-            if (!response.json || !response.json.data || !response.json.data[0] || !response.json.data[0].embedding) {
+            if (!body || !body.data || !body.data[0] || !body.data[0].embedding) {
                                 throw new Error('Invalid response from OpenRouter API');
             }
             
-            return response.json.data[0].embedding;
-        } catch (error) {
-                        throw error;
-        }
+            return body.data[0].embedding;
     }
 
     /**
@@ -919,7 +907,6 @@ export class EmbeddingsManager {
      * This is much faster than individual requests
      */
     private async getOpenRouterEmbeddingBatch(texts: string[], modelId: string, apiKey: string): Promise<number[][]> {
-        try {
                         
             const response = await requestUrl({
                 url: 'https://openrouter.ai/api/v1/embeddings',
@@ -937,19 +924,18 @@ export class EmbeddingsManager {
                 throw: false
             });
             
+            const body = response.json as OpenAIEmbeddingResponse;
+
                         
             if (response.status >= 400) {
-                                throw new Error(`OpenRouter batch API error: ${response.json?.error?.message || response.status}`);
+                                throw new Error(`OpenRouter batch API error: ${body.error?.message || response.status}`);
             }
             
-            if (!response.json || !response.json.data || !Array.isArray(response.json.data)) {
+            if (!body || !body.data || !Array.isArray(body.data)) {
                                 throw new Error('Invalid batch response from OpenRouter API');
             }
             
-            return response.json.data.map((item: { embedding: number[] }) => item.embedding);
-        } catch (error) {
-                        throw error;
-        }
+            return body.data.map(item => item.embedding);
     }
 
     /**
@@ -957,7 +943,6 @@ export class EmbeddingsManager {
      * Ollama uses its own embeddings endpoint
      */
     private async getOllamaEmbedding(text: string, modelId: string): Promise<number[]> {
-        try {
                         
             const baseUrl = this.settings.ollamaBaseUrl || 'http://localhost:11434';
             const isCloudMode = baseUrl.includes('ollama.com');
@@ -986,26 +971,24 @@ export class EmbeddingsManager {
                 throw: false
             });
             
+            const body = response.json as OllamaEmbedResponse;
+
                         
             if (response.status >= 400) {
-                                throw new Error(`Ollama API error: ${response.json?.error || response.status}`);
+                                throw new Error(`Ollama API error: ${body.error || response.status}`);
             }
             
-            if (!response.json || !response.json.embeddings || !response.json.embeddings[0]) {
+            if (!body.embeddings || !body.embeddings[0]) {
                                 throw new Error('Invalid response from Ollama API');
             }
             
-            return response.json.embeddings[0];
-        } catch (error) {
-                        throw error;
-        }
+            return body.embeddings[0];
     }
 
     /**
      * Get embeddings from Ollama API in batch
      */
     private async getOllamaEmbeddingBatch(texts: string[], modelId: string): Promise<number[][]> {
-        try {
                         
             const baseUrl = this.settings.ollamaBaseUrl || 'http://localhost:11434';
             const isCloudMode = baseUrl.includes('ollama.com');
@@ -1034,14 +1017,17 @@ export class EmbeddingsManager {
                 throw: false
             });
             
+            const body = response.json as OllamaEmbedResponse;
+
             if (response.status >= 400) {
-                throw new Error(`Ollama API error: ${response.json?.error || response.status}`);
+                throw new Error(`Ollama API error: ${body.error || response.status}`);
             }
             
-            return response.json.embeddings;
-        } catch (error) {
-                        throw error;
-        }
+            if (!body.embeddings) {
+                throw new Error('Invalid response from Ollama API');
+            }
+            
+            return body.embeddings;
     }
 
     /**
@@ -1049,7 +1035,6 @@ export class EmbeddingsManager {
      * Uses NVIDIA's /v1/embeddings endpoint
      */
     private async getNvidiaEmbedding(text: string, modelId: string, apiKey: string, isQuery: boolean = false): Promise<number[]> {
-        try {
                         
             const baseUrl = 'https://integrate.api.nvidia.com';
             
@@ -1077,26 +1062,24 @@ export class EmbeddingsManager {
                 throw: false
             });
             
+            const body = response.json as OpenAIEmbeddingResponse;
+
                         
             if (response.status >= 400) {
-                                throw new Error(`NVIDIA API error: ${response.json?.error?.message || response.status}`);
+                                throw new Error(`NVIDIA API error: ${body.error?.message || response.status}`);
             }
             
-            if (!response.json || !response.json.data || !response.json.data[0] || !response.json.data[0].embedding) {
+            if (!body || !body.data || !body.data[0] || !body.data[0].embedding) {
                                 throw new Error('Invalid response from NVIDIA API');
             }
             
-            return response.json.data[0].embedding;
-        } catch (error) {
-                        throw error;
-        }
+            return body.data[0].embedding;
     }
 
     /**
      * Get embeddings from NVIDIA NIM API in batch
      */
     private async getNvidiaEmbeddingBatch(texts: string[], modelId: string, apiKey: string, isQuery: boolean = false): Promise<number[][]> {
-        try {
                         
             const baseUrl = 'https://integrate.api.nvidia.com';
             const requestBody: Record<string, unknown> = {
@@ -1120,18 +1103,17 @@ export class EmbeddingsManager {
                 throw: false
             });
             
+            const body = response.json as OpenAIEmbeddingResponse;
+
             if (response.status >= 400) {
-                throw new Error(`NVIDIA API error: ${response.json?.error?.message || response.status}`);
+                throw new Error(`NVIDIA API error: ${body.error?.message || response.status}`);
             }
             
-            if (!response.json || !response.json.data) {
+            if (!body || !body.data) {
                 throw new Error('Invalid response from NVIDIA API');
             }
             
-            return response.json.data.map((item: { embedding: number[] }) => item.embedding);
-        } catch (error) {
-                        throw error;
-        }
+            return body.data.map(item => item.embedding);
     }
 
 

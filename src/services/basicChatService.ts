@@ -858,7 +858,7 @@ Instructions:
                                     const webContext = this.formatOllamaWebSearchResults(searchResults.results as unknown as OpenAITool[]);
                                     
                                     
-                                    ollamaMessages[0].content += `\n\n${webContext}`;
+                                    ollamaMessages[0].content = (ollamaMessages[0].content || '') + `\n\n${webContext}`;
                                     
                                     
                                     webResults = searchResults.results.map(r => ({
@@ -1103,7 +1103,8 @@ Instructions:
                     })
                 });
 
-                responseText = resp.json.choices[0].message.content;
+                const respData = resp.json as OpenAIChatCompletionResponse;
+                responseText = respData.choices?.[0]?.message?.content || '';
             }
 
             
@@ -1644,7 +1645,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                             ? JSON.parse(tc.function.arguments) as { selected_tools?: unknown[] }
                                             : tc.function.arguments;
                                         if (args?.selected_tools && Array.isArray(args.selected_tools)) {
-                                            extractedTools = args.selected_tools;
+                                            extractedTools = args.selected_tools as string[];
                                         }
                                     } catch {
                                         // Failed to parse - keep previous value
@@ -2063,20 +2064,22 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                 { temperature: getModelTemperature(this.settings.model, this.settings), maxOutputTokens: 8192, topP: getModelTopP(this.settings.model, this.settings) }
                             );
                         } else if (provider === 'openrouter') {
-                            const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                            const resp = await requestUrl({
+                                url: 'https://openrouter.ai/api/v1/chat/completions',
                                 method: 'POST',
                                 headers: { 'Authorization': `Bearer ${this.settings.openRouterApiKey}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://obsidian.md', 'X-Title': 'Obsidian AI Tutor' },
                                 body: JSON.stringify({ model: this.settings.model, messages: multiServerSynthPrompt, temperature: getModelTemperature(this.settings.model, this.settings), max_tokens: 8192, top_p: getModelTopP(this.settings.model, this.settings), stream: false })
                             });
-                            if (resp.ok) {
-                                const d = await resp.json();
+                            if (resp.status >= 200 && resp.status < 300) {
+                                const d = resp.json as OpenAIChatCompletionResponse;
                                 consolidatedAnswer = d.choices?.[0]?.message?.content || '';
                             } else {
                                 throw new Error(`OpenRouter synthesis error: ${resp.status}`);
                             }
                         } else if (provider === 'ollama') {
                             const baseUrl = this.settings.ollamaBaseUrl || 'http://localhost:11434';
-                            const resp = await fetch(`${baseUrl}/api/chat`, {
+                            const resp = await requestUrl({
+                                url: `${baseUrl}/api/chat`,
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -2087,8 +2090,8 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                     options: { temperature: getModelTemperature(this.settings.model, this.settings) }
                                 })
                             });
-                            if (resp.ok) {
-                                const d = await resp.json();
+                            if (resp.status >= 200 && resp.status < 300) {
+                                const d = resp.json as OllamaGenerateResponse;
                                 consolidatedAnswer = d.message?.content || '';
                             } else {
                                 throw new Error(`Ollama synthesis error: ${resp.status}`);
@@ -2441,20 +2444,22 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                     { temperature: getModelTemperature(this.settings.model, this.settings), maxOutputTokens: 8192, topP: getModelTopP(this.settings.model, this.settings) });
                                 synthResult = geminiResult;
                             } else if (provider === 'openrouter') {
-                                const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                                const resp = await requestUrl({
+                                    url: 'https://openrouter.ai/api/v1/chat/completions',
                                     method: 'POST',
                                     headers: { 'Authorization': `Bearer ${this.settings.openRouterApiKey}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://obsidian.md', 'X-Title': 'Obsidian AI Tutor' },
                                     body: JSON.stringify({ model: this.settings.model, messages: synthMessages, temperature: getModelTemperature(this.settings.model, this.settings), max_tokens: 8192, top_p: getModelTopP(this.settings.model, this.settings), stream: false })
                                 });
-                                if (resp.ok) {
-                                    const d = await resp.json();
+                                if (resp.status >= 200 && resp.status < 300) {
+                                    const d = resp.json as OpenAIChatCompletionResponse;
                                     synthResult = d.choices?.[0]?.message?.content || '';
                                 } else {
                                     throw new Error(`OpenRouter synthesis error: ${resp.status}`);
                                 }
                             } else if (provider === 'ollama') {
                                 const baseUrl = this.settings.ollamaBaseUrl || 'http://localhost:11434';
-                                const resp = await fetch(`${baseUrl}/api/chat`, {
+                                const resp = await requestUrl({
+                                    url: `${baseUrl}/api/chat`,
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -2465,8 +2470,8 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                         options: { temperature: getModelTemperature(this.settings.model, this.settings) }
                                     })
                                 });
-                                if (resp.ok) {
-                                    const d = await resp.json();
+                                if (resp.status >= 200 && resp.status < 300) {
+                                    const d = resp.json as OllamaGenerateResponse;
                                     synthResult = d.message?.content || '';
                                 } else {
                                     throw new Error(`Ollama synthesis error: ${resp.status}`);
@@ -2744,7 +2749,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                                             ? JSON.parse(tc.function.arguments) as { selected_tools?: unknown[] }
                                             : tc.function.arguments;
                                         if (args?.selected_tools && Array.isArray(args.selected_tools)) {
-                                            extractedTools = args.selected_tools;
+                                            extractedTools = args.selected_tools as string[];
                                         }
                                     } catch {
                                         // Failed to parse - keep previous value
@@ -4091,11 +4096,11 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                             modelEntry.modelId,
                             synthMsgs as unknown as OpenAIMessage[],
                             (token: string) => {
-                                if (timedPromise) timedPromise.disableTimer();
+                                if (timedPromise !== null && timedPromise !== undefined) timedPromise.disableTimer();
                                 updateSnippetUI('Generating response...', token);
                             },
                             (thinking: string) => {
-                                if (timedPromise) timedPromise.disableTimer();
+                                if (timedPromise !== null && timedPromise !== undefined) timedPromise.disableTimer();
                                 updateSnippetUI('Thinking...', thinking);
                             },
                             signal 

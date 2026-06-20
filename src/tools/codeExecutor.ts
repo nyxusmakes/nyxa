@@ -94,7 +94,7 @@ export async function executeCode(code: string, language: string): Promise<CodeE
 async function executeJavaScript(code: string): Promise<CodeExecutionResult> {
     const logs: string[] = [];
     try {
-        const AsyncFn = Object.getPrototypeOf(async function () {}).constructor;
+        const AsyncFn = Object.getPrototypeOf(async function () {}).constructor as new (code: string) => () => Promise<unknown>;
         const result = await new AsyncFn(code)();
         if (result !== undefined)
             logs.push(`→ ${typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)}`);
@@ -315,8 +315,8 @@ function stripTypeAnnotations(code: string): string {
     return code
         .replace(/\binterface\s+\w+\s*\{[^}]*\}/gs, '')
         .replace(/\btype\s+\w+\s*=\s*[^;]+;/g, '')
-        .replace(/:\s*[\w<>\[\]|&,\s]+(?=\s*[=,);{])/g, '')
-        .replace(/\)\s*:\s*[\w<>\[\]|&,\s]+(?=\s*\{)/g, ')')
+        .replace(/:\s*[\w<>[\]|&,\s]+(?=\s*[=,);{])/g, '')
+        .replace(/\)\s*:\s*[\w<>[\]|&,\s]+(?=\s*\{)/g, ')')
         .replace(/<[^>()]*>/g, '')
-        .replace(/\bas\s+[\w<>\[\]|&,\s]+/g, '');
+        .replace(/\bas\s+[\w<>[\]|&,\s]+/g, '');
 }

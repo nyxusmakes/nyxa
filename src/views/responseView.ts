@@ -1667,7 +1667,7 @@ export class ResponseView extends ItemView {
         });
 
         // Deterministic scaling using CSS transform
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             if (!nameSpan.parentElement) return;
             
             // Fixed available width: button width (130px) minus padding and icon
@@ -9294,7 +9294,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         const files = this.app.vault.getFiles();
         for (const file of files) {
             if (file.path.startsWith(folderPath) && file.extension === 'canvas') {
-                await this.app.vault.delete(file);
+                await this.app.fileManager.trashFile(file);
                 break; 
             }
         }
@@ -9308,7 +9308,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         const files = this.app.vault.getFiles();
         for (const file of files) {
             if (file.path.startsWith(folderPath) && file.extension === 'md' && file.basename.includes('diagram')) {
-                await this.app.vault.delete(file);
+                await this.app.fileManager.trashFile(file);
                 break;
             }
         }
@@ -9371,17 +9371,18 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
 
             const file = this.app.vault.getAbstractFileByPath(filePath);
             if (file) {
-                await this.app.vault.delete(file);
+                await this.app.fileManager.trashFile(file);
             }
         }
 
         
         try {
-            const folder = this.app.vault.getAbstractFileByPath(plan.folderName);
-            if (folder && folder instanceof this.app.vault.adapter.constructor && 'children' in folder) {
-                const folderChildren = (folder as TFolder).children;
+            const abstractFile = this.app.vault.getAbstractFileByPath(plan.folderName);
+            if (abstractFile instanceof TFolder) {
+                const folder = abstractFile;
+                const folderChildren = folder.children;
                 if (folderChildren && folderChildren.length === 0) {
-                    await this.app.vault.delete(folder);
+                    await this.app.vault.trash(folder, false);
                 }
             }
         } catch {
@@ -9775,9 +9776,8 @@ IMPORTANT RULES:
             }
         }
 
-        try {
-            
-            let contextInfo = '';
+        
+        let contextInfo = '';
             if (context.contextFiles.length > 0) {
                 contextInfo = `\n\nCONTEXT FILES PROVIDED:\n${context.contextFiles.map((f: ContextFile) => `- ${f.basename}: ${f.content.substring(0, 200)}...`).join('\n')}`;
             }
@@ -9953,9 +9953,6 @@ CRITICAL:
             }
 
             return plan;
-        } catch (err) {
-                        throw err;
-        }
     }
 
     private async generateDetailedFileContent(initialPlan: FileCreationPlan, context: DiagramGenerationContext, autoSelectedModel: ModelSelection | null = null): Promise<FileCreationPlan> {
@@ -11199,7 +11196,7 @@ class CodeCanvasModal extends Modal {
                 } else if (result.isMarkdown && result.markdownContent) {
                     previewArea.addClass('nl-padding-');
                     { const _comp = new Component();
-                    await MarkdownRenderer.render(this.app, result.markdownContent, previewArea, '', _comp);
+                    void MarkdownRenderer.render(this.app, result.markdownContent, previewArea, '', _comp);
                     _comp.load(); }
                 } else if (!result.success) {
                     previewArea.createEl('pre', { cls: 'code-exec-output-text', text: `Error: ${result.error}` });
@@ -11211,7 +11208,7 @@ class CodeCanvasModal extends Modal {
                 ? code
                 : wrapInMarkdownFence(code, lang);
             { const _comp = new Component();
-            await MarkdownRenderer.render(this.app, fenced, previewArea, '', _comp);
+            void MarkdownRenderer.render(this.app, fenced, previewArea, '', _comp);
             _comp.load(); }
         };
 
@@ -11326,7 +11323,7 @@ class CodeCanvasModal extends Modal {
             } else if (result.isMarkdown && result.markdownContent) {
                 outputArea.classList.add('code-canvas-render-area');
                 { const _comp = new Component();
-                await MarkdownRenderer.render(this.app, result.markdownContent, outputArea, '', _comp);
+                void MarkdownRenderer.render(this.app, result.markdownContent, outputArea, '', _comp);
                 _comp.load(); }
             } else if (result.success) {
                 const pre = outputArea.createEl('pre', { cls: 'code-exec-output-text' });

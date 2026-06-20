@@ -21,6 +21,10 @@ interface PlayerCaptions {
     playerCaptionsTracklistRenderer: PlayerCaptionsTracklistRenderer;
 }
 
+interface YouTubeOEmbedResponse {
+    title?: string;
+}
+
 interface YouTubePlayerResponse {
     captions?: PlayerCaptions;
     playabilityStatus?: { status: string; reason?: string };
@@ -66,8 +70,9 @@ export class YouTubeTranscriptService {
                     method: 'GET',
                     headers: { 'User-Agent': this.CAPTION_USER_AGENT },
                 });
-                if (oembedRes.status === 200 && oembedRes.json?.title) {
-                    return oembedRes.json.title as string;
+                const oembedData = oembedRes.json as YouTubeOEmbedResponse;
+                if (oembedRes.status === 200 && oembedData?.title) {
+                    return oembedData.title;
                 }
             }
         } catch {

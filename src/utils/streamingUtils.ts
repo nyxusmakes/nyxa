@@ -39,7 +39,7 @@ export async function simulatedStream(
 ): Promise<Record<string, string>> {
   if (abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
-  const parsedBody: { stream?: boolean; [key: string]: unknown } = JSON.parse(body);
+  const parsedBody = JSON.parse(body) as { stream?: boolean; [key: string]: unknown };
   parsedBody.stream = false;
   const nonStreamBody = JSON.stringify(parsedBody);
 
@@ -100,6 +100,7 @@ export async function fetchStream(
 ): Promise<void> {
   if (abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
+  // eslint-disable-next-line no-restricted-globals
   const response = await fetch(url, {
     method: 'POST',
     signal: abortSignal,
@@ -163,7 +164,7 @@ export function createOllamaParser(): LineStreamParser {
     const trimmed = line.trim();
     if (!trimmed) return { done: false };
     try {
-      const data: OllamaStreamChunk = JSON.parse(trimmed);
+      const data = JSON.parse(trimmed) as OllamaStreamChunk;
       return {
         content: data.message?.content || undefined,
         thinking: data.message?.thinking || undefined,

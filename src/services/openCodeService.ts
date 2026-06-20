@@ -47,48 +47,44 @@ export class OpenCodeProvider extends BaseProvider {
         if (options?.topP !== undefined) body.top_p = options.topP;
         if (options?.maxTokens !== undefined) body.max_tokens = options.maxTokens;
 
-        try {
-            const response = await requestUrl({
-                url: `${this.baseUrl}/chat/completions`,
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://obsidian.md',
-                    'X-Title': 'Nexus-LM'
-                },
-                body: JSON.stringify(body),
-                throw: false
-            });
+        const response = await requestUrl({
+            url: `${this.baseUrl}/chat/completions`,
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://obsidian.md',
+                'X-Title': 'Nexus-LM'
+            },
+            body: JSON.stringify(body),
+            throw: false
+        });
 
-            if (response.status >= 400) {
-                const errorData = (typeof response.json === 'object' ? response.json : {}) as { error?: { message?: string } };
-                throw new Error(`OpenCode API error: ${response.status} ${errorData.error?.message || 'Request failed'}`);
-            }
-
-            // Standardize headers for RateLimitManager
-            const headersObj = new Headers();
-            Object.entries(response.headers).forEach(([key, value]) => {
-                headersObj.set(key, Array.isArray(value) ? value.join(', ') : value);
-            });
-            RateLimitManager.getInstance().updateFromHeaders(this.id, modelId, headersObj);
-
-            const data = response.json as OpenAIChatCompletionResponse;
-            if (data.usage) {
-                RateLimitManager.getInstance().recordApiCall(this.id, modelId, data.usage.total_tokens ?? 0);
-            }
-
-            return {
-                text: (data.choices ?? [])[0]?.message?.content || '',
-                usage: data.usage ? {
-                    promptTokens: data.usage.prompt_tokens!,
-                    completionTokens: data.usage.completion_tokens!,
-                    totalTokens: data.usage.total_tokens!
-                } : undefined
-            };
-        } catch (error) {
-            throw error;
+        if (response.status >= 400) {
+            const errorData = (typeof response.json === 'object' ? response.json : {}) as { error?: { message?: string } };
+            throw new Error(`OpenCode API error: ${response.status} ${errorData.error?.message || 'Request failed'}`);
         }
+
+        // Standardize headers for RateLimitManager
+        const headersObj = new Headers();
+        Object.entries(response.headers).forEach(([key, value]) => {
+            headersObj.set(key, Array.isArray(value) ? value.join(', ') : value);
+        });
+        RateLimitManager.getInstance().updateFromHeaders(this.id, modelId, headersObj);
+
+        const data = response.json as OpenAIChatCompletionResponse;
+        if (data.usage) {
+            RateLimitManager.getInstance().recordApiCall(this.id, modelId, data.usage.total_tokens ?? 0);
+        }
+
+        return {
+            text: (data.choices ?? [])[0]?.message?.content || '',
+            usage: data.usage ? {
+                promptTokens: data.usage.prompt_tokens!,
+                completionTokens: data.usage.completion_tokens!,
+                totalTokens: data.usage.total_tokens!
+            } : undefined
+        };
     }
 
     async streamContent(
@@ -192,79 +188,75 @@ export class OpenCodeProvider extends BaseProvider {
                 requestBody.tool_choice = currentToolChoice;
             }
 
-            try {
-                const response = await requestUrl({
-                    url: `${this.baseUrl}/chat/completions`,
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${this.apiKey}`,
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': 'https://obsidian.md',
-                        'X-Title': 'Nexus-LM'
-                    },
-                    body: JSON.stringify(requestBody),
-                    throw: false
-                });
+            const response = await requestUrl({
+                url: `${this.baseUrl}/chat/completions`,
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://obsidian.md',
+                    'X-Title': 'Nexus-LM'
+                },
+                body: JSON.stringify(requestBody),
+                throw: false
+            });
 
-                if (response.status >= 400) {
+            if (response.status >= 400) {
                 const errorData = (typeof response.json === 'object' ? response.json : {}) as { error?: { message?: string } };
                 throw new Error(`OpenCode API error: ${response.status} ${errorData.error?.message || 'Request failed'}`);
             }
 
-                const headersObj = new Headers();
-                Object.entries(response.headers).forEach(([key, value]) => {
-                    headersObj.set(key, Array.isArray(value) ? value.join(', ') : value);
-                });
-                RateLimitManager.getInstance().updateFromHeaders(this.id, modelId, headersObj);
+            const headersObj = new Headers();
+            Object.entries(response.headers).forEach(([key, value]) => {
+                headersObj.set(key, Array.isArray(value) ? value.join(', ') : value);
+            });
+            RateLimitManager.getInstance().updateFromHeaders(this.id, modelId, headersObj);
 
-                const data = response.json as OpenAIChatCompletionResponse;
-                if (data.usage) {
-                    totalTokens += (data.usage.total_tokens || 0);
-                    RateLimitManager.getInstance().recordApiCall(this.id, modelId, data.usage.total_tokens ?? 0);
-                }
-
-                const message = data.choices?.[0]?.message;
-                if (!message) break;
-                conversationMessages.push(message as unknown as UnifiedMessage);
-
-                if (message.tool_calls && message.tool_calls.length > 0) {
-                    toolRoundsExecuted++;
-                    if (currentToolChoice === 'required') currentToolChoice = 'auto';
-                    
-                    if (executeToolsCallback) {
-                        const toolResults = await executeToolsCallback(message.tool_calls as Record<string, unknown>[]);
-                        for (let i = 0; i < message.tool_calls.length; i++) {
-                            const toolCall = message.tool_calls[i] as Record<string, unknown>;
-                            const toolResult = toolResults[i];
-                            conversationMessages.push({
-                                role: 'tool',
-                                tool_call_id: toolCall.id as string,
-                                name: (toolCall.function as Record<string, unknown>).name as string,
-                                content: toolResult.success ? toolResult.content : `Error: ${toolResult.error}`
-                            } as unknown as UnifiedMessage);
-                        }
-                        continue;
-                    } else throw new Error('Tool calls requested but no executeToolsCallback provided');
-                }
-
-                if (message.content) {
-                    fullContent = message.content;
-                    if (streamCallback) streamCallback(fullContent);
-                    break;
-                }
-
-                if (toolRoundsExecuted > 0 && nudgeCount < MAX_CONTINUATION_NUDGES) {
-                    nudgeCount++;
-                    conversationMessages.push({
-                        role: 'user',
-                        content: 'Please synthesise a final answer based on the tool results above.'
-                    });
-                    continue;
-                }
-                break;
-            } catch (error) {
-                throw error;
+            const data = response.json as OpenAIChatCompletionResponse;
+            if (data.usage) {
+                totalTokens += (data.usage.total_tokens || 0);
+                RateLimitManager.getInstance().recordApiCall(this.id, modelId, data.usage.total_tokens ?? 0);
             }
+
+            const message = data.choices?.[0]?.message;
+            if (!message) break;
+            conversationMessages.push(message as unknown as UnifiedMessage);
+
+            if (message.tool_calls && message.tool_calls.length > 0) {
+                toolRoundsExecuted++;
+                if (currentToolChoice === 'required') currentToolChoice = 'auto';
+                
+                if (executeToolsCallback) {
+                    const toolResults = await executeToolsCallback(message.tool_calls as Record<string, unknown>[]);
+                    for (let i = 0; i < message.tool_calls.length; i++) {
+                        const toolCall = message.tool_calls[i] as Record<string, unknown>;
+                        const toolResult = toolResults[i];
+                        conversationMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id as string,
+                            name: (toolCall.function as Record<string, unknown>).name as string,
+                            content: toolResult.success ? toolResult.content : `Error: ${toolResult.error}`
+                        } as unknown as UnifiedMessage);
+                    }
+                    continue;
+                } else throw new Error('Tool calls requested but no executeToolsCallback provided');
+            }
+
+            if (message.content) {
+                fullContent = message.content;
+                if (streamCallback) streamCallback(fullContent);
+                break;
+            }
+
+            if (toolRoundsExecuted > 0 && nudgeCount < MAX_CONTINUATION_NUDGES) {
+                nudgeCount++;
+                conversationMessages.push({
+                    role: 'user',
+                    content: 'Please synthesise a final answer based on the tool results above.'
+                });
+                continue;
+            }
+            break;
         }
         return { content: fullContent, totalTokens };
     }

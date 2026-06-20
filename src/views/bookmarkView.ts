@@ -141,6 +141,7 @@ export class BookmarkView extends ItemView {
                 .setIcon('bookmark-x') 
                 .setTooltip('Remove bookmark')
                 .onClick(async () => {
+                    // eslint-disable-next-line no-restricted-globals
                     if (confirm(`Are you sure you want to remove "${entry.title || 'this entry'}" from bookmarks?`)) {
                         this.plugin.removeBookmark(entry);
                         new Notice('Bookmark removed!');

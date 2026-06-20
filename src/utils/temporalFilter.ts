@@ -620,7 +620,7 @@ JSON:`;
             };
         }
 
-        const parsed: TemporalFilterInput = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]) as TemporalFilterInput;
         
         if (!parsed.hasTime) {
             return {

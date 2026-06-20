@@ -12,7 +12,7 @@ export function stripMarkdown(markdown: string): string {
   stripped = stripped.replace(/```[\s\S]*?```/g, '');
   stripped = stripped.replace(/`([^`]+)`/g, '$1');
   // Remove bullet points and numbered lists
-  stripped = stripped.replace(/^\s*[\-*+]\s|^\s*\d+\.\s/gm, '');
+  stripped = stripped.replace(/^\s*[-*+]\s|^\s*\d+\.\s/gm, '');
   // Remove horizontal rules
   stripped = stripped.replace(/^-{3,}$|^\*{3,}$|^_{3,}$/gm, '');
   // Remove multiple newlines, replace with single newline

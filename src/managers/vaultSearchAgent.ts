@@ -1285,8 +1285,8 @@ RESPONSE QUALITY CHECKLIST:
         if (invalidCitations.size === 0) return answer;
 
         
-        let cleaned = answer.replace(/\[\^(\d+)\]/g, (match, numStr) => {
-            return invalidCitations.has(parseInt(numStr)) ? '' : match;
+        let cleaned = answer.replace(/\[\^(\d+)\]/g, (match: string, numStr: string) => {
+            return invalidCitations.has(parseInt(numStr, 10)) ? '' : match;
         });
 
         

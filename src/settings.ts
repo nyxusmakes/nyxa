@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice, Modal, setIcon, TFolder, Platform } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, Modal, setIcon, TFolder, Platform, requestUrl } from 'obsidian';
 import { MCPRegistryModal } from './modals/mcpRegistryModal';
 import { ModelLatencyModal } from './modals/modelLatencyModal';
 import { CustomProviderModal } from './modals/customProviderModal';
@@ -1190,19 +1190,17 @@ await this.plugin.saveSettings();
        this.plugin.settings.modelCache = {};
    }
 
-   // Chat Models: Gemini, Opencode, Openrouter, Ollama, Nvidia, Groq
-   if (true) {
-       // Force filter ALL models for this provider regardless of status
-       this.plugin.settings.customModels = this.plugin.settings.customModels.filter((m: CustomModel) => m.provider !== provider);
+        // Chat Models: Gemini, Opencode, Openrouter, Ollama, Nvidia, Groq
+        // Force filter ALL models for this provider regardless of status
+        this.plugin.settings.customModels = this.plugin.settings.customModels.filter((m: CustomModel) => m.provider !== provider);
 
-       // Clear from cache to prevent immediate re-population
-       if (provider === 'gemini') this.plugin.settings.modelCache.gemini = [];
-       if (provider === 'openrouter') this.plugin.settings.modelCache.openrouter = [];
-       if (provider === 'opencode') this.plugin.settings.modelCache.opencode = [];
-       if (provider === 'ollama') this.plugin.settings.modelCache.ollama = [];
-       if (provider === 'nvidia') this.plugin.settings.modelCache.nvidia = [];
-       if (provider === 'groq') this.plugin.settings.modelCache.groq = [];
-   }
+        // Clear from cache to prevent immediate re-population
+        if (provider === 'gemini') this.plugin.settings.modelCache.gemini = [];
+        if (provider === 'openrouter') this.plugin.settings.modelCache.openrouter = [];
+        if (provider === 'opencode') this.plugin.settings.modelCache.opencode = [];
+        if (provider === 'ollama') this.plugin.settings.modelCache.ollama = [];
+        if (provider === 'nvidia') this.plugin.settings.modelCache.nvidia = [];
+        if (provider === 'groq') this.plugin.settings.modelCache.groq = [];
 
    // Embedding Models: Gemini, Openrouter, Nvidia, Opencode (Except Ollama)
    if (provider !== 'ollama') {
@@ -1419,6 +1417,7 @@ await this.plugin.saveSettings();
       const deleteBtn = actionsCell.createEl('button', { cls: 'index-action-btn index-delete-btn' });
       setIcon(deleteBtn, 'trash-2');
       deleteBtn.addEventListener('click', () => { void (async () => {
+        // eslint-disable-next-line no-restricted-globals
         const confirmed = confirm(`Are you sure you want to delete the provider "${provider.name}"? This may affect models using this provider.`);
         if (confirmed) {
           this.plugin.settings.customProviders = this.plugin.settings.customProviders.filter((p: CustomProviderConfig) => p.id !== provider.id);
@@ -1829,6 +1828,7 @@ await this.plugin.saveSettings();
         deleteBtn.disabled = index.isBuilding || false;
 
         deleteBtn.addEventListener('click', () => { void (async () => {
+          // eslint-disable-next-line no-restricted-globals
           const confirmed = confirm(`Are you sure you want to delete the index "${index.name}"? This will also permanently delete the index file from your vault.`);
           if (!confirmed) return;
 
@@ -2147,13 +2147,13 @@ await this.plugin.saveSettings();
         // Check if Ollama is accessible and model is available
         try {
           const baseUrl = this.plugin.settings.ollamaBaseUrl || 'http://localhost:11434';
-          const response = await fetch(`${baseUrl}/api/tags`);
+          const response = await requestUrl({ url: `${baseUrl}/api/tags`, method: 'GET', throw: false });
           
-          if (!response.ok) {
+          if (response.status >= 400) {
             throw new Error('Ollama not accessible');
           }
           
-          const data = await response.json() as OllamaTagsResponse;
+          const data = response.json as OllamaTagsResponse;
           const availableModels = data.models?.map((m: { name: string }) => m.name) || [];
           
           // Check if the model is pulled
@@ -2433,7 +2433,6 @@ if (this.validatePath(normalizedPath)) {
                 await this.plugin.saveSettings();
                 new Notice('PDF output directory updated');
               } else {
-                Notice;
                 new Notice('Invalid directory path');
               }
             })
@@ -2765,9 +2764,9 @@ if (this.validatePath(normalizedPath)) {
       badge.setAttribute('title', 'Newly discovered or modified model');
     }
 
-    nameInput.addEventListener('change', async () => {
+    nameInput.addEventListener('change', () => {
       model.name = nameInput.value;
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     });
     // Token Limit cell
     const tokenCell = row.createEl('td');
@@ -3506,7 +3505,8 @@ if (this.validatePath(normalizedPath)) {
             return;
           }
           // Use Node's child_process — available in Electron/Obsidian desktop
-          const { execSync } = window.require('child_process');
+          const childProcess = window.require('child_process') as { execSync: (cmd: string, opts?: Record<string, unknown>) => string };
+          const { execSync } = childProcess;
           const version = execSync(cmd, { timeout: 5000, encoding: 'utf8' }).trim();
 
           statusEl.textContent = `✅ Installed — ${version}`;
@@ -3693,6 +3693,7 @@ if (this.validatePath(normalizedPath)) {
     });
     setIcon(deleteBtn, 'trash-2');
     deleteBtn.addEventListener('click', () => { void (async () => {
+      // eslint-disable-next-line no-restricted-globals
       if (confirm(`Delete MCP server "${server.name}"?`)) {
         this.plugin.settings.mcpServers.splice(index, 1);
         await this.plugin.saveSettings();

@@ -425,13 +425,13 @@ export function triggerConfetti(element: HTMLElement) {
       });
       
       if (elapsed < 1.5) {
-        requestAnimationFrame(animate);
+        window.requestAnimationFrame(animate);
       } else {
         confetti.remove();
       }
     }
     
-    requestAnimationFrame(animate);
+    window.requestAnimationFrame(animate);
   }
 }
 

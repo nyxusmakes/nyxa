@@ -110,7 +110,7 @@ export class CustomOpenAIProvider extends BaseProvider {
             });
             RateLimitManager.getInstance().updateFromHeaders(this.id, modelId, headersObj);
 
-            const data: OpenAIChatCompletionResponse = response.json;
+            const data = response.json as OpenAIChatCompletionResponse;
             
             // Record API call usage
             if (data.usage) {
@@ -287,7 +287,7 @@ export class CustomOpenAIProvider extends BaseProvider {
                 });
                 RateLimitManager.getInstance().updateFromHeaders(this.id, modelId, headersObj);
 
-                const data: OpenAIChatCompletionResponse = response.json;
+                const data = response.json as OpenAIChatCompletionResponse;
                 
                 if (data.usage) {
                     totalTokens += (data.usage.total_tokens ?? 0);

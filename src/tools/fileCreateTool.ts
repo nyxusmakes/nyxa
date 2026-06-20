@@ -921,7 +921,9 @@ function isValidPlan(plan: Record<string, unknown>): boolean {
   if (plan.files.length === 0) return false;
   
   // Check each file has required fields
-  for (const file of plan.files) {
+  const files = plan.files as FileCreationPlan['files'];
+  if (!Array.isArray(files)) return false;
+  for (const file of files) {
     if (!file.name || typeof file.name !== 'string') return false;
     if (!file.content || typeof file.content !== 'string') return false;
     // extension is optional, will be set to 'md' by default
