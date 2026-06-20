@@ -301,7 +301,8 @@ export class EmbeddingsManager {
                 try {
                     cb(status);
                 } catch {
-                                    }
+                    // Event handler error - safe to ignore
+                }
             });
         }
     }
@@ -641,7 +642,8 @@ export class EmbeddingsManager {
                 // Check if it's a custom provider
                 const customProvider = this.settings.customProviders?.find(p => p.id === provider);
                 if (customProvider && customProvider.enableEmbeddings) {
-                                    } else if (!geminiApiKey || geminiApiKey.trim() === '') {
+                    // Custom provider with embeddings enabled - no API key validation needed
+                } else if (!geminiApiKey || geminiApiKey.trim() === '') {
                     // Default to Gemini
                                         throw new Error('Gemini API key is required for embeddings. Please configure your Gemini API key in settings.');
                 }
@@ -1376,6 +1378,7 @@ export class EmbeddingsManager {
                 try {
                     await this.saveIndex(indexId);
                 } catch {
+                    // File may not exist or be accessible - safe to ignore
                 }
             } finally {
                 // Restore the original embedding model
@@ -2362,6 +2365,7 @@ export class EmbeddingsManager {
 
             await adapter.writeBinary(indexPath, compressed.buffer as ArrayBuffer);
                     } catch {
+                        // File may not exist or be accessible - safe to ignore
                     }
     }
     async findSimilarContent(query: string, limit: number = 5, hybridEnabled: boolean = true): Promise<{results: Array<{path: string, content: string, similarity: number, chunkIndex?: number}>, temporalContext?: {startDate: number | null, endDate: number | null, cleanQuery: string}}> {

@@ -582,7 +582,7 @@ export class AITutorView extends ItemView {
         }
         
         
-        this.updateContextBar();
+        void this.updateContextBar();
       },
       false 
     );
@@ -722,7 +722,7 @@ export class AITutorView extends ItemView {
     }
     
     
-    this.updateContextBar();
+    void this.updateContextBar();
   }
 
   private renderNotebooks(container: HTMLElement) {
@@ -779,7 +779,7 @@ export class AITutorView extends ItemView {
   private handleCreateNewNotebook() {
     new NotebookFormModal(this.app, this.plugin, null, (settings) => {
       const notebook = this.notebookManager.addNotebook(settings.name, Array.from(settings.sourcePaths), settings.customInstruction, settings.webSources, settings.inlineCitation, settings.mode, settings.sourceFolders, settings.feedSources);
-      this.invalidateNotebookCache(notebook.id);
+      void this.invalidateNotebookCache(notebook.id);
       this.renderInitial();
     }).open();
   }
@@ -799,7 +799,7 @@ export class AITutorView extends ItemView {
         await this.notebookManager.updateNotebook(latestNotebook.id, settings.name, Array.from(settings.sourcePaths), settings.customInstruction, settings.webSources, settings.inlineCitation, settings.mode, settings.sourceFolders, settings.feedSources);
         
         await this.notebookManager.loadNotebooks();
-        this.invalidateNotebookCache(latestNotebook.id);
+        void this.invalidateNotebookCache(latestNotebook.id);
         this.renderInitial();
       })();
     }).open();
@@ -810,7 +810,7 @@ export class AITutorView extends ItemView {
       
       (this.document.activeElement as HTMLElement)?.blur();
       this.notebookManager.deleteNotebook(notebookId);
-      this.invalidateNotebookCache(notebookId);
+      void this.invalidateNotebookCache(notebookId);
       this.renderInitial();
     }
   }
@@ -836,7 +836,7 @@ export class AITutorView extends ItemView {
     }
 
     new Notice(`Loading notebook: ${latestNotebook.name} with ${sourceCount} source(s).`);
-    this.app.workspace.getLeaf(true).setViewState({
+    void this.app.workspace.getLeaf(true).setViewState({
       type: VIEW_TYPE_NOTEBOOK_CHAT,
       active: true,
       state: { notebook: latestNotebook },
@@ -922,7 +922,7 @@ export class AITutorView extends ItemView {
             await this.plugin.saveSettings();
             
             
-            this.updateContextBar();
+            void this.updateContextBar();
           })();
         });
       });
@@ -1006,7 +1006,8 @@ export class AITutorView extends ItemView {
           const content = await this.app.vault.read(file);
           currentTokens += tokenEstimator['countTokens'](content);
         } catch {
-                  }
+          // File may not exist or be accessible - safe to ignore
+        }
       }
     }
 
@@ -1044,10 +1045,10 @@ export class AITutorView extends ItemView {
       this.state.qaSessionSettings = qaSettings;
 
       
-      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'] as HTMLElement;
+      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'];
       
       
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
@@ -1103,7 +1104,7 @@ export class AITutorView extends ItemView {
       new Notice(`Error: ${errorMessage}`);
       
       
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
       
       
@@ -1123,7 +1124,7 @@ export class AITutorView extends ItemView {
       
       
       const questionEl = questionContainer.createDiv();
-      this.renderMarkdown(`**Q${i + 1}:** ${q.text}`, questionEl);
+      void this.renderMarkdown(`**Q${i + 1}:** ${q.text}`, questionEl);
 
       
       const answerSection = questionContainer.createDiv({ cls: 'answer-section' });
@@ -1160,7 +1161,7 @@ export class AITutorView extends ItemView {
       
       if (q.feedback) {
         const feedbackSection = questionContainer.createDiv({ cls: 'feedback-section' });
-        this.renderMarkdown(q.feedback, feedbackSection);
+        void this.renderMarkdown(q.feedback, feedbackSection);
       }
     });
 
@@ -1240,10 +1241,10 @@ export class AITutorView extends ItemView {
       this.state.mcqSessionSettings = mcqSettings;
 
 
-      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'] as HTMLElement;
+      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'];
 
 
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
 
@@ -1298,8 +1299,8 @@ export class AITutorView extends ItemView {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       new Notice(`Error: ${errorMessage}`);
 
-
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
+      
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
 
 
@@ -1323,7 +1324,7 @@ export class AITutorView extends ItemView {
       
       
       const questionEl = mcqContainer.createDiv();
-      this.renderMarkdown(`Q${i + 1}: ${mcq.question}`, questionEl);
+      void this.renderMarkdown(`Q${i + 1}: ${mcq.question}`, questionEl);
 
       
       const optionsTable = mcqContainer.createEl('table', { cls: 'mcq-options-table' });
@@ -1337,7 +1338,7 @@ export class AITutorView extends ItemView {
         
         const textCell = optionRow.createEl('td', { cls: 'mcq-text-cell' });
         const optionText = textCell.createSpan({ cls: 'mcq-option-text' });
-        this.renderMarkdown(`${String.fromCharCode(65 + j)}. ${option.text}`, optionText);
+        void this.renderMarkdown(`${String.fromCharCode(65 + j)}. ${option.text}`, optionText);
 
         checkbox.addEventListener('change', (e) => {
           const target = e.target as HTMLInputElement;
@@ -1675,7 +1676,7 @@ export class AITutorView extends ItemView {
         
         if (wrong.explanation) {
           const explanationText = explanationDiv.createDiv({ cls: 'explanation-text' });
-          this.renderMarkdown(wrong.explanation, explanationText);
+          void this.renderMarkdown(wrong.explanation, explanationText);
         }
       });
     }
@@ -1685,10 +1686,10 @@ export class AITutorView extends ItemView {
   async generateConceptMap(notePaths: string[], name: string) {
     try {
       
-      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'] as HTMLElement;
+      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'];
       
       
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
@@ -1743,7 +1744,7 @@ export class AITutorView extends ItemView {
         filePath: filePath
       };
       this.state.savedConceptMaps.push(savedMap);
-      this.saveSavedConceptMaps();
+      void this.saveSavedConceptMaps();
 
       
       await this.conceptMapManager.openConceptMapVisualization(conceptMapData, name);
@@ -1760,7 +1761,7 @@ export class AITutorView extends ItemView {
       new Notice(`Error: ${errorMessage}`);
       
       
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button') as NodeListOf<HTMLElement>;
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
       
       
@@ -1775,10 +1776,10 @@ export class AITutorView extends ItemView {
   async generateSlideshow(notePaths: string[], settings: { name: string; type: 'zen'; preferredVoice?: string; voiceRate?: number; voicePitch?: number }) {
     try {
       
-      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'] as HTMLElement;
+      const selectedNotesContainer = this.noteSuggester?.['selectedNotesContainer'];
       
       
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button, .start-slides-button') as NodeListOf<HTMLElement>;
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button, .start-slides-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
@@ -1851,7 +1852,7 @@ export class AITutorView extends ItemView {
         type: 'zen'
       };
       this.state.savedSlideshows.push(savedSlideshow);
-      this.saveSavedSlideshows();
+      void this.saveSavedSlideshows();
 
       
       progressFill.addClass('nl-width-100');
@@ -1875,7 +1876,7 @@ export class AITutorView extends ItemView {
       new Notice(`Error: ${errorMessage}`);
       
       
-      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button, .start-slides-button') as NodeListOf<HTMLElement>;
+      const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button, .start-slides-button');
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
       
       
@@ -1956,7 +1957,7 @@ export class AITutorView extends ItemView {
       
       card.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('.visual-action-button')) return;
-        this.openSavedConceptMap(conceptMap);
+        void this.openSavedConceptMap(conceptMap);
       });
 
       const actions = card.createDiv({ cls: 'visual-actions' });
@@ -2002,7 +2003,7 @@ export class AITutorView extends ItemView {
       
       card.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('.visual-action-button')) return;
-        this.openSavedSlideshow(slideshow);
+        void this.openSavedSlideshow(slideshow);
       });
 
       const actions = card.createDiv({ cls: 'visual-actions' });
@@ -2196,7 +2197,7 @@ export class AITutorView extends ItemView {
       .onClick(() => {
         if (newName.trim()) {
           conceptMap.name = newName.trim();
-          this.saveSavedConceptMaps();
+          void this.saveSavedConceptMaps();
           this.renderInitial();
           modal.close();
         }
@@ -2210,7 +2211,7 @@ export class AITutorView extends ItemView {
       
       (this.document.activeElement as HTMLElement)?.blur();
       this.state.savedConceptMaps = this.state.savedConceptMaps.filter(cm => cm.id !== id);
-      this.saveSavedConceptMaps();
+      void this.saveSavedConceptMaps();
       this.renderInitial();
     }
   }
@@ -2256,7 +2257,7 @@ export class AITutorView extends ItemView {
       .onClick(() => {
         if (newName.trim()) {
           slideshow.name = newName.trim();
-          this.saveSavedSlideshows();
+          void this.saveSavedSlideshows();
           this.renderInitial();
           modal.close();
         }
@@ -2294,7 +2295,7 @@ export class AITutorView extends ItemView {
     if (confirm('Are you sure you want to delete this slideshow from the saved list?')) {
       (this.document.activeElement as HTMLElement)?.blur();
       this.state.savedSlideshows = this.state.savedSlideshows.filter(s => s.id !== id);
-      this.saveSavedSlideshows();
+      void this.saveSavedSlideshows();
       this.renderInitial();
     }
   }
@@ -2430,7 +2431,7 @@ export class AITutorView extends ItemView {
     
     
      if (this.directorySuggester) {
-         
+         // Intentionally empty
      }
   }
 
@@ -2464,9 +2465,7 @@ export class AITutorView extends ItemView {
             if (file instanceof TFile) {
               droppedPaths.add(file.path);
             } else {
-              
-              
-              
+              // No action needed for this case
             }
           }
         } else if (item.kind === 'string' && item.type === 'text/plain') {

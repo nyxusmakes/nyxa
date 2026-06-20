@@ -1080,9 +1080,7 @@ export class ResponseView extends ItemView {
         for (const leaf of leaves) {
             const view = leaf.view;
             if (view instanceof ResponseView) {
-                
-                const viewWithSession = view as ResponseView;
-                if (viewWithSession.currentSessionId === sessionId) {
+                if (view.currentSessionId === sessionId) {
                     return leaf;
                 }
             }
@@ -1209,7 +1207,7 @@ export class ResponseView extends ItemView {
             historyBtn.setAttr('tabindex', '0');
             historyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.openSessionHistoryModal();
+                void this.openSessionHistoryModal();
             });
         }
 
@@ -1220,10 +1218,10 @@ export class ResponseView extends ItemView {
         dbIndexBtn.setAttr('tabindex', '0');
         dbIndexBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.showEmbeddingIndexMenu(dbIndexBtn);
+            void this.showEmbeddingIndexMenu(dbIndexBtn);
         });
 
-        
+         
         const systemInstructionsBtn = headerLeftControls.createDiv({ cls: 'header-system-instructions-btn' });
         setIcon(systemInstructionsBtn, 'wrench');
         systemInstructionsBtn.addClass('nl-cursor-pointer');
@@ -1359,7 +1357,7 @@ export class ResponseView extends ItemView {
                 const query = this.queryInput.value;
                 if (query.trim()) {
                     this.loadingSpinner.classList.add('visible');
-                    this.processQuery(query).then(() => {
+                                        this.processQuery(query).then(() => {
                         this.loadingSpinner.classList.remove('visible');
                         this.queryInput.value = '';
                         this.adjustTextareaHeight();
@@ -1367,8 +1365,8 @@ export class ResponseView extends ItemView {
                         this.loadingSpinner.classList.remove('visible');
                         
                         if (error instanceof Error && error.message.startsWith('PRESERVE_INPUT:')) {
-                            
-                                                    } else {
+                            // Preserve input text on PRESERVE_INPUT error
+                        } else {
                             
                             this.queryInput.value = '';
                             
@@ -1378,6 +1376,9 @@ export class ResponseView extends ItemView {
                     });
                 }
             } else {
+                
+
+
                 
                 this.vaultSearchAgent.stop();
                 if (this.currentAbortController) {
@@ -1592,8 +1593,8 @@ export class ResponseView extends ItemView {
                         this.loadingSpinner.classList.remove('visible');
                         
                         if (error instanceof Error && error.message.startsWith('PRESERVE_INPUT:')) {
-                            
-                                                    } else {
+                            // Preserve input text on PRESERVE_INPUT error
+                        } else {
                             
                             this.queryInput.value = '';
                             
@@ -1753,10 +1754,11 @@ export class ResponseView extends ItemView {
         }
 
         brainBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.handleOllamaThinkingControlClick(brainBtn).catch(console.error);
-        });
-    }
+                e.stopPropagation();
+                void this.openSessionHistoryModal();
+            });
+        }
+
 
     private async handleOllamaThinkingControlClick(buttonEl: HTMLElement): Promise<void> {
         const activeProvider = this.getActiveChatProvider();
@@ -2446,7 +2448,7 @@ export class ResponseView extends ItemView {
 
             
             if (webEnabled) {
-                
+                // Intentionally empty
             }
 
             
@@ -2625,7 +2627,7 @@ export class ResponseView extends ItemView {
         setIcon(saveOption, 'save');
         saveOption.createSpan({ text: 'Save Session as Note' });
         saveOption.addEventListener('click', () => {
-            this.saveSession();
+            void this.saveSession();
             menuEl.remove();
         });
 
@@ -2676,7 +2678,7 @@ export class ResponseView extends ItemView {
                     new Notice('Wallpaper removed');
                 }).catch(console.error);
             } else {
-                this.pickWallpaperImage();
+                void this.pickWallpaperImage();
             }
         });
 
@@ -2753,7 +2755,7 @@ export class ResponseView extends ItemView {
             });
             itemEl.addEventListener('click', () => {
                 pickerEl.remove();
-                this.setWallpaper(file.path);
+                void this.setWallpaper(file.path);
             });
         }
 
@@ -2952,7 +2954,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             historyBtn.setAttr('tabindex', '0');
             historyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.openSessionHistoryModal();
+                void this.openSessionHistoryModal();
             });
         }
 
@@ -2963,10 +2965,10 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         dbIndexBtn.setAttr('tabindex', '0');
         dbIndexBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.showEmbeddingIndexMenu(dbIndexBtn);
+            void this.showEmbeddingIndexMenu(dbIndexBtn);
         });
 
-        
+         
         const systemInstructionsBtn = headerLeftControls.createDiv({ cls: 'header-system-instructions-btn' });
         setIcon(systemInstructionsBtn, 'wrench');
         systemInstructionsBtn.addClass('nl-cursor-pointer');
@@ -3240,7 +3242,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             this.updateResponseProgress(this.currentProgressResponseEl, this.currentProgressEl, displayMessage);
 
             if (message.startsWith('Generating response')) {
-                const finalContentEl = this.currentProgressResponseEl.querySelector('.final-answer-content') as HTMLElement | null;
+                const finalContentEl = this.currentProgressResponseEl.querySelector('.final-answer-content');
                 if (finalContentEl && !this.currentStreamingAnswerText && !this.generatingIndicatorActive) {
                     finalContentEl.addClass('generating-dots');
                     finalContentEl.textContent = '';
@@ -3254,7 +3256,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         const targetThinkingEl =
             this.currentThinkingEl ||
-            (this.currentProgressResponseEl.querySelector('.thinking-content') as HTMLElement | null);
+            this.currentProgressResponseEl.querySelector('.thinking-content');
 
         if (!targetThinkingEl) return;
 
@@ -3273,11 +3275,12 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         if (this.currentThinkingLabelEl) {
             this.currentThinkingLabelEl.removeClass('is-hidden');
         } else {
-            const label = this.currentProgressResponseEl.querySelector('.thinking-label') as HTMLElement | null;
+            const label = this.currentProgressResponseEl.querySelector('.thinking-label');
             if (label) label.removeClass('is-hidden');
         }
 
         this.currentThinkingText += snippet;
+        
         
         
         const now = Date.now();
@@ -3290,7 +3293,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             if (this.currentThinkingChunkEl && this.currentThinkingChunkText.trim()) {
                 const textToRender = this.currentThinkingChunkText;
                 this.currentThinkingChunkEl.empty();
-                MarkdownRenderer.render(this.app, textToRender, this.currentThinkingChunkEl, '', this);
+                void MarkdownRenderer.render(this.app, textToRender, this.currentThinkingChunkEl, '', this);
             }
 
             this.currentThinkingChunkEl = targetThinkingEl.createDiv({ cls: 'thinking-timeline-item' });
@@ -3332,7 +3335,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 if (this.currentThinkingLabelEl) {
                     this.currentThinkingLabelEl.removeClass('is-hidden');
                 } else {
-                    const label = this.currentProgressResponseEl.querySelector('.thinking-label') as HTMLElement | null;
+                    const label = this.currentProgressResponseEl.querySelector('.thinking-label');
                     if (label) label.removeClass('is-hidden');
                 }
 
@@ -3348,10 +3351,13 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 if (timeDiff > 300 || !this.currentThinkingChunkEl) {
                     
                     if (this.currentThinkingChunkEl && this.currentThinkingChunkText.trim()) {
-                        const textToRender = this.currentThinkingChunkText;
-                        this.currentThinkingChunkEl.empty();
-                        MarkdownRenderer.render(this.app, textToRender, this.currentThinkingChunkEl, '', this);
-                    }
+                const textToRender = this.currentThinkingChunkText;
+                this.currentThinkingChunkEl.empty();
+                void MarkdownRenderer.render(this.app, textToRender, this.currentThinkingChunkEl, '', this);
+            }
+
+
+
 
                     this.currentThinkingChunkEl = targetThinkingEl.createDiv({ cls: 'thinking-timeline-item' });
                     this.currentThinkingChunkText = '';
@@ -3369,9 +3375,9 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         
         if (!finalContentEl) {
-            const answerEl = this.currentProgressResponseEl.querySelector('.response-answer') as HTMLElement | null;
+            const answerEl = this.currentProgressResponseEl.querySelector('.response-answer');
             if (answerEl) {
-                finalContentEl = answerEl.querySelector('.final-answer-content') as HTMLElement | null;
+                finalContentEl = answerEl.querySelector('.final-answer-content');
             }
         }
 
@@ -3407,7 +3413,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 window.clearTimeout(this.answerRenderTimeout);
                 this.answerRenderTimeout = null;
             }
-            renderAnswer();
+            void renderAnswer();
         } else if (!this.answerRenderTimeout) {
             this.answerRenderTimeout = window.setTimeout(() => { renderAnswer().catch(console.error); }, throttleInterval - (now - this.lastAnswerRenderTime));
         }
@@ -3423,7 +3429,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         if (collapsed) container.addClass('collapsed');
         else container.removeClass('collapsed');
 
-        const chev = container.querySelector('.thinking-chevron') as HTMLElement | null;
+        const chev = container.querySelector('.thinking-chevron');
         if (chev) chev.setText(collapsed ? '▸' : '▾');
     }
 
@@ -3639,6 +3645,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                 const content = await this.app.vault.read(fileOrFolder);
                                 fileContents.push(`--- File: ${fileOrFolder.basename} ---\n${content}\n`);
                             } catch {
+                                // File may not exist or be accessible - safe to ignore
                             }
                         }
                     }
@@ -3687,6 +3694,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                     basename: fileOrFolder.basename
                                 });
                             } catch {
+                                // File may not exist or be accessible - safe to ignore
                             }
                         }
                     }
@@ -3699,15 +3707,15 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             
             if (isCanvasRequest) {
                 const message = `I'll create a canvas file for you${targetFolder ? ` in the **${targetFolder}** folder` : ''}. Let me generate a visual layout for your content.`;
-                this.processCanvasCreate(actionId, creationPrompt, targetFolder, contextFiles, autoSelectedModel);
+                void this.processCanvasCreate(actionId, creationPrompt, targetFolder, contextFiles, autoSelectedModel);
                 this.addFileActionResponse(creationPrompt, message, [actionId]);
             } else if (isExcalidrawRequest) {
                 const message = `I'll create an Excalidraw diagram for you${targetFolder ? ` in the **${targetFolder}** folder` : ''}. Processing...`;
-                this.processExcalidrawCreate(actionId, creationPrompt, targetFolder, contextFiles, autoSelectedModel);
+                void this.processExcalidrawCreate(actionId, creationPrompt, targetFolder, contextFiles, autoSelectedModel);
                 this.addFileActionResponse(creationPrompt, message, [actionId]);
             } else {
                 const message = `I'll create files for you${targetFolder ? ` in the **${targetFolder}** folder` : ''}. Let me generate the content and structure.`;
-                this.processFileCreate(actionId, creationPrompt, targetFolder, contextFiles, autoSelectedModel);
+                void this.processFileCreate(actionId, creationPrompt, targetFolder, contextFiles, autoSelectedModel);
                 this.addFileActionResponse(creationPrompt, message, [actionId]);
             }
             return;
@@ -4097,6 +4105,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                         folderFiles.push({ path: file.path, content, similarity: 1.0 });
                                     }
                                 } catch {
+                                    // File may not exist or be accessible - safe to ignore
                                 }
                             }
 
@@ -4532,7 +4541,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                             
                             chatHistory = fullChatHistory.slice(-2);
                         } else {
-                            
+                            // No action needed for this case
                         }
 
                         const startTime = Date.now();
@@ -5180,7 +5189,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
                     if (isYouTubeSource(source.path)) {
                         
-                        getYouTubeUrl(source.path, (source as { path: string; relevance: number; url?: string; content?: string }).content).then(url => {
+                        void getYouTubeUrl(source.path, (source as { path: string; relevance: number; url?: string; content?: string }).content).then(url => {
                             if (url) {
                                 const videoId = extractYouTubeId(url);
                                 if (videoId) {
@@ -5518,7 +5527,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             
             this.updateContextBar();
             
-            this.saveCurrentSession();
+            void this.saveCurrentSession();
         });
 
         const regenerateBtn = actionsContainer.createDiv({ cls: 'response-action-btn regenerate-response' });
@@ -5552,7 +5561,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         copyBtn.addEventListener('click', () => {
             const responseToCopy = this.responses.find(r => r.question === question);
             if (responseToCopy) {
-                navigator.clipboard.writeText(responseToCopy.answer);
+                void navigator.clipboard.writeText(responseToCopy.answer);
                 new Notice('Response copied to clipboard');
             } else {
                 new Notice('Could not find response to copy.');
@@ -5566,7 +5575,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             const responseToCopy = this.responses.find(r => r.question === question);
             if (responseToCopy) {
                 const cleanedText = this.removeCitations(responseToCopy.answer);
-                navigator.clipboard.writeText(cleanedText);
+                void navigator.clipboard.writeText(cleanedText);
                 new Notice('Response copied to clipboard (no citations)');
             } else {
                 new Notice('Could not find response to copy.');
@@ -5581,7 +5590,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             if (responseToCopy) {
                 let cleanedText = this.removeCitations(responseToCopy.answer);
                 cleanedText = this.convertToPlainTextKeepTables(cleanedText);
-                navigator.clipboard.writeText(cleanedText);
+                void navigator.clipboard.writeText(cleanedText);
                 new Notice('Response copied to clipboard (plain text)');
             } else {
                 new Notice('Could not find response to copy.');
@@ -5842,7 +5851,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         } else {
             
             const answerEl = responseEl.createDiv({ cls: 'response-answer' });
-            MarkdownRenderer.render(this.app, answer, answerEl, '', this);
+            void MarkdownRenderer.render(this.app, answer, answerEl, '', this);
 
             
             this.wrapTablesInScrollContainers(answerEl);
@@ -5874,7 +5883,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         });
 
         
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
 
         return { responseEl, progressEl, newResponse };
     }
@@ -5925,14 +5934,14 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         progressEl.remove();
 
         
-        const answerEl = (responseEl.querySelector('.response-answer') as HTMLElement | null) || responseEl.createDiv({ cls: 'response-answer' });
+        const answerEl = responseEl.querySelector('.response-answer') || responseEl.createDiv({ cls: 'response-answer' });
         const finalContentEl =
             (answerEl.querySelector('.final-answer-content') as HTMLElement | null) ||
             answerEl.createDiv({ cls: 'final-answer-content' });
 
         finalContentEl.empty();
         finalContentEl.removeClass('generating-dots');
-        MarkdownRenderer.render(this.app, answer, finalContentEl, '', this);
+        void MarkdownRenderer.render(this.app, answer, finalContentEl, '', this);
 
         
         this.wrapTablesInScrollContainers(finalContentEl);
@@ -5986,7 +5995,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             if (this.currentThinkingChunkEl && this.currentThinkingChunkText.trim()) {
                 const textToRender = this.currentThinkingChunkText;
                 this.currentThinkingChunkEl.empty();
-                MarkdownRenderer.render(this.app, textToRender, this.currentThinkingChunkEl, '', this);
+                void MarkdownRenderer.render(this.app, textToRender, this.currentThinkingChunkEl, '', this);
             }
 
             
@@ -5995,7 +6004,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         }
 
         
-        const label = (responseEl.querySelector('.thinking-label') as HTMLElement | null) || this.currentThinkingLabelEl;
+        const label = (responseEl.querySelector('.thinking-label')) || this.currentThinkingLabelEl;
         if (label) label.addClass('is-hidden');
 
         
@@ -6008,7 +6017,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         this.lastThinkingTime = 0;
 
         
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
     }
 
     /**
@@ -6055,7 +6064,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         }
 
         
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
     }
 
     private enhanceCodeBlocks(answerEl: HTMLElement, question = '') {
@@ -6098,7 +6107,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             setIcon(copyBtn, 'copy');
             copyBtn.addEventListener('click', () => {
                 const code = wrapper.dataset.code || '';
-                navigator.clipboard.writeText(code);
+                void navigator.clipboard.writeText(code);
                 setIcon(copyBtn, 'check');
                 window.setTimeout(() => setIcon(copyBtn, 'copy'), 1500);
             });
@@ -6154,7 +6163,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 if (autoMode) {
                     (pre as HTMLElement).addClass('nl-display-none');
                     outputEl.classList.remove('hidden');
-                    this.runCode(pre as HTMLElement, lang, outputEl, wrapper, false, question);
+                    void this.runCode(pre as HTMLElement, lang, outputEl, wrapper, false, question);
                     return;
                 }
 
@@ -6218,7 +6227,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 
                 (pre as HTMLElement).addClass('nl-display-none');
                 outputEl.classList.remove('hidden');
-                this.runCode(pre as HTMLElement, lang, outputEl, wrapper, true, question);
+                void this.runCode(pre as HTMLElement, lang, outputEl, wrapper, true, question);
             } else {
                 
                 const runToggleRow = this.document.createElement('div');
@@ -6320,7 +6329,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             outputEl.classList.add('code-exec-success');
             outputEl.addClass('nl-font-family-var--font-text');
             outputEl.addClass('nl-padding-12px');
-            MarkdownRenderer.render(this.app, result.markdownContent, outputEl, '', this);
+            void MarkdownRenderer.render(this.app, result.markdownContent, outputEl, '', this);
         } else if (result.success) {
             outputEl.classList.add('code-exec-success');
             const outputPre = this.document.createElement('pre');
@@ -6338,7 +6347,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             outputEl.appendChild(errorPre);
 
             if (autoFix) {
-                this.triggerCodeRepair(code, lang, result.error || '', preEl, outputEl, wrapper, true, question);
+                void this.triggerCodeRepair(code, lang, result.error || '', preEl, outputEl, wrapper, true, question);
             } else {
                 this.addRepairToggle(code, lang, result.error || '', preEl, outputEl, wrapper, question);
             }
@@ -7216,7 +7225,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             .setIcon('copy')
             .setTooltip('Copy query')
             .onClick(() => {
-                navigator.clipboard.writeText(question);
+                void navigator.clipboard.writeText(question);
                 new Notice('Query copied to clipboard');
             });
 
@@ -8451,7 +8460,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             type: 'text', 
             cls: 'session-search-input', 
             placeholder: 'Search sessions by name or message content...' 
-        }) as HTMLInputElement;
+        });
         const _searchIcon = searchContainer.createSpan({ cls: 'search-icon', text: '🔍' });
 
         const sessionList = modalContent.createDiv({ cls: 'session-list' });
@@ -8606,7 +8615,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 searchInput.value = '';
                 currentSearchQuery = '';
                 currentPage = 0;
-                loadPage(currentPage, currentSearchQuery);
+                void loadPage(currentPage, currentSearchQuery);
             }
         });
 
@@ -8663,7 +8672,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 }
                 
                 if (this.currentSessionId) {
-                    this.saveCurrentSession();
+                    void this.saveCurrentSession();
                 }
                 new Notice(instructions ? 'System instructions saved' : 'System instructions cleared');
             }
@@ -8762,6 +8771,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 this.renderingRestoredSession = false;
             }
         } else {
+            // No action needed for this case
         }
     }
 
@@ -8795,7 +8805,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
 
             
             const messageEl = answerEl.createDiv({ cls: 'ai-message' });
-            MarkdownRenderer.render(this.app, r.answer, messageEl, '', this);
+            void MarkdownRenderer.render(this.app, r.answer, messageEl, '', this);
 
             
             const capsulesContainer = answerEl.createDiv({ cls: 'file-action-capsules' });
@@ -8806,7 +8816,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             }
         } else {
             
-            MarkdownRenderer.render(this.app, r.answer, answerEl, '', this);
+            void MarkdownRenderer.render(this.app, r.answer, answerEl, '', this);
             
             this.wrapTablesInScrollContainers(answerEl);
             
@@ -8900,12 +8910,12 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
 
         acceptBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.handleHistoricalFileAction(actionId, 'accept', response);
+            void this.handleHistoricalFileAction(actionId, 'accept', response);
         });
 
         rejectBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.handleHistoricalFileAction(actionId, 'reject', response);
+            void this.handleHistoricalFileAction(actionId, 'reject', response);
         });
 
         
@@ -8979,7 +8989,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 this.updateFileActionButtons(actionId);
 
                 
-                this.processFileCreate(actionId, creationPrompt, targetFolder, []);
+                void this.processFileCreate(actionId, creationPrompt, targetFolder, []);
 
                 new Notice(`Recreating files based on: "${response.question.substring(0, 50)}..."`);
 
@@ -9051,7 +9061,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
 
         
         const messageEl = responseContainer.createDiv({ cls: 'ai-message' });
-        MarkdownRenderer.render(this.app, message, messageEl, '', this);
+        void MarkdownRenderer.render(this.app, message, messageEl, '', this);
 
         
         const capsulesContainer = responseContainer.createDiv({ cls: 'file-action-capsules' });
@@ -9067,10 +9077,13 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         
         const nameEl = capsule.createDiv({ cls: 'file-action-name' });
         if (actionState.fileName && actionState.fileName.includes('[[') && actionState.fileName.includes(']]')) {
-            MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
+            void MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
         } else {
             nameEl.textContent = actionState.fileName;
         }
+
+        capsule.createDiv({ cls: 'file-action-status' });
+
 
         
         capsule.createDiv({ cls: 'file-action-status' });
@@ -9148,7 +9161,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 if (mod.FileCreationReviewModal) {
                     try {
                         new mod.FileCreationReviewModal(this.app, data as unknown as FileCreationPlan, this.plugin.settings, (acceptedPlan: unknown) => {
-                            this.acceptFileAction(actionId, acceptedPlan as FileActionResult);
+                            void this.acceptFileAction(actionId, acceptedPlan as FileActionResult);
                         }).open();
                     } catch (modalError) {
                                                 new Notice('Failed to create create modal: ' + (modalError instanceof Error ? modalError.message : 'Unknown error'));
@@ -9333,12 +9346,12 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
 
         acceptBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.acceptFileAction(actionId);
+            void this.acceptFileAction(actionId);
         });
 
         rejectBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.rejectFileAction(actionId);
+            void this.rejectFileAction(actionId);
         });
 
         statusEl.className = `file-action-status ${actionState.status}`;
@@ -9372,7 +9385,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 }
             }
         } catch {
-            
+            // Vault operation failed - safe to ignore
         }
     }
 
@@ -9475,19 +9488,19 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             canvasData.folderName = folder;
             canvasData.targetPath = fullPath;
             actionState.data = canvasData;
-            
-            
             actionState.fileName = `[[${fullPath}]]`;
             if (actionState.element) {
                 const nameEl = actionState.element.querySelector('.file-action-name') as HTMLElement;
                 if (nameEl) {
                     nameEl.empty();
-                    MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
+                    void MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
                 }
             }
 
             
             this.updateFileActionStatus(actionId, 'completed');
+
+
 
             
             if (actionState.element && actionState.element.classList.contains('historical')) {
@@ -9542,7 +9555,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 const nameEl = actionState.element.querySelector('.file-action-name') as HTMLElement;
                 if (nameEl) {
                     nameEl.empty();
-                    MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
+                    void MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
                 }
             }
 
@@ -10237,6 +10250,7 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
                     return result;
                 }
             } catch {
+                // Skip failed strategy, continue with next
             }
         }
 
@@ -10299,8 +10313,8 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
                     return parsed;
                 }
             } catch {
-            }
-        }
+                // Failed to parse - keep previous value
+            }        }
 
         return null;
     }
@@ -10393,7 +10407,8 @@ IMPORTANT: Return ONLY the markdown content for this specific file. Do not inclu
                         const templateContent = await this.app.vault.read(templateFile);
                         finalContent = templateContent + '\n\n' + finalContent;
                     } catch {
-                                        }
+                        // File may not exist or be accessible - safe to ignore
+                    }
                 }
             }
 
@@ -10498,7 +10513,7 @@ ${jsonContent}
         
         const nameEl = capsule.createDiv({ cls: 'file-action-name' });
         if (actionState.fileName && actionState.fileName.includes('[[') && actionState.fileName.includes(']]')) {
-            MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
+            void MarkdownRenderer.render(this.app, actionState.fileName, nameEl, '', this);
         } else {
             nameEl.textContent = actionState.fileName;
         }
@@ -10542,7 +10557,7 @@ ${jsonContent}
 
         
         const messageEl = answerEl.createDiv({ cls: 'ai-message' });
-        MarkdownRenderer.render(this.app, message, messageEl, '', this);
+        void MarkdownRenderer.render(this.app, message, messageEl, '', this);
 
         
         const capsulesContainer = answerEl.createDiv({ cls: 'file-action-capsules' });
@@ -10562,7 +10577,7 @@ ${jsonContent}
         });
 
         
-        this.saveCurrentSession();
+        void this.saveCurrentSession();
     }
 
     /**
@@ -10590,7 +10605,8 @@ ${jsonContent}
                             const data = await processFileForMultimodal(this.app, file);
                             if (data) multimodalInputs.push(data);
                         } catch {
-                                                    }
+                            // File may not exist or be accessible - safe to ignore
+                        }
                     }
                 }
             }
@@ -10652,7 +10668,8 @@ ${jsonContent}
                             const content = await this.app.vault.read(fileOrFolder);
                             fileContents.push(`--- File: ${fileOrFolder.basename} ---\n${content}\n`);
                         } catch {
-                                                    }
+                            // File may not exist or be accessible - safe to ignore
+                        }
                     } else if (fileOrFolder instanceof TFolder) {
                         const allFiles = fileOrFolder.children.filter(c => c instanceof TFile) as TFile[];
                         for (const file of allFiles) {
@@ -10660,7 +10677,8 @@ ${jsonContent}
                                 const content = await this.app.vault.read(file);
                                 fileContents.push(`--- File: ${file.basename} ---\n${content}\n`);
                             } catch {
-                                                            }
+                                // File may not exist or be accessible - safe to ignore
+                            }
                         }
                     }
                 }
@@ -10867,14 +10885,15 @@ ${jsonContent}
                 );
 
                 
-                this.saveCurrentSession();
+                void this.saveCurrentSession();
             } catch (error) {
             
             window.clearInterval(progressInterval);
             
             const isAbortError = error instanceof DOMException && error.name === 'AbortError';
             if (!isAbortError) {
-                            }
+                // Intentionally empty
+            }
 
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -11079,7 +11098,7 @@ class CodeCanvasModal extends Modal {
         copyBtn.setAttribute('aria-label', 'Copy code');
         setIcon(copyBtn, 'copy');
         copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(this.code);
+            void navigator.clipboard.writeText(this.code);
             setIcon(copyBtn, 'check');
             window.setTimeout(() => setIcon(copyBtn, 'copy'), 1500);
         });
@@ -11215,7 +11234,7 @@ class CodeCanvasModal extends Modal {
             window.setTimeout(() => setIcon(saveIcon, 'save'), 1500);
         });
 
-        render();
+        void render();
     }
 
     

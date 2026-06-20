@@ -384,6 +384,7 @@ Generate the flashcards now:`;
 
 
 export function triggerConfetti(element: HTMLElement) {
+  const doc = element.ownerDocument;
   const rect = element.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
@@ -392,7 +393,7 @@ export function triggerConfetti(element: HTMLElement) {
   const confettiCount = 30;
   
   for (let i = 0; i < confettiCount; i++) {
-    const confetti = document.createElement('div');
+    const confetti = doc.createElement('div');
     confetti.className = 'quiz-confetti';
     confetti.setCssProps({
       '--confetti-bg': colors[Math.floor(Math.random() * colors.length)],
@@ -401,7 +402,7 @@ export function triggerConfetti(element: HTMLElement) {
       '--confetti-radius': Math.random() > 0.5 ? '50%' : '0'
     });
     
-    document.body.appendChild(confetti);
+    doc.body.appendChild(confetti);
     
     const angle = (Math.PI * 2 * i) / confettiCount;
     const velocity = 150 + Math.random() * 100;
@@ -674,7 +675,7 @@ export class QuizRenderer {
       const questionContent = questionText.createEl('span', { cls: 'quiz-question-content' });
       
       { const _comp = new Component();
-      MarkdownRenderer.render(this.app, mcq.question, questionContent, '', _comp);
+      void MarkdownRenderer.render(this.app, mcq.question, questionContent, '', _comp);
       _comp.load(); }
       
       
@@ -703,7 +704,7 @@ export class QuizRenderer {
         
         const optionContent = optionText.createEl('span', { cls: 'quiz-option-content' });
         { const _comp = new Component();
-        MarkdownRenderer.render(this.app, option.text, optionContent, '', _comp);
+        void MarkdownRenderer.render(this.app, option.text, optionContent, '', _comp);
         _comp.load(); }
         
         if (!mcq.isAnswered) {
@@ -837,14 +838,14 @@ export class QuizRenderer {
           copyBtn.removeClass('copied');
         }, 2000);
       } catch {
-        
+        // Clipboard write failed - safe to ignore
       }
     };
     
     
     const contentDiv = container.createDiv({ cls: 'quiz-explanation-content' });
     { const _comp = new Component();
-    MarkdownRenderer.render(this.app, explanation, contentDiv, '', _comp);
+    void MarkdownRenderer.render(this.app, explanation, contentDiv, '', _comp);
     _comp.load(); }
   }
 }
@@ -959,7 +960,7 @@ export class FlashcardRenderer {
       const frontContent = frontSide.createDiv({ cls: 'flashcard-content' });
       
       { const _comp = new Component();
-      MarkdownRenderer.render(this.app, currentCard.front, frontContent, '', _comp);
+      void MarkdownRenderer.render(this.app, currentCard.front, frontContent, '', _comp);
       _comp.load(); }
       frontSide.createDiv({ cls: 'flashcard-hint', text: 'Click to flip' });
       
@@ -969,7 +970,7 @@ export class FlashcardRenderer {
       const backContent = backSide.createDiv({ cls: 'flashcard-content' });
       
       { const _comp = new Component();
-      MarkdownRenderer.render(this.app, currentCard.back, backContent, '', _comp);
+      void MarkdownRenderer.render(this.app, currentCard.back, backContent, '', _comp);
       _comp.load(); }
       backSide.createDiv({ cls: 'flashcard-hint', text: 'Click to flip' });
       

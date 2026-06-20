@@ -262,7 +262,7 @@ export class FeedView extends ItemView {
                         await this.plugin.saveSettings();
                         this.renderSavedFeeds();
                         
-                        this.onOpen(); 
+                        void this.onOpen(); 
                     })();
                 }).open();
             });
@@ -304,7 +304,7 @@ export class FeedView extends ItemView {
                                 folder.color = newColor;
                                 void this.plugin.saveSettings().then(() => {
                                     this.renderSavedFeeds();
-                                    this.onOpen(); 
+                                    void this.onOpen(); 
                                 });
                             }, folder.name, folder.color).open();
                         });
@@ -318,7 +318,7 @@ export class FeedView extends ItemView {
                                 this.plugin.settings.feedFolders.splice(folderIndex, 1);
                                 await this.plugin.saveSettings();
                                 this.renderSavedFeeds();
-                                this.onOpen(); 
+                                void this.onOpen(); 
                             }
                         });
                 });

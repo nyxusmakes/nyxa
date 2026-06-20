@@ -449,7 +449,8 @@ export class MCPService {
                     }
                 }
             } catch {
-                            }
+                // Event handler error - safe to ignore
+            }
         }
     }
 
@@ -652,7 +653,8 @@ export class MCPService {
                             }
                         }
                     } catch {
-                                            }
+                        // Failed to parse - keep previous value
+                    }
                 }
                 currentEvent = '';
                 currentData = '';
@@ -699,7 +701,7 @@ export class MCPService {
             await this.discoverResources(serverId);
 
                     } catch (error) {
-                        this.disconnectServer(serverId);
+                        void this.disconnectServer(serverId);
             throw error;
         }
     }
@@ -815,7 +817,8 @@ export class MCPService {
                 (connection.eventSource as { close?: () => void })?.close?.();
             }
         } catch {
-                    }
+            // Cleanup failed - safe to ignore
+        }
 
         this.servers.delete(serverId);
     }

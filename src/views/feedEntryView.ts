@@ -36,12 +36,11 @@ export class FeedEntryView extends ItemView {
         if (feedState && feedState.feedData) {
             this.feedData = feedState.feedData;
             
-             if (this.entriesContainer) { 
+             if (this.entriesContainer) {
                  this.renderEntries();
              } else {
-                 
-                 
-                              }
+                 // Intentionally empty
+             }
 
         } else {
             
@@ -169,7 +168,8 @@ export class FeedEntryView extends ItemView {
                         });
                     }
                 } catch {
-                                    }
+                  // Failed to parse - keep previous value
+                }
             } else if (!entry.author) {
                 
                 metadataLine.createEl('span', { text: 'No Date', cls: 'entry-date' });

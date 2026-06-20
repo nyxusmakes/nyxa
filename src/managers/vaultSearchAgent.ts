@@ -1134,8 +1134,8 @@ RESPONSE QUALITY CHECKLIST:
                     finalAnswer += `\n\n${footnoteDefinitions}`;
                 }
             } else {
-                
-                            }
+                // No footnote definitions to add
+            }
         }
 
         

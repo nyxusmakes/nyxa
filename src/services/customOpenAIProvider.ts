@@ -312,7 +312,7 @@ export class CustomOpenAIProvider extends BaseProvider {
                         const toolResults = await executeToolsCallback(message.tool_calls as unknown as Array<Record<string, unknown>>);
                         
                         for (let i = 0; i < message.tool_calls.length; i++) {
-                            const toolCall = message.tool_calls[i] as unknown as { id?: string; function?: { name: string }; name?: string };
+                            const toolCall = message.tool_calls[i] as { id?: string; function?: { name: string }; name?: string };
                             const toolResult = toolResults[i];
                             
                             conversationMessages.push({

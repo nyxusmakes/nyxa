@@ -139,7 +139,8 @@ export class OpenCodeProvider extends BaseProvider {
             );
             return { text: fullContent };
         } catch {
-                    }
+            // API call failed - fallback logic follows
+        }
 
         // Fallback: requestUrl simulated streaming (cross-platform)
         const respHeaders = await simulatedStream(

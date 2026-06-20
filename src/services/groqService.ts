@@ -763,6 +763,7 @@ export class GroqService {
     if (executedTools.length > 0) {
             webSources = this.parseExecutedTools(executedTools);
           } else {
+            // No executed tools - web sources remain empty
           }
 
     return {
@@ -802,12 +803,13 @@ export class GroqService {
                 webSources.push(...parsedResults);
               }
             } catch {
-              
+                // Failed to parse - keep previous value
             }
           }
         }
       } catch {
-              }
+        // Ignore malformed response
+      }
     }
     
     return webSources;
@@ -833,7 +835,7 @@ export class GroqService {
         return this.parseWebSearchResults(parsed.results);
       }
     } catch {
-      
+        // Failed to parse - keep previous value
     }
     
     
@@ -905,16 +907,19 @@ export class GroqService {
               snippet: snippet || undefined
             });
           } else {
-                      }
+              // No URL found - skip this result
+          }
         } else {
-                  }
+            // No URL pattern match - skip this result
+        }
       } catch {
-                
+          // Skip failed item, continue processing
       }
     }
     
     if (webSources.length === 0 && results.length > 0) {
-          }
+        // No web sources found - fallback to raw results
+    }
     
     return webSources;
   }

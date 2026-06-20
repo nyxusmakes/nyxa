@@ -243,7 +243,8 @@ export class NotebookBM25Manager {
                 });
             }
         } catch {
-                    }
+            // Vault search failed - return empty results
+        }
         return [];
     }
 

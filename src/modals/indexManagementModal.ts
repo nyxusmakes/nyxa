@@ -216,9 +216,11 @@ export class IndexManagementModal extends Modal {
                                                                     progressFill.setCssProps({ '--progress-width': `${progress}%` });
                                     progressText.setText(`${progress}%`);
                                 } else {
-                                                                }
+                                    // Progress bar elements not found in DOM - safe to ignore
+                                }
                             } else {
-                                                        }
+                                // Index row not found in DOM - safe to ignore
+                            }
                         });
                         index.buildProgress = 100;
                         new Notice(`${index.name} built successfully`);

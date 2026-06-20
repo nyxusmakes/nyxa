@@ -46,7 +46,8 @@ export class ModelSelector {
     if (configuredTPM > 0) {
       // Use configured TPM from settings
     } else {
-          }
+        // No configured TPM - use 0 as fallback
+    }
     
     return configuredTPM;
   }
@@ -80,7 +81,8 @@ export class ModelSelector {
     
     // Notify user about unavailable providers
     if (unavailableProviders.length > 0) {
-          }
+        // Provider availability check complete
+    }
 
     // STRICT 7K TPM FLOOR — no model below this threshold enters any auto chain,
     // regardless of task type. Applied before capability filtering so all modes
@@ -90,7 +92,8 @@ export class ModelSelector {
     availableModels = availableModels.filter(m => this.getActualTPM(m) >= MIN_GLOBAL_TPM);
     const excludedCount = beforeFloor - availableModels.length;
     if (excludedCount > 0) {
-          }
+        // TPM floor filter applied
+    }
     
     if (availableModels.length === 0) {
       // Fallback to current model if no models available
@@ -133,7 +136,8 @@ export class ModelSelector {
         };
       }
       if (requirements.supportsMCPToolCalling) {
-              }
+          // MCP tool calling requirement - filter to compatible models
+      }
       // For other requirements, use any available model
       capable = availableModels;
     }

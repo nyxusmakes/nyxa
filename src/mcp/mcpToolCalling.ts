@@ -121,7 +121,7 @@ export class MCPToolCallingService {
         try {
             // Parse the tool name to extract server and tool.
             // Format: <sanitizedServerName>__<toolName>
-            const fullToolName = (toolCall.function?.name as string | undefined) || (toolCall.name as string | undefined) || '';
+            const fullToolName = toolCall.function?.name || toolCall.name || '';
             const separatorIdx = fullToolName.indexOf('__');
             
             if (separatorIdx === -1) {
@@ -186,7 +186,7 @@ export class MCPToolCallingService {
             return toolResult;
 
         } catch (error) {
-            const fullToolName = (toolCall.function?.name as string | undefined) || (toolCall.name as string | undefined) || 'unknown';
+            const fullToolName = toolCall.function?.name || toolCall.name || 'unknown';
             return {
                 toolName: fullToolName,
                 serverName: 'unknown',

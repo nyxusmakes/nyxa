@@ -131,7 +131,7 @@ export class IndexStatusModal extends Modal {
         this.contentArea.createDiv({ cls: 'index-status-loading', text: 'Loading…' });
 
         // Async load then render
-        this.loadAndRender(entry.config, entry.type);
+        void this.loadAndRender(entry.config, entry.type);
     }
 
     private async loadAndRender(config: IndexConfig, type: 'embedding' | 'bm25') {

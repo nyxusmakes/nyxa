@@ -68,7 +68,8 @@ export default class AIPlugin extends Plugin {
         
         
         window.setTimeout(() => {
-            const mcqOverlays = document.body.querySelectorAll('.mcq-error-overlay, .mcq-progress-dialog');
+            const doc = this.app.workspace.activeLeaf?.view.containerEl.ownerDocument ?? document;
+            const mcqOverlays = doc.body.querySelectorAll('.mcq-error-overlay, .mcq-progress-dialog');
             mcqOverlays.forEach(overlay => overlay.remove());
         }, 0);
 
@@ -119,7 +120,7 @@ export default class AIPlugin extends Plugin {
             
             
             
-            (async () => {
+            void (async () => {
                 if (!this.embeddingsManager) return;
                 try {
                     const embId = this.settings.selectedEmbeddingIndexId;
@@ -131,7 +132,8 @@ export default class AIPlugin extends Plugin {
                         await this.embeddingsManager.loadIndex(bm25Id);
                     }
                 } catch {
-                                    }
+                    // Index loading failed on startup - will be retried on first use
+                }
             })();
         });
 
@@ -195,8 +197,8 @@ export default class AIPlugin extends Plugin {
         
         
         this.addCommand({
-            id: 'open-nexus-lm-hub',
-            name: 'Open Nexus-LM Hub',
+            id: 'open-hub',
+            name: 'Open Hub',
             callback: async () => {
                 await this.activateView('landing');
             }
@@ -206,7 +208,7 @@ export default class AIPlugin extends Plugin {
             id: 'open-ai-chat',
             name: 'Open Nexus Chat',
             callback: () => {
-                this.activateView('chat');
+                void this.activateView('chat');
             }
         });
 
@@ -251,7 +253,7 @@ export default class AIPlugin extends Plugin {
                     }
                     
                     if (isPDF) {
-                        (async () => {
+                        void (async () => {
                             try {
                                 
                                 const vault = this.app.vault;
@@ -532,23 +534,26 @@ export default class AIPlugin extends Plugin {
                 });
             }
             
-            this.app.workspace.revealLeaf(leaf);
+            void this.app.workspace.revealLeaf(leaf);
         } else {
             new Notice(`Could not find or create leaf to open ${mode} view.`);
         }
     }
 
-    async onunload() {
+    onunload() {
         
         if (this.mcpService) {
-            await this.mcpService.disconnectAll();
+            this.mcpService.disconnectAll().catch(err => {
+                console.error('MCP disconnect failed during unload:', err);
+            });
         }
 
         
-        const mcqOverlays = document.body.querySelectorAll('.mcq-error-overlay');
+        const doc = this.app.workspace.activeLeaf?.view.containerEl.ownerDocument ?? document;
+        const mcqOverlays = doc.body.querySelectorAll('.mcq-error-overlay');
         mcqOverlays.forEach(overlay => overlay.remove());
 
-        await this.notebookManager.saveNotebooks();
+        void this.notebookManager.saveNotebooks();
     }
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<AISettings>);
@@ -668,7 +673,7 @@ export default class AIPlugin extends Plugin {
         if (!this.visitedEntriesSet.has(url)) {
             this.visitedEntriesSet.add(url);
             
-            this.saveSettings();
+            void this.saveSettings();
         }
     }
 
@@ -683,7 +688,7 @@ export default class AIPlugin extends Plugin {
         if (!this.bookmarkedEntriesSet.has(stringifiedEntry)) {
             this.bookmarkedEntriesSet.add(stringifiedEntry);
             this.settings.bookmarkedEntries.push(entry);
-            this.saveSettings();
+            void this.saveSettings();
             new Notice(`'${entry.title || 'Entry'}' bookmarked!`);
         }
     }
@@ -694,7 +699,7 @@ export default class AIPlugin extends Plugin {
         if (this.bookmarkedEntriesSet.has(stringifiedEntry)) {
             this.bookmarkedEntriesSet.delete(stringifiedEntry);
             this.settings.bookmarkedEntries = this.settings.bookmarkedEntries.filter(b => b.link !== entry.link);
-            this.saveSettings();
+            void this.saveSettings();
             new Notice(`'${entry.title || 'Entry'}' bookmark removed.`);
         }
     }
@@ -858,7 +863,8 @@ export default class AIPlugin extends Plugin {
                 await this.saveSettings();
             }
         } catch {
-                    }
+            // Cache corruption or missing data - will be regenerated on next access
+        }
     }
 
     /**
@@ -895,7 +901,8 @@ export default class AIPlugin extends Plugin {
                     }
                 }
             } catch {
-                            }
+                // API call failed - fallback logic follows
+            }
         }
 
         try {
@@ -947,7 +954,7 @@ export default class AIPlugin extends Plugin {
 
                 
                 activeTasks.add(taskPromise);
-                taskPromise.finally(() => activeTasks.delete(taskPromise));
+                void taskPromise.finally(() => activeTasks.delete(taskPromise));
             }
 
             
@@ -1016,7 +1023,8 @@ export default class AIPlugin extends Plugin {
                     }
                 }
             } catch {
-                            }
+                // API call failed - fallback logic follows
+            }
         }
 
         try {
@@ -1067,7 +1075,7 @@ export default class AIPlugin extends Plugin {
 
                 
                 activeTasks.add(taskPromise);
-                taskPromise.finally(() => activeTasks.delete(taskPromise));
+                void taskPromise.finally(() => activeTasks.delete(taskPromise));
             }
 
             
