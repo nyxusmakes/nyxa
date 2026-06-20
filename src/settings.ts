@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice, Modal, setIcon, TFile, TFolder, Platform } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, Modal, setIcon, TFolder, Platform } from 'obsidian';
 import { MCPRegistryModal } from './modals/mcpRegistryModal';
 import { ModelLatencyModal } from './modals/modelLatencyModal';
 import { CustomProviderModal } from './modals/customProviderModal';
@@ -2268,7 +2268,7 @@ await this.plugin.saveSettings();
         indexConfig.fileCount = indexedFileCount;
         indexConfig.lastUpdated = Date.now();
         await this.plugin.saveSettings();
-      } catch (metadataError) {
+      } catch {
               }
       
       throw error;
@@ -2895,7 +2895,7 @@ if (this.validatePath(normalizedPath)) {
         value: (model.temperature ?? 0.7).toString()
       }
     });
-    const _tempDesc = tempContainer.createEl('div', { 
+    tempContainer.createEl('div', { 
       cls: 'setting-item-description',
       text: 'Controls randomness. Lower values make output more focused and deterministic. (0.0-2.0)'
     });
@@ -2921,7 +2921,7 @@ if (this.validatePath(normalizedPath)) {
         value: (model.topP ?? 0.95).toString()
       }
     });
-    const _topPDesc = topPContainer.createEl('div', { 
+    topPContainer.createEl('div', { 
       cls: 'setting-item-description',
       text: 'Controls diversity via nucleus sampling. Lower values make output more focused. (0.0-1.0)'
     });
@@ -3637,7 +3637,7 @@ if (this.validatePath(normalizedPath)) {
     
     // Status cell
     const statusCell = row.createEl('td');
-    const _statusBadge = statusCell.createEl('span', { 
+    statusCell.createEl('span', { 
       cls: `mcp-status-badge ${server.disabled ? 'disabled' : 'enabled'}`,
       text: server.disabled ? 'Disabled' : 'Enabled'
     });
@@ -3983,7 +3983,7 @@ class MCPServerModal extends Modal {
       const currentConfig = this.getCurrentConfigFromFields();
       if (currentConfig) {
         // Strip out ID and disabled state for cleaner schema view
-        const { id: _id, disabled: _disabled, name: _name, ...schemaFields } = currentConfig as unknown as MCPServerConfig;
+        const { id: _, disabled: _d, name: _n, ...schemaFields } = currentConfig as unknown as MCPServerConfig;
         this.schemaInput.value = JSON.stringify(schemaFields, null, 2);
       }
     } else {

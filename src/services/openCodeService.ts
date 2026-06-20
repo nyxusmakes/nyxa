@@ -14,12 +14,6 @@ interface OpenCodeRequestBody {
     tool_choice?: string;
 }
 
-interface _OpenCodeToolCallResult {
-    success: boolean;
-    content: string;
-    error?: string;
-}
-
 /**
  * OpenCode Provider - Handles API calls to OpenCode Zen API
  */

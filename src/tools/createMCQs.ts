@@ -9,12 +9,6 @@ import { NvidiaService, ChatMessage as NvidiaChatMessage } from '../services/nvi
 import { MultimodalInput, processFileForMultimodal, isTextFile } from '../utils/multimodalUtils';
 import { UnifiedProviderManager } from '../services/unifiedProviderManager';
 
-interface _OpenAIErrorResponse {
-  error: {
-    message: string;
-  };
-}
-
 export interface MCQOption {
   text: string;
   isCorrect: boolean;
@@ -462,7 +456,7 @@ ${mcqSettings.customPrompt ? `Additional context: ${mcqSettings.customPrompt}` :
     
     let match;
     while ((match = mcqRegex.exec(text)) !== null) {
-      const [__unused, question, optA, optB, optC, optD, correct] = match;
+      const [, question, optA, optB, optC, optD, correct] = match;
       const correctIndex = correct.charCodeAt(0) - 'A'.charCodeAt(0);
       
       mcqs.push({
@@ -629,7 +623,7 @@ ${mcqSettings.customPrompt ? `Additional context: ${mcqSettings.customPrompt}` :
 
   async renderMarkdown(content: string, container: HTMLElement) {
     { const _comp = new Component();
-    await MarkdownRenderer.renderMarkdown(content, container, '.', _comp);
+    await MarkdownRenderer.render(this.app, content, container, '.', _comp);
     _comp.load(); }
   }
 }

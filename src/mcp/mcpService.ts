@@ -365,7 +365,7 @@ export class MCPService {
 
         while (Date.now() < deadline) {
             try {
-                const _res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
+                await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
                 
                                 return;
             } catch (e: unknown) {

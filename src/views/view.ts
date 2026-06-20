@@ -14,12 +14,6 @@ import { ConceptMapManager, ConceptMapModal, SavedConceptMap, ConceptMapData } f
 import { SlideManager, SlideshowSettingsModal, SavedSlideshow, SlideshowVoiceSettingsModal } from '../tools/createSlides';
 import { isMultimodalSupported } from '../utils/multimodalUtils';
 
-interface OpenAIErrorResponse {
-  error: {
-    message: string;
-  };
-}
-
 interface Question {
   text: string;
   answer?: string;
@@ -48,11 +42,6 @@ interface MCQResult {
 interface NotebookChatViewLike {
   notebook?: { id: string };
   externalInvalidateContextCache?: () => void;
-}
-
-interface _MindmapNode {
-  content: string;
-  children?: _MindmapNode[];
 }
 
 interface QASettings {
@@ -250,7 +239,7 @@ export class NoteSuggester {
       if (file && file instanceof TFile) {
         const noteChip = this.selectedNotesContainer.createDiv({ cls: 'note-chip' });
         noteChip.createSpan({ text: file.basename, cls: 'note-chip-text' });
-        const _removeBtn = new ButtonComponent(noteChip)
+        new ButtonComponent(noteChip)
           .setClass('note-chip-remove')
           .setIcon('x')
           .setTooltip('Remove')
@@ -413,7 +402,7 @@ export class FolderSuggester {
     this.selectedFolders.forEach(folder => {
       const folderChip = this.selectedFoldersContainer.createDiv({ cls: 'folder-chip' });
       folderChip.createSpan({ text: folder, cls: 'folder-chip-text' });
-      const _removeBtn = new ButtonComponent(folderChip)
+      new ButtonComponent(folderChip)
         .setClass('folder-chip-remove')
         .setIcon('x')
         .setTooltip('Remove')
@@ -602,7 +591,7 @@ export class AITutorView extends ItemView {
     
     
     const spinnerContainer = buttonContainer.createDiv({ cls: 'spinner-container' });
-    const _loadingSpinner = spinnerContainer.createDiv({ cls: 'loading-spinner' });
+    spinnerContainer.createDiv({ cls: 'loading-spinner' });
 
     
     const startQAButton = new ButtonComponent(buttonContainer)
@@ -1595,7 +1584,7 @@ export class AITutorView extends ItemView {
     
     const buttons = content.createDiv({ cls: 'mcq-error-buttons' });
     
-    const _retryBtn = new ButtonComponent(buttons)
+    new ButtonComponent(buttons)
       .setButtonText('Re-check')
       .setCta()
       .onClick(() => {
@@ -1603,7 +1592,7 @@ export class AITutorView extends ItemView {
         this.evaluateMCQs();
       });
     
-    const _cancelBtn = new ButtonComponent(buttons)
+    new ButtonComponent(buttons)
       .setButtonText('Cancel')
       .onClick(() => {
         overlay.remove();
@@ -1748,7 +1737,7 @@ export class AITutorView extends ItemView {
       
       
       const savedMap: SavedConceptMap = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         name: name,
         timestamp: Date.now(),
         filePath: filePath
@@ -1855,7 +1844,7 @@ export class AITutorView extends ItemView {
       
       
       const savedSlideshow: SavedSlideshow = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         name: settings.name,
         timestamp: Date.now(),
         filePath: filePath,
@@ -2057,7 +2046,7 @@ export class AITutorView extends ItemView {
     const after = text.substring(index + query.length);
     
     if (before) element.appendChild(this.document.createTextNode(before));
-    const _highlight = element.createEl('mark', { text: match, cls: 'search-highlight' });
+    element.createEl('mark', { text: match, cls: 'search-highlight' });
     if (after) element.appendChild(this.document.createTextNode(after));
   }
 
@@ -2313,7 +2302,7 @@ export class AITutorView extends ItemView {
   
   private async renderMarkdown(content: string, container: HTMLElement) {
     { const _comp = new Component();
-    await MarkdownRenderer.renderMarkdown(content, container, '.', _comp);
+    await MarkdownRenderer.render(this.app, content, container, '.', _comp);
     _comp.load(); }
   }
 
@@ -2663,7 +2652,6 @@ class QASettingsModal extends Modal {
                     this.filename = value.trim();
                 }));
 
-        let _directoryInput: HTMLInputElement;
         new Setting(contentEl)
             .setName('Save Directory')
             .setDesc('Optional: Directory to save the session. Defaults to settings directory.')
@@ -2857,71 +2845,7 @@ class MCQSettingsModal extends Modal {
   }
 }
 
-class _MindmapSettingsModal extends Modal {
-  private initialSelectedPaths: Set<string>;
-  private onSubmit: (settings: { customPrompt: string; saveDirectory: string }) => void;
-  private settings: AISettings;
 
-  private customPrompt: string = '';
-  private saveDirectory: string;
-
-  constructor(app: App, pluginSettings: AISettings, initialSelectedPaths: Set<string>, onSubmit: (settings: { customPrompt: string; saveDirectory: string }) => void) {
-    super(app);
-    this.initialSelectedPaths = initialSelectedPaths;
-    this.onSubmit = onSubmit;
-    this.settings = pluginSettings;
-    this.saveDirectory = this.settings.saveDirectory?.trim() || '';
-    this.modalEl.addClass('mindmap-settings-modal');
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    contentEl.createEl('h2', { text: 'Mindmap Generation Settings' });
-
-    new Setting(contentEl)
-      .setName('Custom Prompt (Optional)')
-      .setDesc('Provide additional instructions or context for the AI when generating the mindmap.')
-      .addTextArea(text => text
-        .setPlaceholder('e.g., Focus on key concepts and their relationships, omitting minor details.')
-        .setValue(this.customPrompt)
-        .onChange(value => {
-          this.customPrompt = value;
-        }));
-    
-    new Setting(contentEl)
-        .setName('Save Directory')
-        .setDesc('Optional: Directory to save the mindmap. Defaults to settings directory.')
-        .addText(text => {
-            text.setPlaceholder('e.g., Daily Notes/Study')
-                .setValue(this.saveDirectory)
-                .onChange(value => {
-                    this.saveDirectory = value.trim();
-                });
-            new DirectorySuggester(this.app, text.inputEl, (path) => {
-                this.saveDirectory = path;
-                text.inputEl.value = path;
-            }, this.saveDirectory);
-        });
-
-    const buttonContainer = contentEl.createDiv({ cls: 'modal-button-container' });
-    new ButtonComponent(buttonContainer)
-      .setButtonText('Cancel')
-      .onClick(() => this.close());
-
-    new ButtonComponent(buttonContainer)
-      .setButtonText('Generate Mindmap')
-      .setCta()
-      .onClick(() => {
-        this.onSubmit({
-          customPrompt: this.customPrompt,
-          saveDirectory: this.saveDirectory
-        });
-        this.close();
-      });
-  }
-}
 
 
 class TimerModal extends Modal {

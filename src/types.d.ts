@@ -323,7 +323,7 @@ interface TemporalFilterInput {
 interface Window {
     pdfjsLib?: PdfjsLib;
     activeConceptMapModal?: unknown;
-    require?: NodeRequire;
+    require?: NodeJS.Require;
 }
 
 // ===== Ollama Tags Response =====

@@ -1375,8 +1375,8 @@ export class EmbeddingsManager {
                 // If there's an error during building, try to save what we have so far
                 try {
                     await this.saveIndex(indexId);
-                } catch (saveError) {
-                                    }
+                } catch {
+                }
             } finally {
                 // Restore the original embedding model
                 this.settings.embeddingModel = originalEmbeddingModel;
@@ -1437,8 +1437,8 @@ export class EmbeddingsManager {
             let content = '';
             try {
                 content = await this.app.vault.read(file);
-            } catch (error) {
-                                processed++;
+            } catch {
+                processed++;
                 continue;
             }
 
@@ -1522,8 +1522,8 @@ export class EmbeddingsManager {
                                         this.index.lastUpdated = Date.now();
                     await this.saveIndex(indexId);
                     filesSinceLastSave = 0;
-                } catch (saveError) {
-                                        // Continue processing even if save fails
+                } catch {
+                    // Continue processing even if save fails
                 }
             }
 
@@ -1604,8 +1604,8 @@ export class EmbeddingsManager {
             let content = '';
             try {
                 content = await this.app.vault.read(file);
-            } catch (error) {
-                                processed++;
+            } catch {
+                processed++;
                 continue;
             }
 
@@ -1703,10 +1703,10 @@ export class EmbeddingsManager {
                 // Incremental save: Save progress every SAVE_INTERVAL_BATCHES batches
                 if (batchNumber % SAVE_INTERVAL_BATCHES === 0) {
                     try {
-                                                this.index.lastUpdated = Date.now();
+                        this.index.lastUpdated = Date.now();
                         await this.saveIndex(indexId);
-                    } catch (saveError) {
-                                                // Continue processing even if save fails
+                    } catch {
+                        // Continue processing even if save fails
                     }
                 }
                 

@@ -119,7 +119,7 @@ export class NotebookFormModal extends Modal {
 
     // --- Add Source Folders Section ---
     scrollableContainer.createEl('h3', { text: 'Add Source Folders' });
-    const _folderDescription = scrollableContainer.createEl('p', { 
+    scrollableContainer.createEl('p', { 
       cls: 'folder-description',
       text: 'Select folders to automatically include all their files as sources. New files added to these folders will be available when you reopen the notebook.'
     });
@@ -179,7 +179,7 @@ export class NotebookFormModal extends Modal {
 
     // --- Add Feed Sources Section ---
     scrollableContainer.createEl('h3', { text: 'Add Feed Sources' });
-    const _feedDescription = scrollableContainer.createEl('p', {
+    scrollableContainer.createEl('p', {
       cls: 'feed-description',
       text: 'Select RSS/Atom feeds from your saved feeds. Recent entries (based on duration) will be added as web sources.'
     });

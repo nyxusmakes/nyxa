@@ -130,7 +130,7 @@ export default class AIPlugin extends Plugin {
                     if (bm25Id) {
                         await this.embeddingsManager.loadIndex(bm25Id);
                     }
-                } catch (err) {
+                } catch {
                                     }
             })();
         });
@@ -857,7 +857,7 @@ export default class AIPlugin extends Plugin {
 
                 await this.saveSettings();
             }
-        } catch (error) {
+        } catch {
                     }
     }
 
@@ -894,7 +894,7 @@ export default class AIPlugin extends Plugin {
                         hasCredits = false;
                     }
                 }
-            } catch (error) {
+            } catch {
                             }
         }
 
@@ -1015,7 +1015,7 @@ export default class AIPlugin extends Plugin {
                         hasCredits = false;
                     }
                 }
-            } catch (error) {
+            } catch {
                             }
         }
 

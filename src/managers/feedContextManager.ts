@@ -91,7 +91,7 @@ export class FeedEntrySelectModal extends Modal {
       if (!entry.title || !entry.link) return;
       const item = entriesListContainer.createDiv({ cls: 'feed-entry-card' });
       // Title
-      const _titleEl = item.createEl('div', { text: entry.title, cls: 'entry-title' });
+      item.createEl('div', { text: entry.title, cls: 'entry-title' });
       // Metadata Line (Author and Date)
       const metadataLine = item.createDiv({ cls: 'entry-metadata-line' });
       if (entry.author) {

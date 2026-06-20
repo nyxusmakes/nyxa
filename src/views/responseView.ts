@@ -238,8 +238,6 @@ interface FileActionState {
     isExcalidraw?: boolean;
 }
 
-type _PauseResumeTimerCallback = (pause: boolean) => void;
-
 class FileModal extends SuggestModal<TFile> {
     private selectedCallback: (file: TFile) => void;
     private cursorPosition: number;
@@ -1256,7 +1254,7 @@ export class ResponseView extends ItemView {
         const headerRightControls = headerSection.createDiv({ cls: 'header-right-controls' });
 
         
-        const _headerModelBtn = new ButtonComponent(headerRightControls)
+        new ButtonComponent(headerRightControls)
             .setButtonText(this.getModelButtonText())
             .setClass('header-model-btn')
             .onClick(() => this.showModelMenu());
@@ -2999,7 +2997,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const headerRightControls = headerSection.createDiv({ cls: 'header-right-controls' });
 
         
-        const _headerModelBtn = new ButtonComponent(headerRightControls)
+        new ButtonComponent(headerRightControls)
             .setButtonText(this.getModelButtonText())
             .setClass('header-model-btn')
             .onClick(() => this.showModelMenu());
@@ -3010,20 +3008,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const ellipsisBtn = headerRightControls.createDiv({ cls: 'header-ellipsis-btn' });
         setIcon(ellipsisBtn, 'more-vertical');
         ellipsisBtn.addClass('nl-cursor-pointer');
-        ellipsisBtn.setAttr('aria-label', 'Menu options');
-        ellipsisBtn.setAttr('tabindex', '0');
-        ellipsisBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.showHeaderMenu(ellipsisBtn);
-        });
-
-        
-        const firstChild = wrapper.firstChild;
-        if (firstChild) {
-            wrapper.insertBefore(headerSection, firstChild);
-        } else {
-            wrapper.appendChild(headerSection);
-        }
     }
 
     private renderFileCapsules(container: HTMLElement) {
@@ -5201,7 +5185,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                 const videoId = extractYouTubeId(url);
                                 if (videoId) {
                                     const embedContainer = citationItem.createDiv({ cls: 'youtube-embed-container' });
-                                    const _iframe = embedContainer.createEl('iframe', {
+                                    embedContainer.createEl('iframe', {
                                         cls: 'youtube-embed',
                                         attr: {
                                             src: `https://www.youtube.com/embed/${videoId}`,
@@ -5210,7 +5194,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                             allowfullscreen: 'true'
                                         }
                                     });
-                                    const _titleEl = embedContainer.createDiv({
+                                    embedContainer.createDiv({
                                         cls: 'youtube-embed-title',
                                         text: source.path.replace('YouTube: ', '')
                                     });
@@ -5244,7 +5228,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                 const videoId = extractYouTubeId(url);
                                 if (videoId) {
                                     const embedContainer = sourceItem.createDiv({ cls: 'youtube-embed-container' });
-                                    const _iframe = embedContainer.createEl('iframe', {
+                                    embedContainer.createEl('iframe', {
                                         cls: 'youtube-embed',
                                         attr: {
                                             src: `https://www.youtube.com/embed/${videoId}`,
@@ -5253,7 +5237,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                                             allowfullscreen: 'true'
                                         }
                                     });
-                                    const _titleEl = embedContainer.createDiv({
+                                    embedContainer.createDiv({
                                         cls: 'youtube-embed-title',
                                         text: source.path.replace('YouTube: ', '')
                                     });
@@ -5351,7 +5335,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             const sourcesHeader = webSourcesEl.createDiv({ cls: 'sources-header' });
             const toggleIcon = sourcesHeader.createSpan({ cls: 'sources-toggle-icon' });
             toggleIcon.setText('▶'); 
-            const _headerText = sourcesHeader.createEl('h6', { text: `Web Sources (${webResults.length})` });
+            sourcesHeader.createEl('h6', { text: `Web Sources (${webResults.length})` });
 
             
             const sourcesContent = webSourcesEl.createDiv({ cls: 'sources-content' });
@@ -5404,7 +5388,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const sourcesHeader = sourcesEl.createDiv({ cls: 'sources-header' });
         const toggleIcon = sourcesHeader.createSpan({ cls: 'sources-toggle-icon' });
         toggleIcon.setText('▶'); 
-        const _headerText = sourcesHeader.createEl('h6', { text: `Sources Referred (${totalSources})` });
+        sourcesHeader.createEl('h6', { text: `Sources Referred (${totalSources})` });
 
         
         const sourcesContent = sourcesEl.createDiv({ cls: 'sources-content' });
@@ -6804,7 +6788,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const filesSection = callout.createDiv({ cls: 'index-status-files-section' });
         const filesToggle = filesSection.createDiv({ cls: 'index-status-files-toggle' });
         const toggleIcon = filesToggle.createSpan({ cls: 'index-status-files-toggle-icon', text: '▶' });
-        const _toggleText = filesToggle.createSpan({ text: 'View non-indexed files' });
+        filesToggle.createSpan({ text: 'View non-indexed files' });
 
         const filesList = filesSection.createDiv({ cls: 'index-status-files-list' });
         const filesListInner = filesList.createDiv({ cls: 'index-status-files-list-inner' });
@@ -7900,7 +7884,8 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             }
 
             
-            await MarkdownRenderer.renderMarkdown(
+            await MarkdownRenderer.render(
+                this.app,
                 previewText,
                 contentDiv,
                 file.path,
@@ -9086,7 +9071,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         }
 
         
-        const _statusEl = capsule.createDiv({ cls: 'file-action-status' });
+        capsule.createDiv({ cls: 'file-action-status' });
         this.updateFileActionStatus(actionId, 'processing');
 
         
@@ -10516,7 +10501,7 @@ ${jsonContent}
             nameEl.textContent = actionState.fileName;
         }
         
-        const _statusEl = capsule.createDiv({ cls: 'file-action-status' });
+        capsule.createDiv({ cls: 'file-action-status' });
 
         
         this.updateFileActionStatus(actionId, actionState.status, actionState.error);
@@ -10796,7 +10781,6 @@ ${jsonContent}
             const calledTools: Array<{ server: string; tool: string }> = [];
 
             
-            try {
                 const result = await this.basicChatService.processMCPQuery(
                     query,
                     enhancedQuery,
@@ -10882,11 +10866,7 @@ ${jsonContent}
 
                 
                 this.saveCurrentSession();
-            } catch (aiError) {
-                                throw aiError;
-            }
-
-        } catch (error) {
+            } catch (error) {
             
             window.clearInterval(progressInterval);
             
@@ -11040,10 +11020,6 @@ ${jsonContent}
 
         return cleaned.trim();
     }
-}
-
-function _escapeRegex(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

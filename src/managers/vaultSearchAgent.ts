@@ -432,16 +432,6 @@ export class VaultSearchAgent {
         
         
         
-        let estimatedContentTokens = 0;
-        finalFilteredContent.forEach(doc => {
-            if (doc.similarity >= dynamicThresholds.high) {
-                estimatedContentTokens += this._estimateTokens(doc.content);
-            } else if (doc.similarity >= dynamicThresholds.medium) {
-                estimatedContentTokens += Math.min(1500, this._estimateTokens(doc.content));
-            } else {
-                estimatedContentTokens += Math.min(500, this._estimateTokens(doc.content));
-            }
-        });
 
         
 

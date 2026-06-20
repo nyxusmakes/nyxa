@@ -958,7 +958,6 @@ Rules:
       'Keyword based → For facts use this. Keyword-filled query excels, fast'
     ];
     let promptIndex = 0;
-    let _placeholderInterval: number | null = null;
     let isInputActive = false;
     const setNextPlaceholder = () => {
       if (!isInputActive && this.document.activeElement !== this.chatInput.inputEl) {
@@ -968,7 +967,7 @@ Rules:
         }
       }
     };
-    _placeholderInterval = window.setInterval(setNextPlaceholder, 3500);
+    window.setInterval(setNextPlaceholder, 3500);
     this.chatInput.inputEl.addEventListener('focus', () => {
       isInputActive = true;
     });
@@ -1177,7 +1176,7 @@ Rules:
     
     const cagWrap = toggleContainer.createDiv({ cls: 'notebook-mode-checkbox-wrap' });
     const cagCheckbox = cagWrap.createEl('input', { type: 'checkbox', cls: 'notebook-mode-checkbox' });
-    cagCheckbox.id = `mode-cag-${Math.random().toString(36).substr(2, 9)}`; 
+    cagCheckbox.id = `mode-cag-${Math.random().toString(36).substring(2, 11)}`; 
     cagCheckbox.checked = this.notebook.mode === 'cag' || !this.notebook.mode;
     const cagLabel = cagWrap.createEl('label', { text: 'Full context', cls: 'notebook-mode-label' });
     cagLabel.htmlFor = cagCheckbox.id;
@@ -1185,7 +1184,7 @@ Rules:
     
     const ragWrap = toggleContainer.createDiv({ cls: 'notebook-mode-checkbox-wrap' });
     const ragCheckbox = ragWrap.createEl('input', { type: 'checkbox', cls: 'notebook-mode-checkbox' });
-    ragCheckbox.id = `mode-rag-${Math.random().toString(36).substr(2, 9)}`; 
+    ragCheckbox.id = `mode-rag-${Math.random().toString(36).substring(2, 11)}`; 
     ragCheckbox.checked = this.notebook.mode === 'rag';
     const ragLabel = ragWrap.createEl('label', { text: 'Keyword based', cls: 'notebook-mode-label' });
     ragLabel.htmlFor = ragCheckbox.id;
@@ -1287,7 +1286,7 @@ Rules:
     const sourcesHeader = this.sourcesContainer.createDiv({ cls: 'mobile-sources-header' });
 
     
-    const _backBtn = new ButtonComponent(sourcesHeader)
+    new ButtonComponent(sourcesHeader)
       .setIcon('arrow-left')
       .setTooltip('Back to sessions')
       .setClass('mobile-back-btn')
@@ -2718,7 +2717,7 @@ Rules:
           timestamp: Date.now()
         };
 
-        const _messageContainer = this.addQuizMessage(quizState);
+        this.addQuizMessage(quizState);
         return;
       }
 
@@ -2782,7 +2781,7 @@ Rules:
           timestamp: Date.now()
         };
 
-        const _messageContainer = this.addFlashcardMessage(flashcardState);
+        this.addFlashcardMessage(flashcardState);
         return;
       }
 
@@ -3500,7 +3499,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
   private async renderMarkdown(content: string, container: HTMLElement) {
     { const _comp = new Component();
-    await MarkdownRenderer.renderMarkdown(content, container, this.app.vault.adapter.getResourcePath(''), _comp);
+    await MarkdownRenderer.render(this.app, content, container, this.app.vault.adapter.getResourcePath(''), _comp);
     _comp.load(); }
 
     
@@ -4068,7 +4067,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
   
   private animateTokenBarReset() {
     const steps = 20;
-    const _interval = 50; 
+
     const initialDynamic = this.dynamicTokens;
     const initialOutput = this.outputTokens;
     let step = 0;
@@ -4209,66 +4208,4 @@ class SessionSelectModal extends Modal {
 }
 
 
-class _SearchResultsModal extends Modal {
-  private results: Array<{ title: string; link: string; snippet: string }>;
-  private onAdd: (results: Array<{ title: string; link: string; snippet: string }>) => void;
-  private isLoading: boolean;
-  private error: string | null;
-  private selectedResults: Set<number> = new Set();
 
-  constructor(app: App, results: Array<{ title: string; link: string; snippet: string }>, onAdd: (results: Array<{ title: string; link: string; snippet: string }>) => void, isLoading = false, error: string | null = null) {
-    super(app);
-    this.results = results;
-    this.onAdd = onAdd;
-    this.isLoading = isLoading;
-    this.error = error;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.addClass('session-select-modal');
-    contentEl.createEl('h2', { text: 'Search Results' });
-    if (this.isLoading) {
-      contentEl.createDiv({ text: 'Searching...' });
-      return;
-    }
-    if (this.error) {
-      contentEl.createDiv({ text: this.error, cls: 'search-error' });
-      return;
-    }
-    if (!this.results.length) {
-      contentEl.createDiv({ text: 'No results found.' });
-      return;
-    }
-    
-    const scrollableContainer = contentEl.createDiv({ cls: 'search-results-scrollable-container' });
-    
-    this.results.forEach((result, idx) => {
-      const item = scrollableContainer.createDiv({ cls: 'session-item' });
-      const checkbox = item.createEl('input', { type: 'checkbox' });
-      checkbox.checked = this.selectedResults.has(idx);
-      checkbox.onchange = () => {
-        if (checkbox.checked) this.selectedResults.add(idx);
-        else this.selectedResults.delete(idx);
-      };
-      const title = item.createEl('a', { text: result.title, href: result.link });
-      title.target = '_blank';
-      title.rel = 'noopener';
-      item.createDiv({ text: result.snippet, cls: 'notebook-search-snippet' });
-    });
-    
-    const buttonContainer = contentEl.createDiv({ cls: 'modal-button-container' });
-    new ButtonComponent(buttonContainer)
-      .setButtonText('Cancel')
-      .onClick(() => this.close());
-    new ButtonComponent(buttonContainer)
-      .setButtonText('Done')
-      .setCta()
-      .onClick(() => {
-        const selected = Array.from(this.selectedResults).map(idx => this.results[idx]);
-        this.onAdd(selected);
-        this.close();
-      });
-  }
-}
