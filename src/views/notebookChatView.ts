@@ -854,7 +854,7 @@ Rules:
       if (this.currentSession && this.currentSession.id === sessionId) {
         this.currentSession = null;
         this.messages = [];
-        await void this.invalidateContextCache(); 
+        void this.invalidateContextCache(); 
         await this.renderSessionSelector();
       } else {
         await this.renderSessionList();
@@ -4098,7 +4098,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
   
   public async externalInvalidateContextCache() {
-    await void this.invalidateContextCache();
+    void this.invalidateContextCache();
   }
 
     

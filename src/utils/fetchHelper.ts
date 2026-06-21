@@ -1,1 +1,1 @@
-export const nativeFetch: typeof fetch = (...args) => globalThis.fetch(...args);
+export const nativeFetch: typeof fetch = (...args) => window.fetch(...args);

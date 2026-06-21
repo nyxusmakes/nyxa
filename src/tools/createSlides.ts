@@ -570,7 +570,7 @@ export class SlideshowSettingsModal extends Modal {
 
     const voiceSelectContainer = voiceSetting.controlEl.createDiv({ cls: 'voice-select-container' });
     
-    this.voiceSelectDropdown = voiceSelectContainer.createEl('select', { cls: 'voice-select-dropdown' }) as HTMLSelectElement;
+    this.voiceSelectDropdown = voiceSelectContainer.createEl('select', { cls: 'voice-select-dropdown' });
     this.voiceSelectDropdown.empty();
     this.voiceSelectDropdown.createEl('option', { text: 'Loading voices...', value: '' });
     
@@ -828,7 +828,7 @@ export class SlideshowVoiceSettingsModal extends Modal {
 
     const voiceSelectContainer = voiceSetting.controlEl.createDiv({ cls: 'voice-select-container' });
     
-    this.voiceSelectDropdown = voiceSelectContainer.createEl('select', { cls: 'voice-select-dropdown' }) as HTMLSelectElement;
+    this.voiceSelectDropdown = voiceSelectContainer.createEl('select', { cls: 'voice-select-dropdown' });
     this.voiceSelectDropdown.empty();
     this.voiceSelectDropdown.createEl('option', { text: 'Loading voices...', value: '' });
     

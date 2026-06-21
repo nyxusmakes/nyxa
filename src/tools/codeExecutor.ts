@@ -94,7 +94,7 @@ export async function executeCode(code: string, language: string): Promise<CodeE
 async function executeJavaScript(code: string): Promise<CodeExecutionResult> {
     const logs: string[] = [];
     try {
-        const AsyncFn = Object.getPrototypeOf(async function () {}).constructor as new (code: string) => () => Promise<unknown>;
+        const AsyncFn = (Object.getPrototypeOf(async function () {}) as unknown as { constructor: new (code: string) => () => Promise<unknown> }).constructor;
         const result = await new AsyncFn(code)();
         if (result !== undefined)
             logs.push(`→ ${typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)}`);
@@ -233,9 +233,9 @@ function buildSimpleChartHtml(obj: ChartJsSimpleObj): string {
     const PALETTE = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#f97316','#84cc16'];
 
     let spec: Record<string, unknown>;
-    const chartTitle = obj.title as string | undefined;
+    const chartTitle = obj.title;
     const chartData = obj.data;
-    const isHorizontal = obj.horizontal as boolean | undefined;
+    const isHorizontal = obj.horizontal;
     if (rawType === 'sparkline') {
         // Sparkline: minimal line chart, no axes, no legend
         spec = {

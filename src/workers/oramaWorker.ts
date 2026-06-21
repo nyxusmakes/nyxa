@@ -142,7 +142,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 if (!payload) throw new Error('Missing payload for LOAD');
                 try {
                     let binaryData: ArrayBuffer | Array<Record<string, unknown>> | undefined = payload.data as unknown as ArrayBuffer | Array<Record<string, unknown>>;
-                    if (payload.compressed) binaryData = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer)).buffer as ArrayBuffer;
+                    if (payload.compressed) binaryData = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer)).buffer as unknown as ArrayBuffer;
                     
                     let decoded: DecodedLoadPayload;
                     

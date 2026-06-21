@@ -866,15 +866,15 @@ RESPONSE QUALITY CHECKLIST:
                     
                     if (ollamaThinkOption) {
                         let contentBuffer = '';
-                        await (ollamaService as OllamaService).generateContentStreamEvents(
+                        await ollamaService.generateContentStreamEvents(
                             this.settings.model,
                             ollamaMessages,
                             (evt: { type?: string; text?: string }) => {
                                 if (evt?.type === 'thinking' && evt.text) {
-                                    this.snippetUpdateCallback('Thinking...', evt.text as string);
+                                    this.snippetUpdateCallback('Thinking...', evt.text);
                                 } else if (evt?.type === 'content' && evt.text) {
-                                    contentBuffer += evt.text as string;
-                                    this.snippetUpdateCallback('Generating response...', evt.text as string);
+                                    contentBuffer += evt.text;
+                                    this.snippetUpdateCallback('Generating response...', evt.text);
                                 }
                             },
                             {
@@ -888,7 +888,7 @@ RESPONSE QUALITY CHECKLIST:
                         finalAnswer = contentBuffer;
                     } else {
                         
-                        finalAnswer = await (ollamaService as OllamaService).generateContent(
+                        finalAnswer = await ollamaService.generateContent(
                             this.settings.model,
                             ollamaMessages,
                             {

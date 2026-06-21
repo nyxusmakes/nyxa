@@ -858,7 +858,8 @@ Instructions:
                                     const webContext = this.formatOllamaWebSearchResults(searchResults.results as unknown as OpenAITool[]);
                                     
                                     
-                                    ollamaMessages[0].content = (ollamaMessages[0].content || '') + `\n\n${webContext}`;
+                                    const existingContent = typeof ollamaMessages[0].content === 'string' ? ollamaMessages[0].content : '';
+                                    ollamaMessages[0].content = existingContent + `\n\n${webContext}`;
                                     
                                     
                                     webResults = searchResults.results.map(r => ({
@@ -2901,7 +2902,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
             
             const executeToolsViaModel = async (toolCalls: OpenAITool[], passLabel: string) => {
                 if (!ledger) throw new Error('Ledger not initialized');
-                const results = new Array(toolCalls.length);
+                const results: LocalToolResult[] = new Array(toolCalls.length);
                 const promises = toolCalls.map(async (toolCall, i) => {
                     if (passAbandoned) {
                         results[i] = { success: false, content: '', error: 'Pass abandoned' };
@@ -2954,7 +2955,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                             ledger.plan.steps.push(dynStep);
                             ledger.completedSteps.push(dynId);
                         }
-                        results[i] = result;
+                        results[i] = result as unknown as LocalToolResult;
                     } catch (err) {
                         const errMsg = err instanceof Error ? err.message : String(err);
                         if (!passAbandoned) updateSnippetUI(`✗ ${label}`, errMsg);
@@ -3559,7 +3560,9 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                     );
                     const sysMsg  = msgs.find((m: OpenAIMessage) => m.role === 'system');
                     const userMsg = msgs.find((m: OpenAIMessage) => m.role === 'user');
-                    const prompt  = `${sysMsg ? sysMsg.content + '\n\n' : ''}${userMsg?.content || ''}`;
+                    const sysContent = sysMsg ? (typeof sysMsg.content === 'string' ? sysMsg.content : '') : '';
+                    const userContent = typeof userMsg?.content === 'string' ? userMsg.content : '';
+                    const prompt  = `${sysContent ? sysContent + '\n\n' : ''}${userContent}`;
 
                     const geminiModel = geminiService.getGenerativeModel({
                         model: modelId,
