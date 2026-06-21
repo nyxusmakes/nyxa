@@ -142,7 +142,10 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 if (!payload) throw new Error('Missing payload for LOAD');
                 try {
                     let binaryData: ArrayBuffer | Array<Record<string, unknown>> | undefined = payload.data as unknown as ArrayBuffer | Array<Record<string, unknown>>;
-                    if (payload.compressed) binaryData = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer)).buffer as unknown as ArrayBuffer;
+                    if (payload.compressed) {
+                        const decompressed: Uint8Array = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer));
+                        binaryData = decompressed.buffer as ArrayBuffer;
+                    }
                     
                     let decoded: DecodedLoadPayload;
                     
@@ -174,7 +177,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                         shadowDocsMap.set(instanceId, shadowDocs);
                     } else if (decoded.documents && Array.isArray(decoded.documents)) {
                         // Migration from old SearchIndex
-                        const docs = decoded.documents as LegacyDoc[];
+                        const docs = decoded.documents;
                         let dim = 0;
                         for (const d of docs) {
                             if (d.embedding && d.embedding.length > 0) { dim = d.embedding.length; break; }

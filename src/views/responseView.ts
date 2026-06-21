@@ -31,6 +31,16 @@ interface MCPResourceReadResult {
     }>;
 }
 
+function $q<T extends Element>(el: Element | null | undefined, sel: string): T | null {
+    return (el ?? null)?.querySelector<T>(sel) ?? null;
+}
+function $qa<T extends Element>(el: Element, sel: string): T[] {
+    return Array.from(el.querySelectorAll<T>(sel));
+}
+function $c<T extends Element>(el: Element, sel: string): T | null {
+    return el.closest<T>(sel) ?? null;
+}
+
 export const VIEW_TYPE_NEXUS_CHAT = 'NEXUS_CHAT_VIEW';
 
 interface Response {
@@ -1510,7 +1520,7 @@ export class ResponseView extends ItemView {
             if (this.contextMenuEl && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
                 e.preventDefault();
 
-                const items = Array.from(this.contextMenuEl.querySelectorAll('.context-file-menu-item:not([style*="opacity: 0.5"])')) as HTMLElement[];
+                const items = $qa<HTMLElement>(this.contextMenuEl, '.context-file-menu-item:not([style*="opacity: 0.5"])');
                 if (items.length === 0) return;
 
                 const currentSelected = this.contextMenuEl.querySelector('.context-file-menu-item.selected') as HTMLElement;
@@ -2802,7 +2812,7 @@ export class ResponseView extends ItemView {
 
         
         const responseItemsList = container.querySelectorAll('.response-item');
-        const queryInput = container.querySelector('.query-input-new') as HTMLTextAreaElement | null;
+        const queryInput = $q<HTMLTextAreaElement>(container, '.query-input-new');
 
         
         this.applyLiquidGlass(headerSection, inputContainer, responsesContainer, responseItemsList, queryInput, wallpaperEnabled && hasWallpaperPath);
@@ -3266,7 +3276,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         
         const container = this.currentThinkingContainerEl
-            || (targetThinkingEl.closest('.thinking-container') as HTMLElement | null);
+            || $c<HTMLElement>(targetThinkingEl, '.thinking-container');
         if (container && container.classList.contains('collapsed')) {
             this.setThinkingCollapsed(container, false);
         }
@@ -3320,12 +3330,12 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             
             let targetThinkingEl = this.currentThinkingEl;
             if (!targetThinkingEl) {
-                targetThinkingEl = this.currentProgressResponseEl.querySelector('.thinking-content') as HTMLElement | null;
+                targetThinkingEl = $q<HTMLElement>(this.currentProgressResponseEl, '.thinking-content');
             }
 
             if (targetThinkingEl) {
                 
-                const container = (targetThinkingEl.closest('.thinking-container') as HTMLElement | null)
+                const container = $c<HTMLElement>(targetThinkingEl, '.thinking-container')
                     || this.currentThinkingContainerEl;
                 if (container && container.classList.contains('collapsed')) {
                     this.setThinkingCollapsed(container, false);
@@ -3371,7 +3381,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         
         
-        let finalContentEl = this.currentProgressResponseEl.querySelector('.final-answer-content') as HTMLElement | null;
+        let finalContentEl = $q<HTMLElement>(this.currentProgressResponseEl, '.final-answer-content');
 
         
         if (!finalContentEl) {
@@ -3657,7 +3667,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             if (!targetFolder) {
                 const folderPatterns = [
                     /(?:in|to|inside)\s+(?:the\s+)?(?:folder|directory)\s+['"]([^'"]+)['"]/i,
-                    /(?:in|to|inside)\s+(?:the\s+)?(?:folder|directory)\s+([\w\s/\-]+?)(?=\s+(?:create|make|with|and|\.|$))/i,
+                    /(?:in|to|inside)\s+(?:the\s+)?(?:folder|directory)\s+([\w\s/-]+?)(?=\s+(?:create|make|with|and|\.|$))/i,
                     /(?:folder|directory):\s*['"]?([^'"\n]+)['"]?/i
                 ];
 
@@ -5936,7 +5946,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         
         const answerEl = responseEl.querySelector('.response-answer') || responseEl.createDiv({ cls: 'response-answer' });
         const finalContentEl =
-            (answerEl.querySelector('.final-answer-content') as HTMLElement | null) ||
+            $q<HTMLElement>(answerEl, '.final-answer-content') ||
             answerEl.createDiv({ cls: 'final-answer-content' });
 
         finalContentEl.empty();
@@ -5989,7 +5999,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         
         
-        const thinkingContainer = responseEl.querySelector('.thinking-container') as HTMLElement | null;
+        const thinkingContainer = $q<HTMLElement>(responseEl, '.thinking-container');
         if (thinkingContainer) {
             
             if (this.currentThinkingChunkEl && this.currentThinkingChunkText.trim()) {
@@ -7203,7 +7213,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         }
 
         
-        const btn = this.containerEl.querySelector('.header-system-instructions-btn') as HTMLElement | null;
+        const btn = $q<HTMLElement>(this.containerEl, '.header-system-instructions-btn');
         if (btn) {
             btn.removeClass('has-instructions');
             btn.removeAttribute('data-collection-icon');
@@ -8650,7 +8660,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             (instructions: string, icon?: string) => {
                 this.currentSystemInstructions = instructions;
                 
-                const btn = this.containerEl.querySelector('.header-system-instructions-btn') as HTMLElement | null;
+                const btn = $q<HTMLElement>(this.containerEl, '.header-system-instructions-btn');
                 if (btn) {
                     if (instructions) {
                         btn.addClass('has-instructions');
@@ -8734,7 +8744,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             
             this.currentSystemInstructions = session.systemInstructions || '';
             
-            const btn = this.containerEl.querySelector('.header-system-instructions-btn') as HTMLElement | null;
+            const btn = $q<HTMLElement>(this.containerEl, '.header-system-instructions-btn');
             if (btn) {
                 if (this.currentSystemInstructions) {
                     btn.addClass('has-instructions');

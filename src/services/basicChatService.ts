@@ -2902,7 +2902,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
             
             const executeToolsViaModel = async (toolCalls: OpenAITool[], passLabel: string) => {
                 if (!ledger) throw new Error('Ledger not initialized');
-                const results: LocalToolResult[] = new Array(toolCalls.length);
+                const results: LocalToolResult[] = Array.from({ length: toolCalls.length }, () => ({ success: false, content: '' }));
                 const promises = toolCalls.map(async (toolCall, i) => {
                     if (passAbandoned) {
                         results[i] = { success: false, content: '', error: 'Pass abandoned' };

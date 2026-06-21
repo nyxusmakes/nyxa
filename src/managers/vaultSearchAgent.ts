@@ -740,7 +740,7 @@ RESPONSE QUALITY CHECKLIST:
                     const modelTokenLimit = rateLimitState.limits?.tokensPerMinute || 8000;
                     const groqMessages: GroqChatMessage[] = [
                         { role: 'system', content: baseSystemInstructions },
-                        ...convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit) as GroqChatMessage[]
+                        ...convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit)
                     ];
                     if (formattedVaultContent) {
                         groqMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` } as GroqChatMessage);

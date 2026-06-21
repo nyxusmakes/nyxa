@@ -436,7 +436,7 @@ export class PdfExtractOptionsModal extends Modal {
     const loading = this.tocContainer.createDiv({ text: 'Loading outline...', cls: 'pdf-toc-loading' });
     
     try {
-      const outline = await this.pdfDocument.getOutline() as PdfOutlineItem[] | null;
+      const outline = await this.pdfDocument.getOutline();
       loading.remove();
       
       if (!outline || outline.length === 0) {

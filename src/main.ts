@@ -257,7 +257,7 @@ export default class AIPlugin extends Plugin {
                             try {
                                 
                                 const vault = this.app.vault;
-                                const arrayBuffer = await vault.readBinary(activeFile!);
+                                const arrayBuffer = await vault.readBinary(activeFile);
                                 const pdfjsLib = (window as { pdfjsLib?: PdfjsLib }).pdfjsLib;
                                 if (!pdfjsLib) throw new Error('PDF.js library not loaded.');
                                 const pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -266,13 +266,13 @@ export default class AIPlugin extends Plugin {
                                 const defaultDir = this.settings.pdfOutputDirectory || 'PDF-Extracted-Text';
                                 new PdfExtractOptionsModal(this.app, numPages, defaultDir, pdfDocument, (opts) => {
                                     void (async () => {
-                                        new Notice(`Extracting text from ${activeFile!.name}...`);
-                                        const extractedText = await extractTextFromPdf(activeFile!, vault, { from: opts.from, to: opts.to });
+                                        new Notice(`Extracting text from ${activeFile.name}...`);
+                                        const extractedText = await extractTextFromPdf(activeFile, vault, { from: opts.from, to: opts.to });
                                         
                                         const outputDir = opts.directory || defaultDir;
                                         await vault.adapter.mkdir(outputDir);
                                         
-                                        const fileNameWithoutExtension = activeFile!.basename;
+                                        const fileNameWithoutExtension = activeFile.basename;
                                         let outputFileName = '';
                                         if (opts.full) {
                                             outputFileName = `${fileNameWithoutExtension} text.md`;
