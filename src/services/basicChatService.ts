@@ -204,10 +204,8 @@ export class BasicChatService {
         const currentProvider = passedProvider || this.settings.provider;
 
         const normalizedOllamaModelId = (currentModel || '').toLowerCase();
-        const isOllamaGptOssModel = normalizedOllamaModelId.includes('gpt-oss');
 
-        
-        
+
         
         
         const totalSteps = 1;

@@ -3984,7 +3984,7 @@ class MCPServerModal extends Modal {
       const currentConfig = this.getCurrentConfigFromFields();
       if (currentConfig) {
         // Strip out ID and disabled state for cleaner schema view
-        const { id: _, disabled: _d, name: _n, ...schemaFields } = currentConfig as unknown as MCPServerConfig;
+        const schemaFields = currentConfig as unknown as Omit<MCPServerConfig, 'id' | 'disabled' | 'name'>;
         this.schemaInput.value = JSON.stringify(schemaFields, null, 2);
       }
     } else {

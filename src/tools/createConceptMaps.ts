@@ -28,7 +28,7 @@ const highlightOverlayMap = new WeakMap<HTMLElement, HTMLElement>();
 export class ConceptMapManager {
   private get doc(): Document {
     const view = this.app.workspace.getActiveViewOfType(View);
-    return view?.containerEl.ownerDocument ?? this.app.workspace.activeLeaf?.view.containerEl.ownerDocument ?? document;
+    return view?.containerEl.ownerDocument ?? document;
   }
 
   private settings: AISettings;
