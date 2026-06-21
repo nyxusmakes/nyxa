@@ -527,7 +527,7 @@ QUESTION: ${question}
 OPTIONS:
 ${options.map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt.text}`).join('\n')}
 
-USER'S ANSWER: ${String.fromCharCode(65 + selectedOptionIndex!)}. ${selectedOption!.text}
+USER'S ANSWER: ${String.fromCharCode(65 + selectedOptionIndex)}. ${selectedOption!.text}
 CORRECT ANSWER: ${String.fromCharCode(65 + correctOptionIndex)}. ${correctOption.text}
 
 INSTRUCTIONS:

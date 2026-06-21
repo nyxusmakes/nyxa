@@ -92,9 +92,16 @@ export class SaveNoteModal extends Modal {
             });
     }
 
+    private hasControlChars(str: string): boolean {
+        for (let i = 0; i < str.length; i++) {
+            if (str.charCodeAt(i) < 0x20) return true;
+        }
+        return false;
+    }
+
     private validatePath(path: string): boolean {
         // Simple validation: should not contain '..' or invalid characters
-        if (path.includes('..') || /[<>:"|?*\x00-\x1f]/g.test(path)) {
+        if (path.includes('..') || this.hasControlChars(path) || /[<>:"|?*]/.test(path)) {
             return false;
         }
         return true;
