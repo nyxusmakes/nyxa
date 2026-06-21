@@ -3657,7 +3657,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             if (!targetFolder) {
                 const folderPatterns = [
                     /(?:in|to|inside)\s+(?:the\s+)?(?:folder|directory)\s+['"]([^'"]+)['"]/i,
-                    /(?:in|to|inside)\s+(?:the\s+)?(?:folder|directory)\s+([\w\s\/\-]+?)(?=\s+(?:create|make|with|and|\.|$))/i,
+                    /(?:in|to|inside)\s+(?:the\s+)?(?:folder|directory)\s+([\w\s/\-]+?)(?=\s+(?:create|make|with|and|\.|$))/i,
                     /(?:folder|directory):\s*['"]?([^'"\n]+)['"]?/i
                 ];
 
@@ -7479,13 +7479,13 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 item.className = 'context-file-menu-item';
 
                 
-                if ('badge' in opt && (opt as PrefixOption).badge) {
+                if ('badge' in opt && opt.badge) {
                     const labelSpan = this.document.createElement('span');
                     labelSpan.textContent = opt.label;
 
                     const badgeSpan = this.document.createElement('span');
                     badgeSpan.className = 'feature-badge beta-badge';
-                    badgeSpan.textContent = (opt as PrefixOption).badge!;
+                    badgeSpan.textContent = opt.badge!;
                     badgeSpan.addClass('nl-css-text-remaining-14');
 
                     item.appendChild(labelSpan);
@@ -9382,7 +9382,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 const folder = abstractFile;
                 const folderChildren = folder.children;
                 if (folderChildren && folderChildren.length === 0) {
-                    await this.app.vault.trash(folder, false);
+                    await this.app.fileManager.trashFile(folder);
                 }
             }
         } catch {
@@ -11212,12 +11212,12 @@ class CodeCanvasModal extends Modal {
             _comp.load(); }
         };
 
-        refreshBtn.addEventListener('click', render);
+        refreshBtn.addEventListener('click', () => void render());
 
         let debounceTimer: number;
         codeArea.addEventListener('input', () => {
             window.clearTimeout(debounceTimer);
-            debounceTimer = window.setTimeout(render, 600);
+            debounceTimer = window.setTimeout(() => void render(), 600);
             saveBtn.toggleClass('nl-display-none', !(codeArea.value !== this.code));
             if (this.onUpdate) this.onUpdate(codeArea.value);
         });
@@ -11336,7 +11336,7 @@ class CodeCanvasModal extends Modal {
             }
         };
 
-        runBtn.addEventListener('click', run);
+        runBtn.addEventListener('click', () => void run());
 
         codeArea.addEventListener('input', () => {
             saveBtn.toggleClass('nl-display-none', !(codeArea.value !== this.code));
