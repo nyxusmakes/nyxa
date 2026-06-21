@@ -4,6 +4,7 @@ import { ModelLatencyModal } from './modals/modelLatencyModal';
 import { CustomProviderModal } from './modals/customProviderModal';
 import { MCPRegistryEntry } from './mcp/mcpRegistry';
 import { validateNvidiaApiKey } from './services/nvidiaService';
+import { showConfirm } from './modals/confirmModal';
 import { ParsedFeedEntry } from './parsing/feedParsing';
 import { SavedConceptMap } from './tools/createConceptMaps';
 import { SavedSlideshow } from './tools/createSlides';
@@ -1417,8 +1418,7 @@ await this.plugin.saveSettings();
       const deleteBtn = actionsCell.createEl('button', { cls: 'index-action-btn index-delete-btn' });
       setIcon(deleteBtn, 'trash-2');
       deleteBtn.addEventListener('click', () => { void (async () => {
-        // eslint-disable-next-line no-restricted-globals
-        const confirmed = confirm(`Are you sure you want to delete the provider "${provider.name}"? This may affect models using this provider.`);
+        const confirmed = await showConfirm(this.app, `Are you sure you want to delete the provider "${provider.name}"? This may affect models using this provider.`);
         if (confirmed) {
           this.plugin.settings.customProviders = this.plugin.settings.customProviders.filter((p: CustomProviderConfig) => p.id !== provider.id);
           await this.plugin.saveSettings();
@@ -1828,8 +1828,7 @@ await this.plugin.saveSettings();
         deleteBtn.disabled = index.isBuilding || false;
 
         deleteBtn.addEventListener('click', () => { void (async () => {
-          // eslint-disable-next-line no-restricted-globals
-          const confirmed = confirm(`Are you sure you want to delete the index "${index.name}"? This will also permanently delete the index file from your vault.`);
+          const confirmed = await showConfirm(this.app, `Are you sure you want to delete the index "${index.name}"? This will also permanently delete the index file from your vault.`);
           if (!confirmed) return;
 
           const indexToRemove = this.plugin.settings.indexConfigurations.findIndex((i) => i.id === index.id);
@@ -3693,8 +3692,7 @@ if (this.validatePath(normalizedPath)) {
     });
     setIcon(deleteBtn, 'trash-2');
     deleteBtn.addEventListener('click', () => { void (async () => {
-      // eslint-disable-next-line no-restricted-globals
-      if (confirm(`Delete MCP server "${server.name}"?`)) {
+      if (await showConfirm(this.app, `Delete MCP server "${server.name}"?`)) {
         this.plugin.settings.mcpServers.splice(index, 1);
         await this.plugin.saveSettings();
         this.display();

@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf, Notice, ExtraButtonComponent } from 'obsidian';
 import AIPlugin from '../main';
 import { getFaviconUrl } from '../utils/utils';
+import { showConfirm } from '../modals/confirmModal';
 
 export const VIEW_TYPE_BOOKMARKS = 'AI_BOOKMARKS_VIEW';
 
@@ -141,8 +142,7 @@ export class BookmarkView extends ItemView {
                 .setIcon('bookmark-x') 
                 .setTooltip('Remove bookmark')
                 .onClick(async () => {
-                    // eslint-disable-next-line no-restricted-globals
-                    if (confirm(`Are you sure you want to remove "${entry.title || 'this entry'}" from bookmarks?`)) {
+                    if (await showConfirm(this.app, `Are you sure you want to remove "${entry.title || 'this entry'}" from bookmarks?`)) {
                         this.plugin.removeBookmark(entry);
                         new Notice('Bookmark removed!');
                         this.renderBookmarkedEntries(); 
