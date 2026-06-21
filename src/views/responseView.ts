@@ -1421,7 +1421,7 @@ export class ResponseView extends ItemView {
             'Use prefix @mcp to use MCP servers and tools...'
         ];
         let promptIndex = 0;
-        let _placeholderInterval: number | null = null;
+
         let isInputActive = false;
         const setNextPlaceholder = () => {
             if (!isInputActive && this.document.activeElement !== this.queryInput) {
@@ -1431,7 +1431,7 @@ export class ResponseView extends ItemView {
                 }
             }
         };
-        _placeholderInterval = window.setInterval(setNextPlaceholder, 3500);
+        window.setInterval(setNextPlaceholder, 3500);
         this.queryInput.addEventListener('focus', () => {
             isInputActive = true;
         });
@@ -8471,7 +8471,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             cls: 'session-search-input', 
             placeholder: 'Search sessions by name or message content...' 
         });
-        const _searchIcon = searchContainer.createSpan({ cls: 'search-icon', text: '🔍' });
+        searchContainer.createSpan({ cls: 'search-icon', text: '🔍' });
 
         const sessionList = modalContent.createDiv({ cls: 'session-list' });
         const paginationDiv = modalContent.createDiv({ cls: 'session-pagination', attr: { style: 'display: none;' } });

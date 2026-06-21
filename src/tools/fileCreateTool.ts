@@ -310,7 +310,7 @@ export async function handleFileCreationPrompt(
   try {
     // Try to find the file view header or fallback to workspace container
     const view = app.workspace.getActiveViewOfType(View);
-    const doc = view?.containerEl.ownerDocument ?? app.workspace.activeLeaf?.view.containerEl.ownerDocument ?? document;
+    const doc = view?.containerEl.ownerDocument ?? document;
     const workspace = doc.querySelector('.workspace') || doc.body;
     spinner = doc.createElement('div');
     spinner.className = 'loading-spinner visible';
@@ -1383,7 +1383,6 @@ async function createFilesFromPlan(app: App, plan: FileCreationPlan): Promise<vo
       // Folder might already exist, try to get it
       const existingFolder = app.vault.getAbstractFileByPath(folderPath);
       if (existingFolder instanceof TFolder) {
-        folder = existingFolder;
       } else {
         throw new Error(`Failed to create folder: ${folderPath}`);
       }

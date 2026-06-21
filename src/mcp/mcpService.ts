@@ -365,7 +365,7 @@ export class MCPService {
 
         while (Date.now() < deadline) {
             try {
-                const response = await requestUrl({ url, method: 'GET', throw: false });
+                await requestUrl({ url, method: 'GET', throw: false });
                 
                                 return;
             } catch (e: unknown) {

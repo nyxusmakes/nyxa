@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile, ButtonComponent, setIcon, normalizePath, Setting } from 'obsidian';
+import { App, Modal, Notice, ButtonComponent, setIcon, normalizePath, Setting } from 'obsidian';
 import { AISettings } from '../settings';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GroqService, ChatMessage } from '../services/groqService';
