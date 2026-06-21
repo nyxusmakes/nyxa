@@ -13,6 +13,7 @@ import { MCQManager } from '../tools/createMCQs';
 import { ConceptMapManager, ConceptMapModal, SavedConceptMap, ConceptMapData } from '../tools/createConceptMaps';
 import { SlideManager, SlideshowSettingsModal, SavedSlideshow, SlideshowVoiceSettingsModal } from '../tools/createSlides';
 import { isMultimodalSupported } from '../utils/multimodalUtils';
+import { showConfirm } from '../modals/confirmModal';
 
 interface Question {
   text: string;
@@ -805,9 +806,8 @@ export class AITutorView extends ItemView {
     }).open();
   }
 
-  private handleDeleteNotebook(notebookId: string) {
-    // eslint-disable-next-line no-restricted-globals
-    if (confirm('Are you sure you want to delete this notebook?')) {
+  private async handleDeleteNotebook(notebookId: string) {
+    if (await showConfirm(this.app, 'Are you sure you want to delete this notebook?')) {
       
       (this.document.activeElement as HTMLElement)?.blur();
       this.notebookManager.deleteNotebook(notebookId);
@@ -2209,9 +2209,8 @@ export class AITutorView extends ItemView {
     modal.open();
   }
 
-  private deleteSavedConceptMap(id: string) {
-    // eslint-disable-next-line no-restricted-globals
-    if (confirm('Are you sure you want to delete this concept map from the saved list?')) {
+  private async deleteSavedConceptMap(id: string) {
+    if (await showConfirm(this.app, 'Are you sure you want to delete this concept map from the saved list?')) {
       
       (this.document.activeElement as HTMLElement)?.blur();
       this.state.savedConceptMaps = this.state.savedConceptMaps.filter(cm => cm.id !== id);
@@ -2295,9 +2294,8 @@ export class AITutorView extends ItemView {
           }
   }
 
-  private deleteSavedSlideshow(id: string) {
-    // eslint-disable-next-line no-restricted-globals
-    if (confirm('Are you sure you want to delete this slideshow from the saved list?')) {
+  private async deleteSavedSlideshow(id: string) {
+    if (await showConfirm(this.app, 'Are you sure you want to delete this slideshow from the saved list?')) {
       (this.document.activeElement as HTMLElement)?.blur();
       this.state.savedSlideshows = this.state.savedSlideshows.filter(s => s.id !== id);
       void this.saveSavedSlideshows();

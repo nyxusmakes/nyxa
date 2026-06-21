@@ -1,4 +1,5 @@
 import { requestUrl } from 'obsidian';
+import { nativeFetch } from './fetchHelper';
 
 export interface StreamChunk {
   content?: string;
@@ -100,8 +101,7 @@ export async function fetchStream(
 ): Promise<void> {
   if (abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
-  // eslint-disable-next-line no-restricted-globals
-  const response = await fetch(url, {
+  const response = await nativeFetch(url, {
     method: 'POST',
     signal: abortSignal,
     headers,
