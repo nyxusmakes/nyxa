@@ -98,8 +98,7 @@ export class FileCreationReviewModal extends Modal {
 
     messageContainer.createEl('div', {
       text: '📄',
-      cls: 'file-preview-icon',
-      attr: { style: 'font-size: 48px; margin-bottom: 20px;' }
+      cls: 'file-preview-icon nl-font-size-48px nl-margin-bottom-20px'
     });
 
     messageContainer.createEl('p', {

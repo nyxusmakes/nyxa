@@ -961,10 +961,10 @@ RESPONSE QUALITY CHECKLIST:
                                 const text = parts?.[0]?.text || m.content || '';
                                 return (text as string).trim().length > 0;
                             })
-                            .map(m => {
+                            .map((m): UnifiedMessage => {
                                 const parts = m.parts as Array<{ text?: string }> | undefined;
                                 return {
-                                    role: ((m.role === 'model' || m.role === 'assistant') ? 'assistant' : 'user') as 'user' | 'assistant',
+                                    role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : 'user',
                                     content: String(parts?.[0]?.text || m.content || '')
                                 };
                             }))

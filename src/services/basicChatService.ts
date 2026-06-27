@@ -203,11 +203,8 @@ export class BasicChatService {
         const currentModel = passedModel || this.settings.model;
         const currentProvider = passedProvider || this.settings.provider;
 
-        const normalizedOllamaModelId = (currentModel || '').toLowerCase();
-
-
-        
-        
+        // Fetch user instructions
+       
         const totalSteps = 1;
 
         try {

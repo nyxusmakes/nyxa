@@ -3074,8 +3074,8 @@ Rules:
               
               const unifiedMessages: UnifiedMessage[] = [
                 { role: 'system', content: this.buildGroqSystemPrompt(cachedContext) + (webSourceContext || '') },
-                ...this.messages.slice(-(this.notebook.contextLength !== undefined ? this.notebook.contextLength : 3)).map(m => ({
-                    role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+                ...this.messages.slice(-(this.notebook.contextLength !== undefined ? this.notebook.contextLength : 3)).map((m): UnifiedMessage => ({
+                    role: m.role === 'user' ? 'user' : 'assistant',
                     content: m.content
                 })),
                 { role: 'user', content: query }

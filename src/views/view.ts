@@ -873,14 +873,12 @@ export class AITutorView extends ItemView {
     
     
     const searchContainer = menuEl.createDiv({ 
-      cls: 'model-search-container',
-      attr: { style: 'position: sticky; top: 0; background: var(--background-primary); z-index: 2; padding: 8px; border-bottom: 1px solid var(--background-modifier-border);' }
+      cls: 'model-search-container'
     });
     const searchInput = searchContainer.createEl('input', {
       type: 'text',
       placeholder: 'Search models...',
-      cls: 'model-search-input',
-      attr: { style: 'width: 100%; box-sizing: border-box;' }
+      cls: 'model-search-input'
     });
     searchInput.addEventListener('keydown', (e) => e.stopPropagation());
     window.setTimeout(() => searchInput.focus(), 100);

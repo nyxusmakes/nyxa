@@ -3809,7 +3809,7 @@ class MCPServerModal extends Modal {
     const titleRow = contentEl.createDiv({ cls: 'mcp-modal-title-row' });
     titleRow.createEl('h2', { text: this.existingServer ? 'Edit MCP Server' : 'Add MCP Server' });
 
-    const titleButtons = titleRow.createDiv({ cls: 'mcp-modal-title-buttons', attr: { style: 'display: flex; gap: 8px;' } });
+    const titleButtons = titleRow.createDiv({ cls: 'mcp-modal-title-buttons nl-display-flex nl-gap-8px' });
 
     // Schema View Toggle
     const schemaToggleBtn = titleButtons.createEl('button', {

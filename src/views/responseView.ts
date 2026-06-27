@@ -1175,14 +1175,12 @@ export class ResponseView extends ItemView {
         if (this.contextCollapsed) {
             fileTagsScrollWrapper.addClass('nl-display-none');
             if (toggleBtn) {
-                toggleBtn.empty();
-                toggleBtn.createSpan({ text: '▶', attr: { style: 'font-size:18px;user-select:none;' } });
+                toggleBtn.createSpan({ text: '▶', cls: 'nl-font-size-18px nl-user-select-none' });
             }
         } else {
             fileTagsScrollWrapper.addClass('nl-display-');
             if (toggleBtn) {
-                toggleBtn.empty();
-                toggleBtn.createSpan({ text: '▼', attr: { style: 'font-size:18px;user-select:none;' } });
+                toggleBtn.createSpan({ text: '▼', cls: 'nl-font-size-18px nl-user-select-none' });
             }
         }
     }
@@ -2129,14 +2127,12 @@ export class ResponseView extends ItemView {
 
         
         const searchContainer = menuEl.createDiv({ 
-            cls: 'model-search-container',
-            attr: { style: `position: sticky; top: 0; background: var(--background-primary); z-index: 2; padding: 8px; border-bottom: 1px solid var(--background-modifier-border);${this.settings.autoModeEnabled ? ' display: none;' : ''}` }
+            cls: `model-search-container${this.settings.autoModeEnabled ? ' nl-display-none' : ''}`
         });
         const searchInput = searchContainer.createEl('input', {
             type: 'text',
             placeholder: 'Search models...',
-            cls: 'model-search-input',
-            attr: { style: 'width: 100%; box-sizing: border-box;' }
+            cls: 'model-search-input'
         });
         searchInput.addEventListener('keydown', (e) => e.stopPropagation());
         window.setTimeout(() => searchInput.focus(), 100);
@@ -8392,7 +8388,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         const intro = contentEl.createDiv({ cls: 'examples-intro' });
         intro.createEl('p', { 
             text: 'You can combine multiple triggers in a single query to orchestrate complex workflows. The AI will execute them intelligently in sequence.',
-            attr: { style: 'margin-bottom: 16px; color: var(--text-muted);' }
+            cls: 'nl-margin-bottom-16px nl-color-var--text-muted'
         });
 
         const examples = [
@@ -8474,7 +8470,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         searchContainer.createSpan({ cls: 'search-icon', text: '🔍' });
 
         const sessionList = modalContent.createDiv({ cls: 'session-list' });
-        const paginationDiv = modalContent.createDiv({ cls: 'session-pagination', attr: { style: 'display: none;' } });
+        const paginationDiv = modalContent.createDiv({ cls: 'session-pagination nl-display-none' });
         const prevBtn = paginationDiv.createEl('button', { cls: 'prev-page-btn', text: 'Previous' });
         const pageInfo = paginationDiv.createSpan({ cls: 'page-info' });
         const nextBtn = paginationDiv.createEl('button', { cls: 'next-page-btn', text: 'Next' });

@@ -17518,7 +17518,11 @@ body .nl-object-fit-cover { object-fit: cover; }
 body .nl-border-color- { border-color:; }
 body .nl-text-shadow-008pxvar--text-accent { text-shadow: 0 0 8px var(--text-accent); }
 body .nl-text-shadow- { text-shadow:; }
-
+body .nl-font-size-48px { font-size: 48px; }
+body .nl-margin-bottom-20px { margin-bottom: 20px; }
+body .nl-font-size-18px { font-size: 18px; }
+body .nl-user-select-none { user-select: none; }
+body .nl-margin-bottom-16px { margin-bottom: 16px; }
 /* Remaining utility classes */
 body .nl-display-flex { display: flex; }
 body .nl-display-grid { display: grid; }
