@@ -422,7 +422,7 @@ export class AITutorView extends ItemView {
   private container: HTMLElement;
   private settings: AISettings;
   private plugin: AIPlugin;
-  get document() { return this.containerEl.ownerDocument; }
+  get activeDocument() { return this.containerEl.ownerDocument; }
   private noteSuggester!: NoteSuggester;
   private state: {
     questions: Question[];
@@ -809,7 +809,7 @@ export class AITutorView extends ItemView {
   private async handleDeleteNotebook(notebookId: string) {
     if (await showConfirm(this.app, 'Are you sure you want to delete this notebook?')) {
       
-      (this.document.activeElement as HTMLElement)?.blur();
+      (this.activeDocument.activeElement as HTMLElement)?.blur();
       this.notebookManager.deleteNotebook(notebookId);
       void this.invalidateNotebookCache(notebookId);
       this.renderInitial();
@@ -959,10 +959,10 @@ export class AITutorView extends ItemView {
       if (!menuEl.contains(e.target as Node) && 
           !(e.target as Element).closest('.model-select-btn')) {
         menuEl.remove();
-        this.document.removeEventListener('click', closeHandler);
+        this.activeDocument.removeEventListener('click', closeHandler);
       }
     };
-    window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+    window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
   }
 
   private async updateContextBar() {
@@ -1051,7 +1051,7 @@ export class AITutorView extends ItemView {
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
-      const progressContainer = this.document.createElement('div');
+      const progressContainer = this.activeDocument.createElement('div');
       progressContainer.className = 'qna-inline-progress';
       
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -1175,7 +1175,7 @@ export class AITutorView extends ItemView {
       .setButtonText('Start New Session')
       .onClick(() => {
         
-        (this.document.activeElement as HTMLElement)?.blur();
+        (this.activeDocument.activeElement as HTMLElement)?.blur();
         this.renderInitial();
       });
   }
@@ -1247,7 +1247,7 @@ export class AITutorView extends ItemView {
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
 
-      const progressContainer = this.document.createElement('div');
+      const progressContainer = this.activeDocument.createElement('div');
       progressContainer.className = 'mcq-inline-progress';
 
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -1385,7 +1385,7 @@ export class AITutorView extends ItemView {
       .setButtonText('Start New Session')
       .onClick(() => {
         
-        (this.document.activeElement as HTMLElement)?.blur();
+        (this.activeDocument.activeElement as HTMLElement)?.blur();
         this.renderInitial();
       });
   }
@@ -1489,7 +1489,7 @@ export class AITutorView extends ItemView {
     }
     
     
-    const dialog = this.document.createElement('div');
+    const dialog = this.activeDocument.createElement('div');
     dialog.className = 'mcq-progress-dialog mcq-progress-inline';
     
     
@@ -1557,11 +1557,11 @@ export class AITutorView extends ItemView {
     }
     
     
-    const overlay = this.document.createElement('div');
+    const overlay = this.activeDocument.createElement('div');
     overlay.className = 'mcq-error-overlay';
     
     
-    const dialog = this.document.createElement('div');
+    const dialog = this.activeDocument.createElement('div');
     dialog.className = 'mcq-error-dialog';
     
     
@@ -1601,7 +1601,7 @@ export class AITutorView extends ItemView {
       });
     
     overlay.appendChild(dialog);
-    this.document.body.appendChild(overlay);
+    this.activeDocument.body.appendChild(overlay);
     
     
     new Notice('Test evaluation failed. Please try again.');
@@ -1694,7 +1694,7 @@ export class AITutorView extends ItemView {
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
-      const progressContainer = this.document.createElement('div');
+      const progressContainer = this.activeDocument.createElement('div');
       progressContainer.className = 'concept-map-inline-progress';
       
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -1784,7 +1784,7 @@ export class AITutorView extends ItemView {
       startButtons.forEach(btn => btn.addClass('nl-pointer-events-none'));
 
       
-      const progressContainer = this.document.createElement('div');
+      const progressContainer = this.activeDocument.createElement('div');
       progressContainer.className = 'slideshow-inline-progress';
       
       const progressHeader = progressContainer.createDiv({ cls: 'inline-progress-header' });
@@ -2047,9 +2047,9 @@ export class AITutorView extends ItemView {
     const match = text.substring(index, index + query.length);
     const after = text.substring(index + query.length);
     
-    if (before) element.appendChild(this.document.createTextNode(before));
+    if (before) element.appendChild(this.activeDocument.createTextNode(before));
     element.createEl('mark', { text: match, cls: 'search-highlight' });
-    if (after) element.appendChild(this.document.createTextNode(after));
+    if (after) element.appendChild(this.activeDocument.createTextNode(after));
   }
 
   private async openSavedConceptMap(conceptMap: SavedConceptMap) {
@@ -2210,7 +2210,7 @@ export class AITutorView extends ItemView {
   private async deleteSavedConceptMap(id: string) {
     if (await showConfirm(this.app, 'Are you sure you want to delete this concept map from the saved list?')) {
       
-      (this.document.activeElement as HTMLElement)?.blur();
+      (this.activeDocument.activeElement as HTMLElement)?.blur();
       this.state.savedConceptMaps = this.state.savedConceptMaps.filter(cm => cm.id !== id);
       void this.saveSavedConceptMaps();
       this.renderInitial();
@@ -2294,7 +2294,7 @@ export class AITutorView extends ItemView {
 
   private async deleteSavedSlideshow(id: string) {
     if (await showConfirm(this.app, 'Are you sure you want to delete this slideshow from the saved list?')) {
-      (this.document.activeElement as HTMLElement)?.blur();
+      (this.activeDocument.activeElement as HTMLElement)?.blur();
       this.state.savedSlideshows = this.state.savedSlideshows.filter(s => s.id !== id);
       void this.saveSavedSlideshows();
       this.renderInitial();
@@ -2421,7 +2421,7 @@ export class AITutorView extends ItemView {
     this.hideMCQProgressDialog();
     
     
-    const errorOverlays = this.document.body.querySelectorAll('.mcq-error-overlay');
+    const errorOverlays = this.activeDocument.body.querySelectorAll('.mcq-error-overlay');
     errorOverlays.forEach(overlay => overlay.remove());
     
     

@@ -314,7 +314,7 @@ function showInlineDiff(
  * Create the inline diff widget HTML structure
  */
 function createInlineDiffWidget(originalText: string, editedText: string, diffId: string, doc?: Document): HTMLElement {
-    const wrapper = (doc ?? window.activeDocument ?? document).createElement('div');
+    const wrapper = (doc ?? activeDocument).createElement('div');
     
     // Add header
     const header = wrapper.createDiv({ cls: 'edit-selection-diff-header' });

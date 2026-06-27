@@ -951,7 +951,7 @@ export class ResponseView extends ItemView {
     private inputContainer!: HTMLElement;
     private selectedFilesDisplay!: HTMLElement;
     private plugin: AIPlugin;
-    get document() { return this.containerEl.ownerDocument; }
+    get activeDocument() { return this.containerEl.ownerDocument; }
     private geminiFileAPI: GeminiFileAPIService;
     private loadingSpinner!: HTMLElement;
     private mode: 'chat' | 'qa' | 'mcq' = 'chat';
@@ -1422,7 +1422,7 @@ export class ResponseView extends ItemView {
 
         let isInputActive = false;
         const setNextPlaceholder = () => {
-            if (!isInputActive && this.document.activeElement !== this.queryInput) {
+            if (!isInputActive && this.activeDocument.activeElement !== this.queryInput) {
                 promptIndex = (promptIndex + 1) % prompts.length;
                 if (this.queryInput.value.trim() === '') {
                     this.queryInput.setAttribute('placeholder', prompts[promptIndex]);
@@ -1440,7 +1440,7 @@ export class ResponseView extends ItemView {
             }
         });
         this.queryInput.addEventListener('input', () => {
-            isInputActive = (this.document.activeElement === this.queryInput && this.queryInput.value.trim() !== '');
+            isInputActive = (this.activeDocument.activeElement === this.queryInput && this.queryInput.value.trim() !== '');
             if (this.queryInput.value.trim() === '') {
                 this.queryInput.setAttribute('placeholder', prompts[promptIndex]);
             } else {
@@ -1839,10 +1839,10 @@ export class ResponseView extends ItemView {
             if (!menuEl.contains(e.target as Node) &&
                 !(e.target as Element).closest('.header-ollama-thinking-btn')) {
                 menuEl.remove();
-                this.document.removeEventListener('click', closeHandler);
+                this.activeDocument.removeEventListener('click', closeHandler);
             }
         };
-        window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+        window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
     }
 
     private showGemini25ThinkingMenu(anchorEl: HTMLElement): void {
@@ -1886,10 +1886,10 @@ export class ResponseView extends ItemView {
             if (!menuEl.contains(e.target as Node) &&
                 !(e.target as Element).closest('.header-ollama-thinking-btn')) {
                 menuEl.remove();
-                this.document.removeEventListener('click', closeHandler);
+                this.activeDocument.removeEventListener('click', closeHandler);
             }
         };
-        window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+        window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
     }
 
     private showGemini3ThinkingMenu(anchorEl: HTMLElement): void {
@@ -1937,10 +1937,10 @@ export class ResponseView extends ItemView {
             if (!menuEl.contains(e.target as Node) &&
                 !(e.target as Element).closest('.header-ollama-thinking-btn')) {
                 menuEl.remove();
-                this.document.removeEventListener('click', closeHandler);
+                this.activeDocument.removeEventListener('click', closeHandler);
             }
         };
-        window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+        window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
     }
 
     private setSendButtonState(button: HTMLElement, state: 'send' | 'stop') {
@@ -2062,10 +2062,10 @@ export class ResponseView extends ItemView {
         const closeHandler = (e: MouseEvent) => {
             if (!menuEl.contains(e.target as Node) && !anchorEl.contains(e.target as Node)) {
                 menuEl.remove();
-                this.document.removeEventListener('click', closeHandler);
+                this.activeDocument.removeEventListener('click', closeHandler);
             }
         };
-        window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+        window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
     }
 
     private async showModelMenu() {
@@ -2297,10 +2297,10 @@ export class ResponseView extends ItemView {
             if (!menuEl.contains(e.target as Node) &&
                 !(e.target as Element).closest('.header-model-btn')) {
                 menuEl.remove();
-                this.document.removeEventListener('click', closeHandler);
+                this.activeDocument.removeEventListener('click', closeHandler);
             }
         };
-        window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+        window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
     }
 
     private showAutoSelectionIndicator(selection: { modelName: string; reason: string }) {
@@ -2697,10 +2697,10 @@ export class ResponseView extends ItemView {
             if (!menuEl.contains(e.target as Node) &&
                 !(e.target as Element).closest('.header-ellipsis-btn')) {
                 menuEl.remove();
-                this.document.removeEventListener('click', closeHandler);
+                this.activeDocument.removeEventListener('click', closeHandler);
             }
         };
-        window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+        window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
     }
 
     private async pickWallpaperImage() {
@@ -2718,7 +2718,7 @@ export class ResponseView extends ItemView {
             return;
         }
 
-        const pickerEl = this.document.createElement('div');
+        const pickerEl = this.activeDocument.createElement('div');
         pickerEl.className = 'wallpaper-picker';
         pickerEl.addClass('nl-position-absolute');
         pickerEl.addClass('nl-z-index-1000');
@@ -2765,15 +2765,15 @@ export class ResponseView extends ItemView {
             });
         }
 
-        this.document.body.appendChild(pickerEl);
+        this.activeDocument.body.appendChild(pickerEl);
 
         const closeHandler = (e: MouseEvent) => {
             if (!pickerEl.contains(e.target as Node)) {
                 pickerEl.remove();
-                this.document.removeEventListener('click', closeHandler);
+                this.activeDocument.removeEventListener('click', closeHandler);
             }
         };
-        window.setTimeout(() => this.document.addEventListener('click', closeHandler), 0);
+        window.setTimeout(() => this.activeDocument.addEventListener('click', closeHandler), 0);
     }
 
     private async setWallpaper(filePath: string) {
@@ -5019,7 +5019,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 }
 
                 if (targetEl) {
-                    const tooltip = this.document.createElement('div');
+                    const tooltip = this.activeDocument.createElement('div');
                     tooltip.classList.add('footnote-tooltip');
                     tooltip.addClass('footnote-tooltip-style');
 
@@ -5031,7 +5031,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     tooltip.setCssProps({ '--tooltip-left':  rect.left + 'px' });
                     tooltip.setCssProps({ '--tooltip-top':  (rect.bottom + 5) + 'px' });
 
-                    this.document.body.appendChild(tooltip);
+                    this.activeDocument.body.appendChild(tooltip);
 
                     const removeTooltip = () => {
                         if (tooltip.parentNode) {
@@ -5060,7 +5060,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 const id = itemEl.getAttribute('id');
 
                 if (id) {
-                    const backArrow = this.document.createElement('a');
+                    const backArrow = this.activeDocument.createElement('a');
                     backArrow.classList.add('footnote-backref');
                     backArrow.textContent = ' ↩';
                     backArrow.setAttribute('aria-label', 'Back to content');
@@ -5903,7 +5903,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             
             if (table.parentElement?.classList.contains('table-wrapper')) return;
 
-            const wrapper = this.document.createElement('div');
+            const wrapper = this.activeDocument.createElement('div');
             wrapper.className = 'table-wrapper';
             table.parentNode?.insertBefore(wrapper, table);
             wrapper.appendChild(table);
@@ -6083,7 +6083,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             const executable = isExecutable(lang);
 
             
-            const wrapper = this.document.createElement('div');
+            const wrapper = this.activeDocument.createElement('div');
             wrapper.className = 'code-block-wrapper';
             pre.parentNode?.insertBefore(wrapper, pre);
             wrapper.appendChild(pre);
@@ -6092,22 +6092,22 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             wrapper.dataset.code = initialCode;
 
             
-            const toolbar = this.document.createElement('div');
+            const toolbar = this.activeDocument.createElement('div');
             toolbar.className = 'code-block-toolbar';
 
             
             if (lang !== 'unknown') {
-                const badge = this.document.createElement('span');
+                const badge = this.activeDocument.createElement('span');
                 badge.className = 'code-lang-badge';
                 badge.textContent = lang;
                 toolbar.appendChild(badge);
             }
 
-            const toolbarRight = this.document.createElement('div');
+            const toolbarRight = this.activeDocument.createElement('div');
             toolbarRight.className = 'code-block-toolbar-right';
 
             
-            const copyBtn = this.document.createElement('button');
+            const copyBtn = this.activeDocument.createElement('button');
             copyBtn.className = 'code-block-btn';
             copyBtn.setAttribute('aria-label', 'Copy code');
             setIcon(copyBtn, 'copy');
@@ -6120,7 +6120,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             toolbarRight.appendChild(copyBtn);
 
             
-            const expandBtn = this.document.createElement('button');
+            const expandBtn = this.activeDocument.createElement('button');
             expandBtn.className = 'code-block-btn';
             expandBtn.setAttribute('aria-label', 'Expand in canvas');
             setIcon(expandBtn, 'maximize-2');
@@ -6160,7 +6160,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
             
             if (lang === 'json') {
-                const outputEl = this.document.createElement('div');
+                const outputEl = this.activeDocument.createElement('div');
                 outputEl.className = 'code-exec-output hidden';
                 wrapper.appendChild(outputEl);
 
@@ -6173,20 +6173,20 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     return;
                 }
 
-                const renderToggleRow = this.document.createElement('div');
+                const renderToggleRow = this.activeDocument.createElement('div');
                 renderToggleRow.className = 'code-exec-toggle-row';
 
-                const renderLabel = this.document.createElement('span');
+                const renderLabel = this.activeDocument.createElement('span');
                 renderLabel.className = 'code-exec-label';
                 renderLabel.textContent = 'Render visualization';
 
-                const renderToggle = this.document.createElement('div');
+                const renderToggle = this.activeDocument.createElement('div');
                 renderToggle.className = 'code-exec-toggle';
                 renderToggle.setAttribute('role', 'switch');
                 renderToggle.setAttribute('aria-checked', 'false');
                 renderToggle.setAttribute('aria-label', 'Render visualization');
 
-                const backBtn = this.document.createElement('button');
+                const backBtn = this.activeDocument.createElement('button');
                 backBtn.className = 'code-block-btn code-back-btn';
                 backBtn.setAttribute('aria-label', 'Back to code');
                 backBtn.addClass('nl-display-none');
@@ -6222,7 +6222,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             if (!executable) return;
 
             
-            const outputEl = this.document.createElement('div');
+            const outputEl = this.activeDocument.createElement('div');
             outputEl.className = 'code-exec-output hidden';
             
             wrapper.appendChild(outputEl);
@@ -6236,21 +6236,21 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 void this.runCode(pre as HTMLElement, lang, outputEl, wrapper, true, question);
             } else {
                 
-                const runToggleRow = this.document.createElement('div');
+                const runToggleRow = this.activeDocument.createElement('div');
                 runToggleRow.className = 'code-exec-toggle-row';
 
-                const runLabel = this.document.createElement('span');
+                const runLabel = this.activeDocument.createElement('span');
                 runLabel.className = 'code-exec-label';
                 runLabel.textContent = 'Run code';
 
-                const runToggle = this.document.createElement('div');
+                const runToggle = this.activeDocument.createElement('div');
                 runToggle.className = 'code-exec-toggle';
                 runToggle.setAttribute('role', 'switch');
                 runToggle.setAttribute('aria-checked', 'false');
                 runToggle.setAttribute('aria-label', 'Run code');
 
                 
-                const backBtn = this.document.createElement('button');
+                const backBtn = this.activeDocument.createElement('button');
                 backBtn.className = 'code-block-btn code-back-btn';
                 backBtn.setAttribute('aria-label', 'Back to code');
                 backBtn.addClass('nl-display-none');
@@ -6305,7 +6305,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         outputEl.classList.add('code-exec-running');
         outputEl.empty();
 
-        const spinner = this.document.createElement('span');
+        const spinner = this.activeDocument.createElement('span');
         spinner.className = 'code-exec-spinner';
         setIcon(spinner, 'loader');
         outputEl.appendChild(spinner);
@@ -6317,7 +6317,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         if (result.isHtml && result.htmlContent) {
             outputEl.classList.add('code-exec-success');
-            const iframe = this.document.createElement('iframe');
+            const iframe = this.activeDocument.createElement('iframe');
             iframe.className = 'code-exec-iframe';
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-modals');
             iframe.srcdoc = result.htmlContent;
@@ -6338,13 +6338,13 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             void MarkdownRenderer.render(this.app, result.markdownContent, outputEl, '', this);
         } else if (result.success) {
             outputEl.classList.add('code-exec-success');
-            const outputPre = this.document.createElement('pre');
+            const outputPre = this.activeDocument.createElement('pre');
             outputPre.className = 'code-exec-output-text';
             outputPre.textContent = result.output;
             outputEl.appendChild(outputPre);
         } else {
             outputEl.classList.add('code-exec-error');
-            const errorPre = this.document.createElement('pre');
+            const errorPre = this.activeDocument.createElement('pre');
             errorPre.className = 'code-exec-output-text';
             errorPre.textContent = `Error: ${result.error}`;
             if (result.output) {
@@ -6376,14 +6376,14 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             
             if (wrapper.querySelector('.mermaid-repair-row')) return;
 
-            const repairRow = this.document.createElement('div');
+            const repairRow = this.activeDocument.createElement('div');
             repairRow.className = 'code-exec-toggle-row mermaid-repair-row';
 
-            const repairLabel = this.document.createElement('span');
+            const repairLabel = this.activeDocument.createElement('span');
             repairLabel.className = 'code-exec-label';
             repairLabel.textContent = 'Repair diagram';
 
-            const repairBtn = this.document.createElement('button');
+            const repairBtn = this.activeDocument.createElement('button');
             repairBtn.className = 'code-block-btn';
             repairBtn.setAttribute('aria-label', 'Repair mermaid diagram');
             setIcon(repairBtn, 'wrench');
@@ -6399,7 +6399,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         };
 
         const checkForError = (root: HTMLElement): string | null => {
-            const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const walker = this.activeDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
             let node: Text | null;
             while ((node = walker.nextNode() as Text | null)) {
                 if (node.textContent?.includes(MERMAID_ERROR_TEXT)) {
@@ -6447,13 +6447,13 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         question = ''
     ) {
         
-        const loadingEl = this.document.createElement('div');
+        const loadingEl = this.activeDocument.createElement('div');
         loadingEl.className = 'code-exec-output code-exec-running';
-        const spinner = this.document.createElement('span');
+        const spinner = this.activeDocument.createElement('span');
         spinner.className = 'code-exec-spinner';
         setIcon(spinner, 'loader');
         loadingEl.appendChild(spinner);
-        const loadingText = this.document.createElement('span');
+        const loadingText = this.activeDocument.createElement('span');
         loadingText.className = 'code-exec-label';
         loadingText.textContent = 'Repairing diagram…';
         loadingEl.appendChild(loadingText);
@@ -6483,7 +6483,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             this.saveCodeEdit(question, oldCode, fixedCode, 'mermaid');
 
             
-            const tempContainer = this.document.createElement('div');
+            const tempContainer = this.activeDocument.createElement('div');
             await MarkdownRenderer.render(
                 this.app,
                 '```mermaid\n' + fixedCode + '\n```',
@@ -6505,13 +6505,13 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         } catch (err: unknown) {
             loadingEl.remove();
 
-            const errRow = this.document.createElement('div');
+            const errRow = this.activeDocument.createElement('div');
             errRow.className = 'code-exec-toggle-row mermaid-repair-row';
-            const errLabel = this.document.createElement('span');
+            const errLabel = this.activeDocument.createElement('span');
             errLabel.className = 'code-exec-label';
             errLabel.addClass('nl-color-remaining-13');
             errLabel.textContent = `Repair failed: ${err instanceof Error ? err.message : String(err)}`;
-            const retryBtn = this.document.createElement('button');
+            const retryBtn = this.activeDocument.createElement('button');
             retryBtn.className = 'code-block-btn';
             retryBtn.setAttribute('aria-label', 'Retry repair');
             setIcon(retryBtn, 'refresh-cw');
@@ -6538,14 +6538,14 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         outputEl.querySelector('.code-repair-toggle-row')?.remove();
         wrapper.querySelector('.code-repair-toggle-row')?.remove();
 
-        const repairRow = this.document.createElement('div');
+        const repairRow = this.activeDocument.createElement('div');
         repairRow.className = 'code-exec-toggle-row code-repair-toggle-row';
 
-        const repairLabel = this.document.createElement('span');
+        const repairLabel = this.activeDocument.createElement('span');
         repairLabel.className = 'code-exec-label';
         repairLabel.textContent = 'Repair code';
 
-        const repairToggle = this.document.createElement('div');
+        const repairToggle = this.activeDocument.createElement('div');
         repairToggle.className = 'code-exec-toggle code-repair-toggle-switch';
         repairToggle.setAttribute('role', 'switch');
         repairToggle.setAttribute('aria-checked', 'false');
@@ -6578,7 +6578,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         outputEl.classList.remove('hidden', 'code-exec-error', 'code-exec-success');
         outputEl.classList.add('code-exec-running');
         outputEl.empty();
-        const spinner = this.document.createElement('span');
+        const spinner = this.activeDocument.createElement('span');
         spinner.className = 'code-exec-spinner';
         setIcon(spinner, 'loader');
         outputEl.appendChild(spinner);
@@ -6614,7 +6614,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             outputEl.classList.remove('code-exec-running');
             outputEl.classList.add('code-exec-error');
             outputEl.empty();
-            const errPre = this.document.createElement('pre');
+            const errPre = this.activeDocument.createElement('pre');
             errPre.className = 'code-exec-output-text';
             errPre.textContent = `Repair failed: ${err instanceof Error ? err.message : String(err)}`;
             outputEl.appendChild(errPre);
@@ -6985,7 +6985,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         });
 
         
-        this.document.addEventListener('click', () => {
+        this.activeDocument.addEventListener('click', () => {
             calloutVisible = false;
             callout.classList.remove('visible');
         }, { capture: true });
@@ -7306,7 +7306,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         this.closeContextMenu();
         this.contextMenuOpenFromMore = fromMore;
         
-        const menu = this.document.createElement('div');
+        const menu = this.activeDocument.createElement('div');
         menu.className = 'context-file-menu';
         
         const rect = anchorEl.getBoundingClientRect();
@@ -7315,14 +7315,14 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         menu.addClass('nl-z-index-9999');
         menu.addClass('nl-min-width-260px');
         
-        const searchInput = this.document.createElement('input');
+        const searchInput = this.activeDocument.createElement('input');
         searchInput.type = 'text';
         searchInput.className = 'context-file-menu-search';
         searchInput.placeholder = 'Search files directly by name, use / for folders';
         menu.appendChild(searchInput);
         this.contextMenuInput = searchInput;
         
-        const listContainer = this.document.createElement('div');
+        const listContainer = this.activeDocument.createElement('div');
         listContainer.className = 'context-file-menu-list';
         menu.appendChild(listContainer);
         
@@ -7367,9 +7367,9 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         });
         
         window.setTimeout(() => {
-            this.document.addEventListener('mousedown', this.handleContextMenuOutsideClick, true);
+            this.activeDocument.addEventListener('mousedown', this.handleContextMenuOutsideClick, true);
         }, 0);
-        this.document.body.appendChild(menu);
+        this.activeDocument.body.appendChild(menu);
         
         const menuHeight = menu.offsetHeight;
         
@@ -7384,14 +7384,14 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
     private closeContextMenu = () => {
         if (this.contextMenuEl) {
-            this.document.body.removeChild(this.contextMenuEl);
+            this.activeDocument.body.removeChild(this.contextMenuEl);
             this.contextMenuEl = null;
         }
         if (this.contextMenuPreviewEl) {
-            this.document.body.removeChild(this.contextMenuPreviewEl);
+            this.activeDocument.body.removeChild(this.contextMenuPreviewEl);
             this.contextMenuPreviewEl = null;
         }
-        this.document.removeEventListener('mousedown', this.handleContextMenuOutsideClick, true);
+        this.activeDocument.removeEventListener('mousedown', this.handleContextMenuOutsideClick, true);
         this.contextMenuAtIndex = -1;
         this.contextMenuSearchTerm = '';
     };
@@ -7420,7 +7420,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         this.closeContextMenu();
         this.contextMenuOpenFromMore = fromMore;
 
-        const menu = this.document.createElement('div');
+        const menu = this.activeDocument.createElement('div');
         menu.className = 'context-file-menu';
 
         
@@ -7431,7 +7431,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         menu.addClass('nl-min-width-260px');
 
         
-        const listContainer = this.document.createElement('div');
+        const listContainer = this.activeDocument.createElement('div');
         listContainer.className = 'context-file-menu-list';
         menu.appendChild(listContainer);
 
@@ -7440,10 +7440,10 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         
         window.setTimeout(() => {
-            this.document.addEventListener('mousedown', this.handleContextMenuOutsideClick, true);
+            this.activeDocument.addEventListener('mousedown', this.handleContextMenuOutsideClick, true);
         }, 0);
 
-        this.document.body.appendChild(menu);
+        this.activeDocument.body.appendChild(menu);
 
         
         const menuHeight = menu.offsetHeight;
@@ -7481,15 +7481,15 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         
         if (matchingPrefixes.length > 0) {
             matchingPrefixes.forEach((opt, index) => {
-                const item = this.document.createElement('div');
+                const item = this.activeDocument.createElement('div');
                 item.className = 'context-file-menu-item';
 
                 
                 if ('badge' in opt && opt.badge) {
-                    const labelSpan = this.document.createElement('span');
+                    const labelSpan = this.activeDocument.createElement('span');
                     labelSpan.textContent = opt.label;
 
-                    const badgeSpan = this.document.createElement('span');
+                    const badgeSpan = this.activeDocument.createElement('span');
                     badgeSpan.className = 'feature-badge beta-badge';
                     badgeSpan.textContent = opt.badge!;
                     badgeSpan.addClass('nl-css-text-remaining-14');
@@ -7531,13 +7531,13 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             ).slice(0, 10); 
 
             if (matchingFiles.length > 0) {
-                const fileHeader = this.document.createElement('div');
+                const fileHeader = this.activeDocument.createElement('div');
                 fileHeader.className = 'context-file-menu-section-header';
                 fileHeader.textContent = 'Files';
                 container.appendChild(fileHeader);
 
                 matchingFiles.forEach((file, index) => {
-                    const item = this.document.createElement('div');
+                    const item = this.activeDocument.createElement('div');
                     item.className = 'context-file-menu-item';
 
                     const iconSpan = item.createSpan();
@@ -7574,7 +7574,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     container.appendChild(item);
                 });
             } else {
-                const noResults = this.document.createElement('div');
+                const noResults = this.activeDocument.createElement('div');
                 noResults.className = 'context-file-menu-item';
                 noResults.textContent = 'No matches found';
                 noResults.addClass('nl-opacity-05');
@@ -7875,9 +7875,9 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
             
             if (!this.contextMenuPreviewEl) {
-                this.contextMenuPreviewEl = this.document.createElement('div');
+                this.contextMenuPreviewEl = this.activeDocument.createElement('div');
                 this.contextMenuPreviewEl.className = 'context-file-preview';
-                this.document.body.appendChild(this.contextMenuPreviewEl);
+                this.activeDocument.body.appendChild(this.contextMenuPreviewEl);
             }
 
             
@@ -7941,12 +7941,12 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         
         if (this.contextMenuOpenFromMore && files.length > maxVisible) {
             const remaining = files.slice(maxVisible);
-            const remHeader = this.document.createElement('div');
+            const remHeader = this.activeDocument.createElement('div');
             remHeader.className = 'context-file-menu-section-header';
             remHeader.textContent = 'Added files';
             container.appendChild(remHeader);
             remaining.forEach(path => {
-                const item = this.document.createElement('div');
+                const item = this.activeDocument.createElement('div');
                 item.className = 'context-file-menu-item added';
 
                 
@@ -7986,7 +7986,7 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
                 container.appendChild(item);
             });
             
-            const divider = this.document.createElement('div');
+            const divider = this.activeDocument.createElement('div');
             divider.className = 'context-file-menu-divider';
             container.appendChild(divider);
         }
@@ -7999,14 +7999,14 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
             .slice()
             .sort((a, b) => b.stat.mtime - a.stat.mtime)
             .slice(0, filter ? allFiles.length : 5); 
-        const recHeader = this.document.createElement('div');
+        const recHeader = this.activeDocument.createElement('div');
         recHeader.className = 'context-file-menu-section-header';
         recHeader.textContent = 'Recent files';
         container.appendChild(recHeader);
         recentFiles.forEach(file => {
             
             if (this.selectedFiles.has(file.path)) return;
-            const item = this.document.createElement('div');
+            const item = this.activeDocument.createElement('div');
             item.className = 'context-file-menu-item';
             const iconSpan = item.createSpan();
             setIcon(iconSpan, this.getFileTypeIcon(file.name));
@@ -8021,7 +8021,7 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
             container.appendChild(item);
         });
         
-        const divider2 = this.document.createElement('div');
+        const divider2 = this.activeDocument.createElement('div');
         divider2.className = 'context-file-menu-divider';
         container.appendChild(divider2);
         
@@ -8037,25 +8037,25 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
                 { label: '@youtube', value: '@youtube', action: 'modal', modalType: 'youtube' }
             ];
             prefixOptions.forEach(opt => {
-                const item = this.document.createElement('div');
+                const item = this.activeDocument.createElement('div');
                 item.className = 'context-file-menu-item';
 
                 
                 if (opt.hasToggle && opt.value === '@vault ') {
-                    const labelSpan = this.document.createElement('span');
+                    const labelSpan = this.activeDocument.createElement('span');
                     labelSpan.textContent = opt.label;
                     item.appendChild(labelSpan);
 
-                    const toggleContainer = this.document.createElement('div');
+                    const toggleContainer = this.activeDocument.createElement('div');
                     toggleContainer.className = 'vault-citation-toggle-container';
                     toggleContainer.addClass('nl-css-text-rem-13');
 
                     
-                    const toggleLabel = this.document.createElement('span');
+                    const toggleLabel = this.activeDocument.createElement('span');
                     toggleLabel.textContent = 'Citations';
                     toggleLabel.addClass('nl-css-text-rem-14');
 
-                    const toggleSwitch = this.document.createElement('input');
+                    const toggleSwitch = this.activeDocument.createElement('input');
                     toggleSwitch.type = 'checkbox';
                     toggleSwitch.className = 'vault-citation-toggle';
                     toggleSwitch.checked = this.vaultInlineCitationsEnabled;
@@ -8075,19 +8075,19 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
                     item.addClass('nl-css-text-rem-15');
                 } else if (opt.hasToggle && opt.value === '@flash ') {
                     
-                    const labelSpan = this.document.createElement('span');
+                    const labelSpan = this.activeDocument.createElement('span');
                     labelSpan.textContent = opt.label;
                     item.appendChild(labelSpan);
 
-                    const toggleContainer = this.document.createElement('div');
+                    const toggleContainer = this.activeDocument.createElement('div');
                     toggleContainer.className = 'flash-citation-toggle-container';
                     toggleContainer.addClass('nl-css-text-rem-16');
 
-                    const toggleLabel = this.document.createElement('span');
+                    const toggleLabel = this.activeDocument.createElement('span');
                     toggleLabel.textContent = 'Citations';
                     toggleLabel.addClass('nl-css-text-rem-17');
 
-                    const toggleSwitch = this.document.createElement('input');
+                    const toggleSwitch = this.activeDocument.createElement('input');
                     toggleSwitch.type = 'checkbox';
                     toggleSwitch.className = 'flash-citation-toggle';
                     toggleSwitch.checked = this.flashInlineCitationsEnabled;
@@ -8108,16 +8108,16 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
                     /* TEMPORARILY DISABLED - @agent mode
                     } else if (opt.hasToggle && opt.value === '@agent ') {
                         
-                        const labelContainer = this.document.createElement('div');
+                        const labelContainer = this.activeDocument.createElement('div');
                         labelContainer.addClass('nl-css-text-rem-19');
                         
-                        const labelSpan = this.document.createElement('span');
+                        const labelSpan = this.activeDocument.createElement('span');
                         labelSpan.textContent = opt.label;
                         labelContainer.appendChild(labelSpan);
                         
                         
                         if (opt.badge) {
-                            const badgeSpan = this.document.createElement('span');
+                            const badgeSpan = this.activeDocument.createElement('span');
                             badgeSpan.className = 'feature-badge beta-badge';
                             badgeSpan.textContent = opt.badge;
                             badgeSpan.addClass('nl-css-text-rem-20');
@@ -8126,15 +8126,15 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
                         
                         item.appendChild(labelContainer);
                         
-                        const toggleContainer = this.document.createElement('div');
+                        const toggleContainer = this.activeDocument.createElement('div');
                         toggleContainer.className = 'agent-ratelimit-toggle-container';
                         toggleContainer.addClass('nl-css-text-rem-21');
                         
-                        const toggleLabel = this.document.createElement('span');
+                        const toggleLabel = this.activeDocument.createElement('span');
                         toggleLabel.textContent = 'Rate Limit';
                         toggleLabel.addClass('nl-css-text-rem-22');
                         
-                        const toggleSwitch = this.document.createElement('input');
+                        const toggleSwitch = this.activeDocument.createElement('input');
                         toggleSwitch.type = 'checkbox';
                         toggleSwitch.className = 'agent-ratelimit-toggle';
                         toggleSwitch.checked = this.agentRateLimitEnabled;
@@ -8155,19 +8155,19 @@ const isYouTubeUrl = /^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|live\/)|yout
                     */ 
                 } else if (opt.hasToggle && opt.value === '@mcp ') {
                     
-                    const labelSpan = this.document.createElement('span');
+                    const labelSpan = this.activeDocument.createElement('span');
                     labelSpan.textContent = opt.label;
                     item.appendChild(labelSpan);
 
-                    const toggleContainer = this.document.createElement('div');
+                    const toggleContainer = this.activeDocument.createElement('div');
                     toggleContainer.className = 'mcp-ratelimit-toggle-container';
                     toggleContainer.addClass('nl-css-text-rem-24');
 
-                    const toggleLabel = this.document.createElement('span');
+                    const toggleLabel = this.activeDocument.createElement('span');
                     toggleLabel.textContent = 'Delay Limit';
                     toggleLabel.addClass('nl-css-text-rem-25');
 
-                    const toggleSwitch = this.document.createElement('input');
+                    const toggleSwitch = this.activeDocument.createElement('input');
                     toggleSwitch.type = 'checkbox';
                     toggleSwitch.className = 'mcp-ratelimit-toggle';
                     toggleSwitch.checked = this.mcpRateLimitEnabled;
@@ -8451,7 +8451,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
             this.sessionHistoryModal.remove();
             this.sessionHistoryModal = null;
         }
-        const modal = this.document.createElement('div');
+        const modal = this.activeDocument.createElement('div');
         modal.className = 'ai-chat-session-history-modal';
         
         modal.createDiv({ cls: 'modal-bg' });
@@ -8475,7 +8475,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
         const pageInfo = paginationDiv.createSpan({ cls: 'page-info' });
         const nextBtn = paginationDiv.createEl('button', { cls: 'next-page-btn', text: 'Next' });
 
-        this.document.body.appendChild(modal);
+        this.activeDocument.body.appendChild(modal);
         this.sessionHistoryModal = modal;
 
         closeBtn.addEventListener('click', () => {
@@ -8509,9 +8509,9 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 paginationDiv.addClass('nl-display-none');
             } else {
                 
-                const fragment = this.document.createDocumentFragment();
+                const fragment = this.activeDocument.createDocumentFragment();
                 sessions.forEach(meta => {
-                    const card = this.document.createElement('div');
+                    const card = this.activeDocument.createElement('div');
                     card.className = 'session-card';
 
                     const sessionInfo = card.createDiv({ cls: 'session-info' });
@@ -8561,7 +8561,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                             this.sessionHistoryModal = null;
                         }).catch(console.error);
                     });
-                    const deleteBtn = this.document.createElement('button');
+                    const deleteBtn = this.activeDocument.createElement('button');
                     deleteBtn.className = 'delete-session-btn';
                     setIcon(deleteBtn, 'trash-2');
                     deleteBtn.title = 'Delete session';
@@ -11059,7 +11059,7 @@ class CodeCanvasModal extends Modal {
     private onSave?: (newCode: string) => void;
     private onUpdate?: (newCode: string) => void;
     public onCloseCallback?: () => void;
-    get document() { return this.containerEl.ownerDocument; }
+    get activeDocument() { return this.containerEl.ownerDocument; }
 
     constructor(app: App, code: string, language: string, onSave?: (newCode: string) => void, onUpdate?: (newCode: string) => void) {
         super(app);
@@ -11185,7 +11185,7 @@ class CodeCanvasModal extends Modal {
             if (lang === 'json') {
                 const result = await executeCode(code, 'json');
                 if (result.isHtml && result.htmlContent) {
-                    const iframe = this.document.createElement('iframe');
+                    const iframe = this.activeDocument.createElement('iframe');
                     iframe.className = 'code-exec-iframe code-canvas-iframe';
                     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
                     iframe.srcdoc = result.htmlContent;
@@ -11311,7 +11311,7 @@ class CodeCanvasModal extends Modal {
             outputArea.empty();
 
             if (result.isHtml && result.htmlContent) {
-                const iframe = this.document.createElement('iframe');
+                const iframe = this.activeDocument.createElement('iframe');
                 iframe.className = 'code-exec-iframe code-canvas-iframe';
                 iframe.setAttribute('sandbox',
                     'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-modals allow-popups'

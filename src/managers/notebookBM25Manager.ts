@@ -229,11 +229,11 @@ export class NotebookBM25Manager {
                 },
                 tolerance: 1,
                 limit
-            }) as { results?: { hits?: Array<{ document: Record<string, unknown>, score: number }> } } | undefined;
+            }) as { results?: { hits?: Array<{ 'document': Record<string, unknown>, score: number }> } } | undefined;
 
             if (searchResponse && searchResponse.results?.hits) {
                 return searchResponse.results.hits.map((hit) => {
-                    const doc = hit.document;
+                    const doc = hit['document'];
                     return {
                         path: String(doc.path || ''),
                         chunkIndex: Number(doc.chunkIndex || 0),

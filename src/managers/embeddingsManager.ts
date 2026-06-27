@@ -2079,14 +2079,14 @@ export class EmbeddingsManager {
                 },
                 tolerance: 1,
                 limit: limit * 5
-            }) as { results?: { hits?: Array<{ document: OramaHitDocument; score: number }> } } | undefined;
+            }) as { results?: { hits?: Array<{ 'document': OramaHitDocument; score: number }> } } | undefined;
 
-            const bm25Results = (bm25SearchResponse!.results?.hits || []).map((hit: { document: OramaHitDocument; score: number }) => ({
-                path: hit.document.path,
-                chunkIndex: hit.document.chunkIndex,
-                content: hit.document.content || '',
+            const bm25Results = (bm25SearchResponse!.results?.hits || []).map((hit: { 'document': OramaHitDocument; score: number }) => ({
+                path: hit['document'].path,
+                chunkIndex: hit['document'].chunkIndex,
+                content: hit['document'].content || '',
                 similarity: hit.score,
-                lastModified: hit.document.lastModified
+                lastModified: hit['document'].lastModified
             }));
 
             // Group by file
@@ -2529,14 +2529,14 @@ export class EmbeddingsManager {
                     where: Object.keys(where).length > 0 ? where : undefined,
                     limit: limit * 5,
                     similarity: 0.4
-                }) as { results?: { hits?: Array<{ document: OramaHitDocument; score: number }> } } | undefined;
+                }) as { results?: { hits?: Array<{ 'document': OramaHitDocument; score: number }> } } | undefined;
 
-                const fusedResults = (hybridSearchResponse!.results?.hits || []).map((hit: { document: OramaHitDocument; score: number }) => ({
-                    path: hit.document.path,
-                    chunkIndex: hit.document.chunkIndex,
-                    content: hit.document.content || '',
+                const fusedResults = (hybridSearchResponse!.results?.hits || []).map((hit: { 'document': OramaHitDocument; score: number }) => ({
+                    path: hit['document'].path,
+                    chunkIndex: hit['document'].chunkIndex,
+                    content: hit['document'].content || '',
                     similarity: hit.score,
-                    lastModified: hit.document.lastModified
+                    lastModified: hit['document'].lastModified
                 }));
 
                 // ==================== PROCESS RESULTS ====================
@@ -2672,15 +2672,15 @@ export class EmbeddingsManager {
                     where: Object.keys(where).length > 0 ? where : undefined,
                     limit: 100, // Get enough candidates for filtering/grouping
                     similarity: 0.4
-                }) as { results?: { hits?: Array<{ document: OramaHitDocument; score: number }> } } | undefined;
+                }) as { results?: { hits?: Array<{ 'document': OramaHitDocument; score: number }> } } | undefined;
 
                 const vectorResults: Array<{path: string, chunkIndex: number, content: string, similarity: number, lastModified: number}> = 
-                    (vectorSearchResponse!.results?.hits || []).map((hit: { document: OramaHitDocument; score: number }) => ({
-                        path: hit.document.path,
-                        chunkIndex: hit.document.chunkIndex,
-                        content: hit.document.content || '',
+                    (vectorSearchResponse!.results?.hits || []).map((hit: { 'document': OramaHitDocument; score: number }) => ({
+                        path: hit['document'].path,
+                        chunkIndex: hit['document'].chunkIndex,
+                        content: hit['document'].content || '',
                         similarity: hit.score,
-                        lastModified: hit.document.lastModified
+                        lastModified: hit['document'].lastModified
                     }));
                 
                 // Note: Results are already sorted by Orama

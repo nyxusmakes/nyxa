@@ -143,7 +143,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 try {
                     let binaryData: ArrayBuffer | Array<Record<string, unknown>> | undefined = payload.data as unknown as ArrayBuffer | Array<Record<string, unknown>>;
                     if (payload.compressed) {
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- fflate.unzlibSync returns any
                         const decompressed: Uint8Array = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer));
                         binaryData = decompressed.buffer as ArrayBuffer;
                     }
@@ -163,7 +163,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                     
                     if (decoded.type === 'orama-state') {
                         // NEW Container format
-                        const metadata = (decoded.metadata || {}) as OramaMetadata;
+                        const metadata = decoded.metadata || {};
                         const dimension = metadata.dimension || 0;
                         const schema = buildSchema(dimension);
                         

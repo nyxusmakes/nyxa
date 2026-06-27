@@ -476,7 +476,7 @@ Rules:
 JSON:`;
 
     try {
-        let response: { status: number; json: Record<string, unknown> };
+        let response: { status: number; json: any };
         let content: string = '';
 
         // Use provider-specific API calls
@@ -503,7 +503,7 @@ JSON:`;
                                 return { cleanQuery: query, startDate: null, endDate: null, hasTemporalFilter: false };
             }
             
-            content = (response.json.candidates as unknown as Array<{ content?: { parts?: Array<{ text?: string }> } }>)?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            content = response.json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
             
         } else if (provider === 'openrouter') {
             // Use OpenRouter API - try a sequence of reliable free/cheap models
@@ -535,7 +535,7 @@ JSON:`;
                     });
                     
                     if (response.status === 200) {
-                        content = (response.json.choices as unknown as Array<{ message?: { content?: string } }>)?.[0]?.message?.content?.trim() || '';
+                        content = response.json.choices?.[0]?.message?.content?.trim() || '';
                         openRouterSuccess = true;
                         break;
                     }
@@ -570,7 +570,7 @@ JSON:`;
                     });
                     
                     if (response.status === 200) {
-                        content = (response.json.choices as unknown as Array<{ message?: { content?: string } }>)?.[0]?.message?.content?.trim() || '';
+                        content = response.json.choices?.[0]?.message?.content?.trim() || '';
                         groqSuccess = true;
                         break;
                     }

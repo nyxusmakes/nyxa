@@ -51,7 +51,7 @@ interface OramaWorkerPayload {
     path?: string;
     metadata?: Record<string, unknown>;
     documents?: Array<Record<string, unknown>>;
-    document?: Record<string, unknown>;
+    'document'?: Record<string, unknown>;
 }
 
 interface OramaWorkerResponse {
