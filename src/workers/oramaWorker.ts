@@ -143,6 +143,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 try {
                     let binaryData: ArrayBuffer | Array<Record<string, unknown>> | undefined = payload.data as unknown as ArrayBuffer | Array<Record<string, unknown>>;
                     if (payload.compressed) {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                         const decompressed: Uint8Array = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer));
                         binaryData = decompressed.buffer as ArrayBuffer;
                     }

@@ -22,15 +22,15 @@
     "obsidian": "^1.4.0",
     "pdfjs-dist": "^5.1.91",
     "pptx2json": "^0.0.10",
-    "xlsx": "^0.18.5"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^23.0.0",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
     "@types/node": "^22.19.19",
-    "rollup": "^3.0.0",
-    "rollup-plugin-typescript2": "^0.34.0",
+    "rollup": "^3.30.0",
+    "rollup-plugin-typescript2": "^0.37.0",
     "rollup-plugin-web-worker-loader": "^1.7.0",
     "typescript": "^5.0.0"
   }

@@ -68,7 +68,7 @@ export default class AIPlugin extends Plugin {
         
         
         window.setTimeout(() => {
-            const doc = document;
+            const doc = (this.app.workspace.activeEditor?.editor as unknown as { view?: { containerEl?: { ownerDocument?: Document } } })?.view?.containerEl?.ownerDocument ?? window.activeDocument ?? document;
             const mcqOverlays = doc.body.querySelectorAll('.mcq-error-overlay, .mcq-progress-dialog');
             mcqOverlays.forEach(overlay => overlay.remove());
         }, 0);
@@ -549,7 +549,7 @@ export default class AIPlugin extends Plugin {
         }
 
         
-        const doc = document;
+        const doc = (this.app.workspace.activeEditor?.editor as unknown as { view?: { containerEl?: { ownerDocument?: Document } } })?.view?.containerEl?.ownerDocument ?? window.activeDocument ?? document;
         const mcqOverlays = doc.body.querySelectorAll('.mcq-error-overlay');
         mcqOverlays.forEach(overlay => overlay.remove());
 
