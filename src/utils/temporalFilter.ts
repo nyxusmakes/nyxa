@@ -361,6 +361,24 @@ function parseFlexibleDate(dateStr: string): Date | null {
 
 
 
+interface GeminiResponse {
+    candidates?: Array<{
+        content?: {
+            parts?: Array<{
+                text?: string;
+            }>;
+        };
+    }>;
+}
+
+interface OpenAIResponse {
+    choices?: Array<{
+        message?: {
+            content?: string;
+        };
+    }>;
+}
+
 /**
  * AI-based temporal query parsing for complex natural language queries.
  * Uses a lightweight LLM call to extract temporal information that regex can't handle.
@@ -451,20 +469,20 @@ async function parseTemporalQueryAI(query: string, referenceDate: Date, settings
     
     // Use a simple prompt to extract temporal information
     const prompt = `Current date: ${referenceDate.toISOString().split('T')[0]} (${referenceDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })})
-
+ 
 Analyze this query and determine if it's asking to FILTER FILES by their creation/modification date, or if it's asking for CONTENT about a time period:
 "${query}"
-
+ 
 CRITICAL DISTINCTION:
 - TEMPORAL FILTER (filter files by when they were created/modified): "files I created this week", "notes modified yesterday", "what did I work on last month", "documents I edited in January"
 - CONTENT QUERY (search for content about a time period): "fertilizer subsidy in 2022", "events of 1945", "Q4 2023 revenue", "what happened in the year 2020"
-
+ 
 If the query is asking to FILTER FILES by creation/modification date, respond with:
 {"hasTime": true, "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD", "cleanQuery": "query without time references"}
-
+ 
 If the query is asking for CONTENT about a time period (NOT filtering by file dates), respond with:
 {"hasTime": false}
-
+ 
 Rules:
 - Only set hasTime:true if the query explicitly asks about file creation/modification dates
 - Years/dates mentioned in the context of content topics should return hasTime:false
@@ -472,13 +490,13 @@ Rules:
 - startDate and endDate should be in YYYY-MM-DD format
 - cleanQuery should be the original query with temporal phrases removed
 - Respond with ONLY the JSON, no other text
-
+ 
 JSON:`;
-
+ 
     try {
-        let response: { status: number; json: any };
+        let response: { status: number; json: unknown };
         let content: string = '';
-
+ 
         // Use provider-specific API calls
         if (provider === 'gemini') {
             // Use Gemini API
@@ -503,7 +521,8 @@ JSON:`;
                                 return { cleanQuery: query, startDate: null, endDate: null, hasTemporalFilter: false };
             }
             
-            content = response.json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            const geminiJson = response.json as GeminiResponse;
+            content = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
             
         } else if (provider === 'openrouter') {
             // Use OpenRouter API - try a sequence of reliable free/cheap models
@@ -535,7 +554,8 @@ JSON:`;
                     });
                     
                     if (response.status === 200) {
-                        content = response.json.choices?.[0]?.message?.content?.trim() || '';
+                        const openAIJson = response.json as OpenAIResponse;
+                        content = openAIJson.choices?.[0]?.message?.content?.trim() || '';
                         openRouterSuccess = true;
                         break;
                     }
@@ -570,7 +590,8 @@ JSON:`;
                     });
                     
                     if (response.status === 200) {
-                        content = response.json.choices?.[0]?.message?.content?.trim() || '';
+                        const openAIJson = response.json as OpenAIResponse;
+                        content = openAIJson.choices?.[0]?.message?.content?.trim() || '';
                         groqSuccess = true;
                         break;
                     }
