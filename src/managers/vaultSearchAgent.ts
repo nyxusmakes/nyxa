@@ -743,7 +743,7 @@ RESPONSE QUALITY CHECKLIST:
                         ...convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit)
                     ];
                     if (formattedVaultContent) {
-                        groqMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` } as GroqChatMessage);
+                        groqMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` });
                     }
                     
                     if (this.settings.model === GROQ_VISION_MODEL) {
@@ -915,9 +915,9 @@ RESPONSE QUALITY CHECKLIST:
                         ...(convertChatHistoryForGroq(chatHistory as unknown as GeminiHistoryMessage[], this.settings.model, modelTokenLimit) as NvidiaChatMessage[])
                     ];
                     if (formattedVaultContent) {
-                        nvidiaMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` } as NvidiaChatMessage);
+                        nvidiaMessages.push({ role: 'user', content: `Content from notes:\n${formattedVaultContent}` });
                     }
-                    nvidiaMessages.push({ role: 'user', content: `Question: ${query}` } as NvidiaChatMessage);
+                    nvidiaMessages.push({ role: 'user', content: `Question: ${query}` });
 
                     
                     try {

@@ -6086,7 +6086,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             
             if (pre.parentElement?.classList.contains('code-block-wrapper')) return;
 
-            const lang = detectLanguage(pre as HTMLElement);
+            const lang = detectLanguage(pre);
             const executable = isExecutable(lang);
 
             
@@ -6161,7 +6161,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
             
             if (lang === 'mermaid') {
-                this.watchMermaidErrors(pre as HTMLElement, wrapper, question);
+                this.watchMermaidErrors(pre, wrapper, question);
                 return;
             }
 
@@ -6174,9 +6174,9 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 const autoMode = this.plugin.settings.codeExecutionAutoMode ?? false;
 
                 if (autoMode) {
-                    (pre as HTMLElement).addClass('nl-display-none');
+                    pre.addClass('nl-display-none');
                     outputEl.classList.remove('hidden');
-                    void this.runCode(pre as HTMLElement, lang, outputEl, wrapper, false, question);
+                    void this.runCode(pre, lang, outputEl, wrapper, false, question);
                     return;
                 }
 
@@ -6199,7 +6199,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 backBtn.addClass('nl-display-none');
                 setIcon(backBtn, 'code-2');
                 backBtn.addEventListener('click', () => {
-                    (pre as HTMLElement).addClass('nl-display-');
+                    pre.addClass('nl-display-');
                     outputEl.classList.add('hidden');
                     outputEl.empty();
                     outputEl.className = 'code-exec-output hidden';
@@ -6212,10 +6212,10 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     if (renderToggle.classList.contains('is-enabled')) return;
                     renderToggle.classList.add('is-enabled');
                     renderToggle.setAttribute('aria-checked', 'true');
-                    (pre as HTMLElement).addClass('nl-display-none');
+                    pre.addClass('nl-display-none');
                     outputEl.classList.remove('hidden');
                     backBtn.addClass('nl-display-');
-                    this.runCode(pre as HTMLElement, lang, outputEl, wrapper, false, question).catch(console.error);
+                    this.runCode(pre, lang, outputEl, wrapper, false, question).catch(console.error);
                 });
 
                 renderToggleRow.appendChild(renderLabel);
@@ -6238,9 +6238,9 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
             if (autoMode) {
                 
-                (pre as HTMLElement).addClass('nl-display-none');
+                pre.addClass('nl-display-none');
                 outputEl.classList.remove('hidden');
-                void this.runCode(pre as HTMLElement, lang, outputEl, wrapper, true, question);
+                void this.runCode(pre, lang, outputEl, wrapper, true, question);
             } else {
                 
                 const runToggleRow = this.activeDocument.createElement('div');
@@ -6264,7 +6264,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 setIcon(backBtn, 'code-2');
                 backBtn.addEventListener('click', () => {
                     
-                    (pre as HTMLElement).addClass('nl-display-');
+                    pre.addClass('nl-display-');
                     outputEl.classList.add('hidden');
                     outputEl.empty();
                     outputEl.className = 'code-exec-output hidden';
@@ -6281,10 +6281,10 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     runToggle.classList.add('is-enabled');
                     runToggle.setAttribute('aria-checked', 'true');
                     
-                    (pre as HTMLElement).addClass('nl-display-none');
+                    pre.addClass('nl-display-none');
                     outputEl.classList.remove('hidden');
                     backBtn.addClass('nl-display-');
-                    this.runCode(pre as HTMLElement, lang, outputEl, wrapper, false, question).catch(console.error);
+                    this.runCode(pre, lang, outputEl, wrapper, false, question).catch(console.error);
                 });
 
                 runToggleRow.appendChild(runLabel);
@@ -8703,7 +8703,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 answer: m.answer,
                 context: m.context || [],
                 timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
-                sources: (m.sources || []) as Array<{ path: string; relevance: number }>,
+                sources: m.sources || [],
                 webResults: (m.webResults || []) as unknown as WebSearchResult[],
 
 
@@ -8729,7 +8729,7 @@ const availableServers = (this.settings.mcpServers || []).filter((s) => !s.disab
                 searchMode: m.searchMode as Response['searchMode'],
 
                 vaultIndexName: m.vaultIndexName
-            }}) as Response[];
+            }});
 
             this.currentSessionId = sessionId;
 
@@ -9944,7 +9944,7 @@ CRITICAL:
                 });
 
                 const result = await chat.sendMessage(systemPrompt + '\n\n' + userPrompt);
-                aiText = (this.extractGeminiAnswerTextFromResponse(result.response as unknown as GeminiResponse) || result.response.text()).trim();
+                aiText = (this.extractGeminiAnswerTextFromResponse(result.response) || result.response.text()).trim();
             }
 
             if (!aiText || aiText.length === 0) {

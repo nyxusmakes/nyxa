@@ -134,14 +134,14 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
             case 'INIT':
                 if (!payload) throw new Error('Missing payload for INIT');
                 await initInstance(instanceId, payload.schema as AnySchema);
-                metadatas.set(instanceId, (payload.metadata || {}) as OramaMetadata);
+                metadatas.set(instanceId, payload.metadata || {});
                 ctx.postMessage({ success: true, instanceId, id });
                 break;
 
             case 'LOAD':
                 if (!payload) throw new Error('Missing payload for LOAD');
                 try {
-                    let binaryData: ArrayBuffer | Array<Record<string, unknown>> | undefined = payload.data as unknown as ArrayBuffer | Array<Record<string, unknown>>;
+                    let binaryData: ArrayBuffer | Array<Record<string, unknown>> | undefined = payload.data;
                     if (payload.compressed) {
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- fflate.unzlibSync returns any
                         const decompressed: Uint8Array = fflate.unzlibSync(new Uint8Array(binaryData as ArrayBuffer));
@@ -236,7 +236,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 if (!payload) throw new Error('Missing payload for SAVE');
                 const state = save(db);
                 const savePayload = payload as unknown as OramaSavePayload;
-                const metadata: OramaMetadata = { ...(savePayload.metadata || metadatas.get(instanceId) || {}) } as OramaMetadata;
+                const metadata: OramaMetadata = { ...(savePayload.metadata || metadatas.get(instanceId) || {}) };
                 
                 // Track dimension
                 const currentSchema: AnySchema = schemas.get(instanceId)!;
@@ -255,7 +255,7 @@ ctx.addEventListener('message', (event: MessageEvent<OramaWorkerMessage>) => {
                 let output = serialized;
                 
                 if (payload?.compress) {
-                    output = fflate.zlibSync(serialized) as Uint8Array;
+                    output = fflate.zlibSync(serialized);
                 }
                 
                 ctx.postMessage({ 

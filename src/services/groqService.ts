@@ -1093,7 +1093,7 @@ export class GroqService {
             content: toolResult.success 
               ? toolResult.content 
               : `Error: ${toolResult.error}`
-          } as ChatMessage);
+          });
         }
         
         
@@ -1119,7 +1119,7 @@ export class GroqService {
                 conversationMessages.push({
           role: 'user',
           content: 'You have already called some tools and received results. Please now synthesise a complete, direct answer to the original question using all the tool results above. Do not call any more tools — just write the final answer.'
-        } as ChatMessage);
+        });
         continue;
       }
 

@@ -70,7 +70,7 @@ export class OramaWorkerManager {
         return await this.sendRequest({ 
             type: 'LOAD', 
             instanceId, 
-            payload: { data, schema, compressed } as unknown as OramaWorkerPayload
+            payload: { data, schema, compressed }
         }, [data]);
     }
 

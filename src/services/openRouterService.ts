@@ -288,7 +288,7 @@ export class OpenRouterService {
         conversationMessages.push({
           role: 'user',
           content: 'Please synthesise a final answer based on the tool results above.'
-        } as ChatMessage);
+        });
         continue;
       }
       break;
