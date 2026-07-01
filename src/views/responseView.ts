@@ -5202,7 +5202,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
                     if (isYouTubeSource(source.path)) {
                         
-                        void getYouTubeUrl(source.path, (source as { path: string; relevance: number; url?: string; content?: string }).content).then(url => {
+                        void getYouTubeUrl(source.path, source.content).then(url => {
                             if (url) {
                                 const videoId = extractYouTubeId(url);
                                 if (videoId) {
@@ -5245,7 +5245,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
                     if (isYouTubeSource(source.path)) {
                         
-                        getYouTubeUrl(source.path, (source as { path: string; relevance: number; url?: string; content?: string }).content).then(url => {
+                        getYouTubeUrl(source.path, source.content).then(url => {
                             if (url) {
                                 const videoId = extractYouTubeId(url);
                                 if (videoId) {

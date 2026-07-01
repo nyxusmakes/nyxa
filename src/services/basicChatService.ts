@@ -1907,7 +1907,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                     chunkResult = await unifiedProvider.generateContentWithTools(
                                         this.settings.model,
                                         messages as unknown as UnifiedMessage[],
-                                        chunk as ProviderTool[],
+                                        chunk,
                                         {
                                             temperature: getModelTemperature(this.settings.model, this.settings, provider),
                                             maxTokens: 8192,
@@ -1915,7 +1915,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                             toolChoice: toolChoiceVal,
                                             abortSignal
                                         },
-                                        execCb as unknown as Parameters<NonNullable<typeof unifiedProvider.generateContentWithTools>>[4],
+                                        execCb as (toolCalls: any[]) => Promise<any[]>,
                                         (thinking: string) => updateSnippetUI('Thinking...', thinking)
                                     );
                                 } else {
@@ -2280,7 +2280,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                 chunkResult = await unifiedProvider.generateContentWithTools(
                                     this.settings.model,
                                     messages as unknown as UnifiedMessage[],
-                                    chunk as ProviderTool[],
+                                    chunk,
                                     {
                                         temperature: getModelTemperature(this.settings.model, this.settings, provider),
                                         maxTokens: 8192,
@@ -2288,7 +2288,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                         toolChoice,
                                         abortSignal
                                     },
-                                    execCb as unknown as Parameters<NonNullable<typeof unifiedProvider.generateContentWithTools>>[4],
+                                    execCb as (toolCalls: any[]) => Promise<any[]>,
                                     (thinking: string) => updateSnippetUI('Thinking...', thinking)
                                 );
                             } else {
@@ -2767,15 +2767,15 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                         } else if (planningProvider === 'openrouter') {
                             const ors = new OpenRouterService(this.settings.openRouterApiKey,
                                 (h: Headers) => this.rateLimitManager.updateFromHeaders('openrouter', planningModelId, h));
-                            await ors.generateContentWithTools(planningModelId, planningMessages as unknown as OpenRouterChatMessage[], planningTools as unknown as Record<string, unknown>[], { ...planningOptions, toolChoice: 'required' }, planningExecCb as unknown as Parameters<typeof ors.generateContentWithTools>[4]);
+                            await ors.generateContentWithTools(planningModelId, planningMessages as unknown as OpenRouterChatMessage[], planningTools, { ...planningOptions, toolChoice: 'required' }, planningExecCb as (toolCalls: any[]) => Promise<any[]>);
                         } else if (planningProvider === 'ollama') {
                             const os = new OllamaService(this.settings.ollamaBaseUrl || 'http://localhost:11434', this.settings.ollamaApiKey,
                                 (h: Headers) => this.rateLimitManager.updateFromHeaders('ollama', planningModelId, h));
-                            await os.generateContentWithTools(planningModelId, planningMessages as unknown as OllamaChatMessage[], planningTools as ProviderTool[], planningOptions, planningExecCb as unknown as Parameters<typeof os.generateContentWithTools>[4]);
+                            await os.generateContentWithTools(planningModelId, planningMessages as unknown as OllamaChatMessage[], planningTools as unknown as ProviderTool[], planningOptions, planningExecCb as unknown as Parameters<typeof os.generateContentWithTools>[4]);
                         } else if (UnifiedProviderManager.getInstance().hasProvider(planningProvider)) {
                             const unifiedProvider = UnifiedProviderManager.getInstance().getProvider(planningProvider)!;
                             if (unifiedProvider.generateContentWithTools) {
-                                await unifiedProvider.generateContentWithTools(planningModelId, planningMessages as unknown as UnifiedMessage[], planningTools as unknown as Record<string, unknown>[], planningOptions, planningExecCb as unknown as Parameters<NonNullable<typeof unifiedProvider.generateContentWithTools>>[4]);
+                                await unifiedProvider.generateContentWithTools(planningModelId, planningMessages as unknown as UnifiedMessage[], planningTools, planningOptions, planningExecCb as (toolCalls: any[]) => Promise<any[]>);
                             }
                         }
 
@@ -3089,7 +3089,7 @@ ${mcpContext}`;
                 if (provider === 'groq') {
                     const gs = new GroqService(this.settings.groqApiKey,
                         (h) => this.rateLimitManager.updateFromHeaders('groq', modelId, h));
-                    return gs.generateContentWithTools(modelId, passMessages as GroqChatMessage[], passTools as ProviderTool[],
+                    return gs.generateContentWithTools(modelId, passMessages as GroqChatMessage[], passTools,
                         { temperature: getModelTemperature(modelId, this.settings), topP: getModelTopP(modelId, this.settings), toolChoice, abortSignal: effectiveSignal },
                         execCb as unknown as (toolCalls: LocalGroqToolCall[]) => Promise<LocalToolResult[]>);
                 } else if (provider === 'gemini') {
@@ -3097,7 +3097,7 @@ ${mcpContext}`;
                     const gs = new GS(this.settings.geminiApiKey || this.settings.apiKey,
                         (h) => this.rateLimitManager.updateFromHeaders('gemini', modelId, h));
                     return gs.generateContentWithTools(modelId, passMessages as 
-unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: string; type?: string; function?: { name: string; arguments: string }; name?: string }> }>, passTools as ProviderTool[],
+unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: string; type?: string; function?: { name: string; arguments: string }; name?: string }> }>, passTools as unknown as ProviderTool[],
                         {
                             temperature: getModelTemperature(modelId, this.settings),
                             maxOutputTokens: 8192,
@@ -3105,14 +3105,14 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                             thinkingConfig: getGeminiThinkingConfig(modelId, this.settings)?.thinkingConfig,
                             abortSignal: effectiveSignal
                         },
-                        execCb as unknown as Parameters<typeof gs.generateContentWithTools>[4]);
+                        execCb as (toolCalls: any[]) => Promise<any[]>);
                 } else if (provider === 'openrouter') {
                     const { OpenRouterService: ORS } = await import('./openRouterService');
                     const ors = new ORS(this.settings.openRouterApiKey,
                         (h) => this.rateLimitManager.updateFromHeaders('openrouter', modelId, h));
                     return ors.generateContentWithTools(modelId, passMessages as unknown as OpenRouterChatMessage[], passTools,
                         { temperature: getModelTemperature(modelId, this.settings), topP: getModelTopP(modelId, this.settings), toolChoice, abortSignal: effectiveSignal },
-                        execCb as unknown as Parameters<typeof ors.generateContentWithTools>[4]);
+                        execCb as (toolCalls: any[]) => Promise<any[]>);
                 } else if (provider === 'ollama') {
                     const { OllamaService: OS } = await import('./ollamaService');
                     const os = new OS(this.settings.ollamaBaseUrl || 'http://localhost:11434', this.settings.ollamaApiKey,
@@ -3167,7 +3167,7 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                         return unifiedProvider.generateContentWithTools(
                             modelId,
                             passMessages as unknown as UnifiedMessage[],
-                            passTools as ProviderTool[],
+                            passTools,
                             {
                                 temperature: getModelTemperature(modelId, this.settings),
                                 maxTokens: 8192,
@@ -3175,7 +3175,7 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                                 toolChoice,
                                 abortSignal: effectiveSignal
                             },
-                            execCb as unknown as Parameters<NonNullable<typeof unifiedProvider.generateContentWithTools>>[4],
+                            execCb as (toolCalls: any[]) => Promise<any[]>,
                             (thinking: string) => updateSnippetUI('Thinking...', thinking)
                         );
                     } else {

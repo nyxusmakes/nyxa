@@ -3,10 +3,10 @@ import { requestUrl, Platform } from 'obsidian';
 
 interface ChildProcess {
     stdout: {
-        on(event: 'data', listener: (data: Buffer) => void): void;
+        on(event: 'data', listener: (data: Uint8Array) => void): void;
     } | null;
     stderr: {
-        on(event: 'data', listener: (data: Buffer) => void): void;
+        on(event: 'data', listener: (data: Uint8Array) => void): void;
     } | null;
     stdin: {
         write(buffer: string): boolean;
@@ -221,12 +221,12 @@ export class MCPService {
                 
                 let stderrAccum = '';
 
-                childProcess.stdout?.on('data', (data: Buffer) => {
-                                        this.handleServerMessage(config.id, data.toString());
+                childProcess.stdout?.on('data', (data: Uint8Array) => {
+                                        this.handleServerMessage(config.id, new TextDecoder().decode(data));
                 });
 
-                childProcess.stderr?.on('data', (data: Buffer) => {
-                    const text = data.toString();
+                childProcess.stderr?.on('data', (data: Uint8Array) => {
+                    const text = new TextDecoder().decode(data);
                     stderrAccum += text;
                                     });
 
@@ -308,11 +308,11 @@ export class MCPService {
                 
                 let stderrAccum = '';
 
-                childProcess.stdout?.on('data', (data: Buffer) => {
+                childProcess.stdout?.on('data', () => {
                                     });
 
-                childProcess.stderr?.on('data', (data: Buffer) => {
-                    const text = data.toString();
+                childProcess.stderr?.on('data', (data: Uint8Array) => {
+                    const text = new TextDecoder().decode(data);
                     stderrAccum += text;
                                     });
 
