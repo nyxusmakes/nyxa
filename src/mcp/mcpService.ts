@@ -1,9 +1,32 @@
 import { requestUrl, Platform } from 'obsidian';
 
 
-const child_process = (!Platform.isMobile && (window as unknown as Record<string, unknown>).require) ? ((window as unknown as Record<string, unknown>).require as (module: string) => Record<string, unknown>)('child_process') : null;
-const spawn = child_process?.spawn as ((...args: unknown[]) => ChildProcess) | undefined;
-type ChildProcess = import('child_process').ChildProcess; 
+interface ChildProcess {
+    stdout: {
+        on(event: 'data', listener: (data: Buffer) => void): void;
+    } | null;
+    stderr: {
+        on(event: 'data', listener: (data: Buffer) => void): void;
+    } | null;
+    stdin: {
+        write(buffer: string): boolean;
+    } | null;
+    on(event: 'exit', listener: (code: number | null) => void): void;
+    on(event: 'error', listener: (error: Error) => void): void;
+    kill(): void;
+}
+
+const child_process = (!Platform.isMobile && (window as unknown as Record<string, unknown>).require)
+    ? ((window as unknown as Record<string, unknown>).require as (module: string) => {
+        spawn: (command: string, args: string[], options?: Record<string, unknown>) => ChildProcess;
+      })('child_process')
+    : null;
+
+const spawn = child_process?.spawn;
+
+const nodeProcess = (typeof process !== 'undefined') 
+    ? (process as unknown as { platform: string; env: Record<string, string | undefined> }) 
+    : { platform: 'unknown', env: {} };
 
 function spawnMCPProcess(
     command: string,
@@ -22,7 +45,7 @@ function spawnMCPProcess(
         return `"${arg}"`;
     }
 
-    const isWindows = process.platform === 'win32';
+    const isWindows = nodeProcess.platform === 'win32';
 
     if (isWindows) {
         
@@ -39,7 +62,7 @@ function spawnMCPProcess(
         
         
         
-        const shell = process.env.ComSpec || 'cmd.exe';
+        const shell = nodeProcess.env.ComSpec || 'cmd.exe';
         return spawn!(shell, ['/d', '/s', '/c', `"${cmdString}"`], {
             env,
             stdio: ['pipe', 'pipe', 'pipe'],
@@ -178,7 +201,7 @@ export class MCPService {
                 const childProcess: ChildProcess = spawnMCPProcess(
                     command,
                     config.args || [],
-                    { ...process.env, ...config.env }
+                    { ...nodeProcess.env, ...config.env }
                 );
 
                 const connection: MCPServerConnection = {
@@ -279,7 +302,7 @@ export class MCPService {
                 const childProcess: ChildProcess = spawnMCPProcess(
                     command,
                     config.args || [],
-                    { ...process.env, ...config.env }
+                    { ...nodeProcess.env, ...config.env }
                 );
 
                 

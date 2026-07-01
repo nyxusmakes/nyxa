@@ -226,7 +226,7 @@ export class CustomOpenAIProvider extends BaseProvider {
         streamCallback?: (chunk: string) => void
     ): Promise<{ content: string; totalTokens?: number }> {
         let fullContent = '';
-        let conversationMessages = [...messages] as unknown as UnifiedMessage[];
+        let conversationMessages = [...messages];
         let totalTokens = 0;
         let toolRoundsExecuted = 0;
         const MAX_CONTINUATION_NUDGES = 3;

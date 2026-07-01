@@ -13,7 +13,7 @@ export class DirectorySuggester {
         onSelect: (path: string) => void,
         initialPath: string = ''
     ) {
-        this.folders = app.vault.getAllLoadedFiles().filter(f => f instanceof TFolder) as TFolder[];
+        this.folders = app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
         this.onSelect = onSelect;
         this.setupInputField(initialPath);
     }
@@ -87,6 +87,6 @@ export class DirectorySuggester {
     }
 
     refreshFolders() {
-        this.folders = this.app.vault.getAllLoadedFiles().filter(f => f instanceof TFolder) as TFolder[];
+        this.folders = this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
     }
 }

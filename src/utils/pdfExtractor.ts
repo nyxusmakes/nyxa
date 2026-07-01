@@ -62,7 +62,7 @@ export async function extractTextFromPdf(file: TFile, vault: Vault, opts?: { fro
     for (let i = start; i <= end; i++) {
       const page = await pdfDocument.getPage(i);
       const viewport = page.getViewport({ scale: 1.0 });
-      const textContent = await page.getTextContent() as { items: PdfTextItem[] };
+      const textContent = await page.getTextContent();
 
       // Filter out empty strings if they don't have a meaningful position/width
       const items = textContent.items.filter((item: PdfTextItem) => item.str.trim().length > 0 || item.width > 0);

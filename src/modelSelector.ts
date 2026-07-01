@@ -207,7 +207,7 @@ export class ModelSelector {
     } else if (isMcpBiased) {
       providerOrder = [
         'ollama', 'gemini', 'openrouter', 'opencode',
-        ...((this.settings.customProviders || []).map(p => p.id as Provider)),
+        ...((this.settings.customProviders || []).map(p => p.id)),
         'nvidia', 'groq'
       ];
     }

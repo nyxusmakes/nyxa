@@ -15349,10 +15349,14 @@
 
 .index-status-dot-wrapper {
   position: relative;
-  display: inline-flex;
+  display: none;
   align-items: center;
   margin-right: 6px;
   flex-shrink: 0;
+}
+
+.index-status-dot-wrapper.is-visible {
+  display: inline-flex;
 }
 
 .index-status-dot {

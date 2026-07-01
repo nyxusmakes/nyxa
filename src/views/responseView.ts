@@ -294,7 +294,7 @@ class FolderModal extends SuggestModal<TFolder> {
     }
 
     getSuggestions(query: string): TFolder[] {
-        const folders = this.app.vault.getAllLoadedFiles().filter(f => f instanceof TFolder) as TFolder[];
+        const folders = this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
         return folders.filter((folder: TFolder) =>
             folder.path.toLowerCase().includes(query.toLowerCase())
         );
@@ -2528,7 +2528,7 @@ export class ResponseView extends ItemView {
                 }
 
                 try {
-                    this.settings.provider = model.provider as Provider;
+                    this.settings.provider = model.provider;
                     this.settings.model = model.modelId;
 
                     const result = await apiCall();
@@ -4081,7 +4081,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                         
                         if (fileOrFolder instanceof TFolder) {
                             const folderFiles: SearchResult[] = [];
-                            const allFiles = fileOrFolder.children.filter(child => child instanceof TFile) as TFile[];
+                            const allFiles = fileOrFolder.children.filter((child): child is TFile => child instanceof TFile);
 
                             for (const file of allFiles) {
                                 try {
@@ -5102,7 +5102,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         });
     }
 
-    private addSourcesToResponseElement(responseEl: HTMLElement, sources: Array<{ path: string; relevance: number }> = []) {
+    private addSourcesToResponseElement(responseEl: HTMLElement, sources: Array<{ path: string; relevance: number; url?: string; content?: string }> = []) {
         if (sources && sources.length > 0) {
             const sourcesEl = responseEl.createDiv({ cls: 'response-sources' });
 
@@ -5168,7 +5168,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                 }
 
                 
-                const source = sources.find(s => s.path === path) as { path: string; relevance: number; url?: string; content?: string } | undefined;
+                const source = sources.find(s => s.path === path);
                 if (source && source.url) {
                     return source.url;
                 }
@@ -6797,7 +6797,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         
         
         const dotWrapper = container.createDiv({ cls: 'index-status-dot-wrapper' });
-        dotWrapper.style.display = 'none';
         const dot = dotWrapper.createDiv({ cls: 'index-status-dot' });
 
         
@@ -6842,7 +6841,6 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const embeddingsManager = this.plugin.embeddingsManager;
         if (embeddingsManager && typeof embeddingsManager.detectChanges === 'function') {
             
-            const indexConfigs = this.settings.indexConfigurations || [];
             let targetIndexId: string | null = null;
             if (searchMode === 'flash') {
                 targetIndexId = this.settings.selectedBM25IndexId || null;
@@ -6853,7 +6851,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             if (targetIndexId) {
                 embeddingsManager.detectChanges(targetIndexId).then((changes: { hasChanges: boolean }) => {
                     if (changes.hasChanges) {
-                        dotWrapper.style.display = '';
+                        dotWrapper.addClass('is-visible');
                     }
                 }).catch(() => {
                     // on error keep hidden
@@ -10675,7 +10673,7 @@ ${jsonContent}
                             // File may not exist or be accessible - safe to ignore
                         }
                     } else if (fileOrFolder instanceof TFolder) {
-                        const allFiles = fileOrFolder.children.filter(c => c instanceof TFile) as TFile[];
+                        const allFiles = fileOrFolder.children.filter((c): c is TFile => c instanceof TFile);
                         for (const file of allFiles) {
                             try {
                                 const content = await this.app.vault.read(file);

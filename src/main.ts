@@ -823,7 +823,7 @@ export default class AIPlugin extends Plugin {
                 const customProviderIds = new Set(this.settings.customProviders?.map(p => p.id) || []);
                 const dynamicModelIds = new Set(dynamicModels.map(m => `${m.provider}:${m.id}`));
                 const manualModels = this.settings.customModels.filter(m => 
-                    customProviderIds.has(m.provider as string) && !dynamicModelIds.has(`${m.provider}:${m.id}`)
+                    customProviderIds.has(m.provider) && !dynamicModelIds.has(`${m.provider}:${m.id}`)
                 );
 
                 this.settings.customModels = [...manualModels, ...dynamicModels];

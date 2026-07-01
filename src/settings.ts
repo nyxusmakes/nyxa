@@ -524,7 +524,7 @@ export function getModelsGroupedByProvider(settings: AISettings): ModelMenuGroup
       
       if (customModels.length > 0) {
         groups.push({
-          provider: cp.id as Provider,
+          provider: cp.id,
           label: cp.name,
           models: customModels
         });
@@ -1095,7 +1095,7 @@ export class AISettingTab extends PluginSettingTab {
 
         drop.setValue(this.plugin.settings.provider)
            .onChange(async val => {
-             this.plugin.settings.provider = val as Provider;
+             this.plugin.settings.provider = val;
              // Default Ollama to Cloud mode when selected as provider
              if (val === 'ollama') {
                this.plugin.settings.ollamaMode = 'cloud';
@@ -2441,7 +2441,7 @@ if (this.validatePath(normalizedPath)) {
       .setName('Template folder')
       .setDesc('Select the folder that contains your note templates to be able to save responses and AI created files in your preferred template')
       .addDropdown(drop => {
-        const folders = this.app.vault.getAllLoadedFiles().filter(f => f instanceof TFolder) as TFolder[];
+        const folders = this.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
         drop.addOption('', 'None');
         folders.forEach(folder => {
           drop.addOption(folder.path, folder.path);
@@ -2588,7 +2588,7 @@ if (this.validatePath(normalizedPath)) {
       { id: 'opencode', name: 'OpenCode Zen' },
       { id: 'ollama', name: 'Ollama' },
       { id: 'nvidia', name: 'NVIDIA' },
-      ...this.plugin.settings.customProviders.map((p: CustomProviderConfig) => ({ id: p.id as Provider, name: p.name }))
+      ...this.plugin.settings.customProviders.map((p: CustomProviderConfig) => ({ id: p.id, name: p.name }))
     ];
     new Setting(containerEl).setName('Custom AI models' ).setHeading();
     
@@ -2977,7 +2977,7 @@ if (this.validatePath(normalizedPath)) {
       { id: 'nvidia', name: 'NVIDIA' },
       ...this.plugin.settings.customProviders
         .filter((p: CustomProviderConfig) => p.enableEmbeddings)
-        .map((p: CustomProviderConfig) => ({ id: p.id as Provider, name: p.name }))
+        .map((p: CustomProviderConfig) => ({ id: p.id, name: p.name }))
     ];
 
     new Setting(containerEl).setName('Custom embedding models' ).setHeading();
@@ -3503,8 +3503,10 @@ if (this.validatePath(normalizedPath)) {
             checkBtn.textContent = `Check ${label}`;
             return;
           }
-          // Use Node's child_process — available in Electron/Obsidian desktop
-          const childProcess = window.require('child_process') as { execSync: (cmd: string, opts?: Record<string, unknown>) => string };
+          const requireFunc = (window as unknown as {
+            require: (module: string) => { execSync: (cmd: string, opts?: Record<string, unknown>) => string };
+          }).require;
+          const childProcess = requireFunc('child_process');
           const { execSync } = childProcess;
           const version = execSync(cmd, { timeout: 5000, encoding: 'utf8' }).trim();
 

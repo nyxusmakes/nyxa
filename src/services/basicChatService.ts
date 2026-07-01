@@ -351,7 +351,7 @@ Instructions:
                     if (abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
                     const candidate = chunk.candidates?.[0];
                     if (candidate) {
-                        responseText += this.processGeminiStreamingCandidate(candidate as unknown as GenerateContentCandidate, updateSnippetUI);
+                        responseText += this.processGeminiStreamingCandidate(candidate, updateSnippetUI);
                     }
                 }
                 
@@ -1884,7 +1884,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                     (h) => this.rateLimitManager.updateFromHeaders('openrouter', this.settings.model, h));
                                 chunkResult = await ors.generateContentWithTools(this.settings.model, messages as unknown as OpenRouterChatMessage[], chunk as ProviderTool[],
                                     { temperature: getModelTemperature(this.settings.model, this.settings, 'openrouter' as Provider), topP: getModelTopP(this.settings.model, this.settings, 'openrouter' as Provider), toolChoice: toolChoiceVal, abortSignal },
-                                    execCb as unknown as Parameters<typeof ors.generateContentWithTools>[4]);
+                                    execCb);
                             } else if (provider === 'ollama') {
                                 const { OllamaService: OS } = await import('./ollamaService');
                                 const os = new OS(this.settings.ollamaBaseUrl || 'http://localhost:11434', this.settings.ollamaApiKey,
@@ -1909,9 +1909,9 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                         messages as unknown as UnifiedMessage[],
                                         chunk as ProviderTool[],
                                         {
-                                            temperature: getModelTemperature(this.settings.model, this.settings, provider as Provider),
+                                            temperature: getModelTemperature(this.settings.model, this.settings, provider),
                                             maxTokens: 8192,
-                                            topP: getModelTopP(this.settings.model, this.settings, provider as Provider),
+                                            topP: getModelTopP(this.settings.model, this.settings, provider),
                                             toolChoice: toolChoiceVal,
                                             abortSignal
                                         },
@@ -2258,7 +2258,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                 (h) => this.rateLimitManager.updateFromHeaders('openrouter', this.settings.model, h));
                             chunkResult = await ors.generateContentWithTools(this.settings.model, messages as unknown as OpenRouterChatMessage[], chunk as ProviderTool[],
                                 { temperature: getModelTemperature(this.settings.model, this.settings, 'openrouter' as Provider), topP: getModelTopP(this.settings.model, this.settings, 'openrouter' as Provider), toolChoice, abortSignal },
-                                execCb as unknown as Parameters<typeof ors.generateContentWithTools>[4]);
+                                execCb);
                         } else if (provider === 'ollama') {
                             const { OllamaService: OS } = await import('./ollamaService');
                             const os = new OS(this.settings.ollamaBaseUrl || 'http://localhost:11434', this.settings.ollamaApiKey,
@@ -2283,9 +2283,9 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                     messages as unknown as UnifiedMessage[],
                                     chunk as ProviderTool[],
                                     {
-                                        temperature: getModelTemperature(this.settings.model, this.settings, provider as Provider),
+                                        temperature: getModelTemperature(this.settings.model, this.settings, provider),
                                         maxTokens: 8192,
-                                        topP: getModelTopP(this.settings.model, this.settings, provider as Provider),
+                                        topP: getModelTopP(this.settings.model, this.settings, provider),
                                         toolChoice,
                                         abortSignal
                                     },

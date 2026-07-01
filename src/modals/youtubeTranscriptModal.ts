@@ -36,7 +36,7 @@ export class YouTubeTranscriptModal extends Modal {
     private getAllFolders(): string[] {
         const folders: string[] = ['/'];
         const allFolders = this.app.vault.getAllLoadedFiles()
-            .filter(f => f instanceof TFolder) as TFolder[];
+            .filter((f): f is TFolder => f instanceof TFolder);
         
         allFolders.forEach(folder => {
             folders.push(folder.path);

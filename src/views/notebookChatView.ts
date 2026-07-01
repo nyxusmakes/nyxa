@@ -548,7 +548,7 @@ Rules:
   private currentSourceMapping: string[] = []; 
   private sourceViewMode: 'notes' | 'web' = 'notes'; 
   private effectiveWebSourcesCache: { url: string; name: string }[] = []; 
-  private previousModel: { modelId: string; provider: string } | null = null; 
+  private previousModel: { modelId: string; provider: Provider } | null = null; 
 
   constructor(leaf: WorkspaceLeaf, settings: AISettings, plugin: AIPlugin) {
     super(leaf);
@@ -1331,7 +1331,7 @@ Rules:
         
         if (this.previousModel) {
           this.settings.notebookModel = this.previousModel.modelId;
-          this.settings.notebookProvider = this.previousModel.provider as Provider;
+          this.settings.notebookProvider = this.previousModel.provider;
           await this.plugin.saveSettings();
           this.modelSelectButton.setButtonText(getModelDisplayName(this.settings.notebookModel, this.settings));
           void this.updateContextBar();
@@ -1686,7 +1686,7 @@ Rules:
         
         if (this.previousModel) {
           this.settings.notebookModel = this.previousModel.modelId;
-          this.settings.notebookProvider = this.previousModel.provider as Provider;
+          this.settings.notebookProvider = this.previousModel.provider;
           await this.plugin.saveSettings();
           this.modelSelectButton.setButtonText(getModelDisplayName(this.settings.notebookModel, this.settings));
           void this.updateContextBar();
