@@ -2103,77 +2103,7 @@ export class AITutorView extends ItemView {
   }
 
   private parseConceptMapFromMarkdown(content: string, defaultName: string): ConceptMapData {
-    const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    
-    const conceptMapData: ConceptMapData = {
-      noteName: defaultName,
-      innerCircle: [],
-      outerCircle: [],
-      relations: [],
-      themes: []
-    };
-
-    let currentSection: 'none' | 'inner' | 'outer' | 'relations' | 'themes' = 'none';
-
-    for (const line of lines) {
-      if (line.startsWith('# ')) {
-        conceptMapData.noteName = line.substring(2).trim();
-        continue;
-      }
-      if (line.startsWith('## Inner Circle')) {
-        currentSection = 'inner';
-        continue;
-      }
-      if (line.startsWith('### Outer Circle')) {
-        currentSection = 'outer';
-        continue;
-      }
-      if (line.startsWith('#### Relations')) {
-        currentSection = 'relations';
-        continue;
-      }
-      if (line.startsWith('##### Themes')) {
-        currentSection = 'themes';
-        continue;
-      }
-
-      if (line.startsWith('- ')) {
-        const content = line.substring(2).trim();
-        
-        if (currentSection === 'inner') {
-          const match = content.match(/^(.+?)\s+\[([A-Z])\]$/);
-          if (match) {
-            conceptMapData.innerCircle.push({ label: match[1].trim(), id: match[2] });
-          }
-        } else if (currentSection === 'outer') {
-          const match = content.match(/^(.+?)\s+\[(\d+)\]$/);
-          if (match) {
-            conceptMapData.outerCircle.push({ label: match[1].trim(), id: match[2] });
-          }
-        } else if (currentSection === 'relations') {
-          const match = content.match(/^\[([A-Z\d]+)\]<->\[([A-Z\d]+)\]\s*:\s*(.+)$/);
-          if (match) {
-            conceptMapData.relations.push({ from: match[1], to: match[2], reason: match[3].trim() });
-          }
-        } else if (currentSection === 'themes') {
-          const themeMatch = content.match(/^(.+?)\s*:\s*(.+)$/);
-          if (themeMatch) {
-            const nodesPart = themeMatch[1];
-            const reason = themeMatch[2].trim();
-            const nodeMatches = nodesPart.matchAll(/\[([A-Z\d]+)\]/g);
-            const nodes: string[] = [];
-            for (const m of nodeMatches) {
-              nodes.push(m[1]);
-            }
-            if (nodes.length > 0) {
-              conceptMapData.themes.push({ nodes, reason });
-            }
-          }
-        }
-      }
-    }
-
-    return conceptMapData;
+    return this.conceptMapManager.parseConceptMapResponse(content, defaultName);
   }
 
   private renameSavedConceptMap(conceptMap: SavedConceptMap) {

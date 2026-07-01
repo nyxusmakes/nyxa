@@ -173,8 +173,8 @@ export class ConceptMapManager {
    - Span multiple nodes across BOTH inner and outer circles
    - Represent overarching patterns, principles, or frameworks
    - Help organize the conceptual landscape meaningfully
-   - Don't force the nodes unnecesarily into a theme, each theme should connect nodes that share a deeper conceptual unity
    - Themes are HOW users discover the structure of knowledge
+   - For each theme, explain the unifying principle AND explicitly describe how each connected node fits into or relates to this theme.
 
 **EXAMPLES OF GOOD VS BAD RELATIONS:**
 
@@ -214,9 +214,9 @@ IMPORTANT: Create all the existing meaningful relations only. Connect:
 
 ##### Themes
 IMPORTANT: Create themes that group related concepts:
-- [A]--[B]--[1] : [Explanation of the unifying principle or pattern connecting these nodes]
-- [C]--[3]--[4] : [Another thematic framework explaining how these relate]
-(MUST include themes with clear explanations, DON'T include the notations [A], [B], [C], etc. or [1], [2], [3], etc. in the EXPLANATION of a theme)
+- [A]--[B]--[1] : [Theme Name] unifies these concepts. Explain the unifying principle and explicitly describe how each connected node (specifically relating to the labels represented by [A], [B], and [1]) fits into this theme.
+- [C]--[3]--[4] : [Another Theme Name] unifies these concepts. Explain the theme and explicitly describe how each of [C], [3], and [4] relates to it.
+(MUST include themes with clear explanations, DO NOT include raw IDs like [A], [B] in the written explanation itself; refer to their concept names/labels instead)
 
 **Technical Requirements:**
 - Use [A], [B], [C], etc. for inner circle (uppercase letters)
@@ -235,7 +235,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     let responseText = '';
     let isComplete = false;
     let continuationAttempts = 0;
-    const maxContinuations = 3;
+    const maxContinuations = 1;
 
     const provider = this.settings.aiTutorProvider || this.settings.provider;
     const modelId = this.settings.aiTutorModel || this.settings.model;
@@ -578,9 +578,10 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
         const data = resp.json as OpenAIChatCompletionResponse;
         responseText = data.choices?.[0]?.message?.content || '';
         let finishReason = data.choices?.[0]?.finish_reason || '';
+        isComplete = this.checkResponseComplete(responseText);
         
-        // If truncated due to length, continue
-        while (finishReason === 'length' && continuationAttempts < maxContinuations) {
+        // If truncated due to length or incomplete, continue
+        while ((finishReason === 'length' || !isComplete) && continuationAttempts < maxContinuations) {
           continuationAttempts++;
           progressCallback?.(50 + continuationAttempts * 5, `Continuing generation (${continuationAttempts}/${maxContinuations})...`);
           
@@ -636,7 +637,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     return conceptMapData;
   }
 
-  private parseConceptMapResponse(responseText: string, defaultTitle: string): ConceptMapData {
+  public parseConceptMapResponse(responseText: string, defaultTitle: string): ConceptMapData {
     const lines = responseText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
     const conceptMapData: ConceptMapData = {
@@ -656,104 +657,149 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     let currentSection: 'none' | 'inner' | 'outer' | 'relations' | 'themes' = 'none';
 
     for (const line of lines) {
-      // Check for section headers
-      if (line.startsWith('# ')) {
+      const cleanLine = line.replace(/[*_#:]/g, '').trim().toLowerCase();
+      
+      // Check for section headers (highly robust matching)
+      if (line.startsWith('# ') && !line.startsWith('##')) {
         conceptMapData.noteName = line.substring(2).trim();
         continue;
       }
-      if (line.startsWith('## Inner Circle')) {
+      if (cleanLine.includes('inner circle')) {
         currentSection = 'inner';
         continue;
       }
-      if (line.startsWith('### Outer Circle')) {
+      if (cleanLine.includes('outer circle')) {
         currentSection = 'outer';
         continue;
       }
-      if (line.startsWith('#### Relations')) {
+      if (cleanLine.includes('relations') || cleanLine.includes('connections')) {
         currentSection = 'relations';
         continue;
       }
-      if (line.startsWith('##### Themes')) {
+      if (cleanLine.includes('themes')) {
         currentSection = 'themes';
         continue;
       }
 
-      // Parse content based on current section
-      if (line.startsWith('- ')) {
-        const content = line.substring(2).trim();
+      // Strip bullet points or numbered list indicators if present
+      let content = line;
+      const listMatch = content.match(/^[-*+•]\s+(.+)$/) || content.match(/^\d+\.\s+(.+)$/);
+      if (listMatch) {
+        content = listMatch[1].trim();
+      }
+
+      if (currentSection === 'inner') {
+        // Parse: "Concept Name [A]" or "[A] Concept Name" or "[A]: Concept Name"
+        let idMatch = content.match(/\[([A-Z])\]\s*$/i) || content.match(/\(([A-Z])\)\s*$/i);
+        let label = '';
+        let id = '';
+        if (idMatch) {
+          id = idMatch[1].toUpperCase();
+          label = content.substring(0, content.lastIndexOf(idMatch[0])).trim();
+        } else {
+          idMatch = content.match(/^\s*\[([A-Z])\]\s*:?\s*/i) || content.match(/^\s*\(([A-Z])\)\s*:?\s*/i);
+          if (idMatch) {
+            id = idMatch[1].toUpperCase();
+            label = content.substring(idMatch[0].length).trim();
+          }
+        }
         
-        if (currentSection === 'inner') {
-          // Parse: "Concept Name [A]"
-          const match = content.match(/^(.+?)\s+\[([A-Z])\]$/);
-          if (match) {
-            const id = match[2];
-            const label = match[1].trim();
-            
-            // Only add if not seen before (check both ID and normalized label)
-            const normalizedLabel = label.toLowerCase().replace(/\s+/g, ' ');
-            if (!seenInnerIds.has(id) && !seenInnerIds.has(normalizedLabel)) {
-              conceptMapData.innerCircle.push({ label, id });
-              seenInnerIds.add(id);
-              seenInnerIds.add(normalizedLabel);
+        if (id && label) {
+          label = label.replace(/^\*\*|\*\*$/g, '').trim();
+          label = label.replace(/[:\-–—]$/, '').trim();
+          label = label.replace(/^\*\*|\*\*$/g, '').trim();
+          if (label.startsWith('[') && label.endsWith(']')) {
+            label = label.substring(1, label.length - 1).trim();
+          }
+          
+          const normalizedLabel = label.toLowerCase().replace(/\s+/g, ' ');
+          if (!seenInnerIds.has(id) && !seenInnerIds.has(normalizedLabel)) {
+            conceptMapData.innerCircle.push({ label, id });
+            seenInnerIds.add(id);
+            seenInnerIds.add(normalizedLabel);
+          }
+        }
+      } else if (currentSection === 'outer') {
+        // Parse: "Application Name [1]" or "[1] Application Name"
+        let idMatch = content.match(/\[(\d+)\]\s*$/) || content.match(/\((\d+)\)\s*$/);
+        let label = '';
+        let id = '';
+        if (idMatch) {
+          id = idMatch[1];
+          label = content.substring(0, content.lastIndexOf(idMatch[0])).trim();
+        } else {
+          idMatch = content.match(/^\s*\[(\d+)\]\s*:?\s*/) || content.match(/^\s*\((\d+)\)\s*:?\s*/);
+          if (idMatch) {
+            id = idMatch[1];
+            label = content.substring(idMatch[0].length).trim();
+          }
+        }
+        
+        if (id && label) {
+          label = label.replace(/^\*\*|\*\*$/g, '').trim();
+          label = label.replace(/[:\-–—]$/, '').trim();
+          label = label.replace(/^\*\*|\*\*$/g, '').trim();
+          if (label.startsWith('[') && label.endsWith(']')) {
+            label = label.substring(1, label.length - 1).trim();
+          }
+          
+          const normalizedLabel = label.toLowerCase().replace(/\s+/g, ' ');
+          if (!seenOuterIds.has(id) && !seenOuterIds.has(normalizedLabel)) {
+            conceptMapData.outerCircle.push({ label, id });
+            seenOuterIds.add(id);
+            seenOuterIds.add(normalizedLabel);
+          }
+        }
+      } else if (currentSection === 'relations') {
+        // Parse: "[A]<->[B] : Reason" or "[A] -> [1] : Reason" or "A to B : Reason"
+        const match = content.match(/^\s*\[?([A-Z\d]+)\]?\s*(?:<->|->|--|-|to|and)\s*\[?([A-Z\d]+)\]?\s*[:\-–—]?\s*(.+)$/i);
+        if (match) {
+          const from = match[1].toUpperCase();
+          const to = match[2].toUpperCase();
+          const reason = match[3].trim();
+          
+          const relationKey1 = `${from}<->${to}`;
+          const relationKey2 = `${to}<->${from}`;
+          
+          if (!seenRelations.has(relationKey1) && !seenRelations.has(relationKey2)) {
+            conceptMapData.relations.push({ from, to, reason });
+            seenRelations.add(relationKey1);
+            seenRelations.add(relationKey2);
+          }
+        }
+      } else if (currentSection === 'themes') {
+        // Robust theme parsing: find all valid bracketed node IDs in the line,
+        // and treat everything after the last matched bracketed node as the reason.
+        const validIds = new Set([
+          ...conceptMapData.innerCircle.map(n => n.id),
+          ...conceptMapData.outerCircle.map(n => n.id)
+        ]);
+
+        const nodes: string[] = [];
+        let lastNodeIndex = -1;
+        
+        const bracketMatches = Array.from(content.matchAll(/\[([A-Z\d]+)\]/gi));
+        for (const m of bracketMatches) {
+          const id = m[1].toUpperCase();
+          if (validIds.has(id)) {
+            nodes.push(id);
+            const matchEnd = (m.index ?? 0) + m[0].length;
+            if (matchEnd > lastNodeIndex) {
+              lastNodeIndex = matchEnd;
             }
           }
-        } else if (currentSection === 'outer') {
-          // Parse: "Application Name [1]"
-          const match = content.match(/^(.+?)\s+\[(\d+)\]$/);
-          if (match) {
-            const id = match[2];
-            const label = match[1].trim();
-            
-            // Only add if not seen before (check both ID and normalized label)
-            const normalizedLabel = label.toLowerCase().replace(/\s+/g, ' ');
-            if (!seenOuterIds.has(id) && !seenOuterIds.has(normalizedLabel)) {
-              conceptMapData.outerCircle.push({ label, id });
-              seenOuterIds.add(id);
-              seenOuterIds.add(normalizedLabel);
-            }
-          }
-        } else if (currentSection === 'relations') {
-          // Parse: "[A]<->[B] : Reason"
-          const match = content.match(/^\[([A-Z\d]+)\]<->\[([A-Z\d]+)\]\s*:\s*(.+)$/);
-          if (match) {
-            const from = match[1];
-            const to = match[2];
-            const reason = match[3].trim();
-            
-            // Create unique key for relation (bidirectional - A<->B same as B<->A)
-            const relationKey1 = `${from}<->${to}`;
-            const relationKey2 = `${to}<->${from}`;
-            
-            // Only add if not seen before
-            if (!seenRelations.has(relationKey1) && !seenRelations.has(relationKey2)) {
-              conceptMapData.relations.push({ from, to, reason });
-              seenRelations.add(relationKey1);
-              seenRelations.add(relationKey2);
-            }
-          }
-        } else if (currentSection === 'themes') {
-          // Parse: "[A]--[B]--[1] : Reason"
-          const themeMatch = content.match(/^(.+?)\s*:\s*(.+)$/);
-          if (themeMatch) {
-            const nodesPart = themeMatch[1];
-            const reason = themeMatch[2].trim();
-            
-            // Extract all node IDs from the pattern [X]--[Y]--[Z]
-            const nodeMatches = nodesPart.matchAll(/\[([A-Z\d]+)\]/g);
-            const nodes: string[] = [];
-            for (const m of nodeMatches) {
-              nodes.push(m[1]);
-            }
-            
-            if (nodes.length > 0) {
-              // Create unique key for theme (sorted nodes)
-              const themeKey = nodes.slice().sort().join('--');
-              
-              // Only add if not seen before
-              if (!seenThemes.has(themeKey)) {
-                conceptMapData.themes.push({ nodes, reason });
-                seenThemes.add(themeKey);
-              }
+        }
+
+        if (nodes.length > 0 && lastNodeIndex > 0) {
+          let reason = content.substring(lastNodeIndex).trim();
+          // Strip any leading colons, hyphens, dashes, or spaces
+          reason = reason.replace(/^[:\-–—\s]+/, '').trim();
+          
+          if (reason.length > 0) {
+            const themeKey = nodes.slice().sort().join('--');
+            if (!seenThemes.has(themeKey)) {
+              conceptMapData.themes.push({ nodes, reason });
+              seenThemes.add(themeKey);
             }
           }
         }
@@ -766,46 +812,125 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
       ...conceptMapData.outerCircle.map(n => n.id)
     ]);
 
-    // Filter relations to only include those with valid node IDs
     conceptMapData.relations = conceptMapData.relations.filter(rel => 
       allValidIds.has(rel.from) && allValidIds.has(rel.to)
     );
 
-    // Filter themes to only include those with all valid node IDs
     conceptMapData.themes = conceptMapData.themes.filter(theme =>
       theme.nodes.every(nodeId => allValidIds.has(nodeId))
     );
 
+    // If no themes parsed, generate fallback themes based on connections
+    if (conceptMapData.themes.length === 0) {
+      this.generateFallbackThemes(conceptMapData);
+    }
+
     return conceptMapData;
   }
 
+  private generateFallbackThemes(data: ConceptMapData): void {
+    if (data.themes.length > 0) return;
+
+    // We want to group nodes into 2-3 simple themes based on their connections
+    const visited = new Set<string>();
+    const themesList: Array<{ nodes: string[]; reason: string }> = [];
+    
+    // Build adjacency list
+    const adj = new Map<string, string[]>();
+    for (const rel of data.relations) {
+      if (!adj.has(rel.from)) adj.set(rel.from, []);
+      if (!adj.has(rel.to)) adj.set(rel.to, []);
+      adj.get(rel.from)!.push(rel.to);
+      adj.get(rel.to)!.push(rel.from);
+    }
+    
+    // Group connected components or subgraphs
+    const allNodeIds = [
+      ...data.innerCircle.map(n => n.id),
+      ...data.outerCircle.map(n => n.id)
+    ];
+    
+    for (const nodeId of allNodeIds) {
+      if (visited.has(nodeId)) continue;
+      
+      // BFS to find connected nodes up to size 4
+      const component: string[] = [];
+      const queue: string[] = [nodeId];
+      visited.add(nodeId);
+      
+      while (queue.length > 0 && component.length < 4) {
+        const current = queue.shift()!;
+        component.push(current);
+        
+        const neighbors = adj.get(current) || [];
+        for (const neighbor of neighbors) {
+          if (!visited.has(neighbor) && component.length + queue.length < 4) {
+            visited.add(neighbor);
+            queue.push(neighbor);
+          }
+        }
+      }
+      
+      if (component.length >= 2) {
+        const nodeLabels = component.map(id => {
+          const node = data.innerCircle.find(n => n.id === id) || data.outerCircle.find(n => n.id === id);
+          return node ? node.label : id;
+        });
+        
+        themesList.push({
+          nodes: component,
+          reason: `Unifying concept framework. This theme connects the core principles of ${nodeLabels[0]} and ${nodeLabels[1]} with their practical applications in ${nodeLabels[2] || 'related areas'} to demonstrate their combined impact.`
+        });
+      }
+    }
+    
+    // If we still have no themes, just group inner nodes with their first outer connections
+    if (themesList.length === 0) {
+      for (let i = 0; i < data.innerCircle.length; i += 2) {
+        const group: string[] = [];
+        if (data.innerCircle[i]) group.push(data.innerCircle[i].id);
+        if (data.innerCircle[i+1]) group.push(data.innerCircle[i+1].id);
+        
+        for (const id of group) {
+          const connections = adj.get(id) || [];
+          for (const conn of connections) {
+            if (group.length < 4 && !group.includes(conn)) {
+              group.push(conn);
+            }
+          }
+        }
+        
+        if (group.length >= 2) {
+          const labels = group.map(id => {
+            const node = data.innerCircle.find(n => n.id === id) || data.outerCircle.find(n => n.id === id);
+            return node ? node.label : id;
+          });
+          themesList.push({
+            nodes: group,
+            reason: `Conceptual bridge linking ${labels[0]} with ${labels[1]} and its active manifestations (${labels.slice(2).join(', ') || 'other applications'}) to highlight their interdependencies.`
+          });
+        }
+      }
+    }
+    
+    data.themes = themesList;
+  }
+
   private detectMissingSections(responseText: string): string[] {
+    const data = this.parseConceptMapResponse(responseText, 'Temp');
     const missing: string[] = [];
     
-    if (!responseText.includes('## Inner Circle')) {
+    if (data.innerCircle.length < 2) {
       missing.push('inner');
     }
-    if (!responseText.includes('### Outer Circle')) {
+    if (data.outerCircle.length < 2) {
       missing.push('outer');
     }
-    if (!responseText.includes('#### Relations')) {
+    if (data.relations.length < 2) {
       missing.push('relations');
-    } else {
-      // Check if there are enough relations
-      const relationMatches = responseText.match(/\[[A-Z\d]+\]<->\[[A-Z\d]+\]/g);
-      if (!relationMatches || relationMatches.length < 5) {
-        missing.push('more-relations');
-      }
     }
-    
-    if (!responseText.includes('##### Themes')) {
+    if (data.themes.length < 1) {
       missing.push('themes');
-    } else {
-      // Check if there are actual theme entries
-      const themeMatches = responseText.match(/\[[A-Z\d]+\]--\[[A-Z\d]+\]/g);
-      if (!themeMatches || themeMatches.length < 2) {
-        missing.push('more-themes');
-      }
     }
     
     return missing;
@@ -827,22 +952,16 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     if (missingSections.includes('relations')) {
       prompt += 'Add the #### Relations section with detailed connections between nodes. ';
     }
-    if (missingSections.includes('more-relations')) {
-      prompt += 'Add MORE relations (at least 10 total) with deep, meaningful explanations. ';
-    }
     if (missingSections.includes('themes')) {
       prompt += 'Add the ##### Themes section. This is CRITICAL and MANDATORY. ';
-    }
-    if (missingSections.includes('more-themes')) {
-      prompt += 'Add MORE themes (at least 3 total) that group related nodes with clear explanations. ';
     }
     
     prompt += '\n\n**IMPORTANT FOR THEMES:**\n';
     prompt += '- Themes MUST follow this format: [A]--[B]--[1] : Explanation\n';
     prompt += '- Each theme should connect 3-4 nodes from different circles or same circle based on common theme, FIND THE COMMON THEMES FROM AMONG THE NODES ALWAYS and CONNECT THE NODES HAVING THE SAME THEME\n';
-    prompt += '- Explain the unifying principle or pattern\n';
-    prompt += '- Do NOT include node IDs like [A], [B] in the explanation text\n';
-    prompt += '- Example: [A]--[C]--[2]--[D] : These concepts share a common foundation in information processing\n\n';
+    prompt += '- Explain the unifying principle or pattern AND explicitly describe how each connected node fits into or relates to this theme.\n';
+    prompt += '- Do NOT include raw node IDs like [A], [B] in the explanation text itself; refer to their concept names/labels instead\n';
+    prompt += '- Example: [A]--[C]--[2] : [Theme Name] unifies these concepts. [A] provides the core mechanism, which is directly applied in [2], while [C] acts as the primary constraint on the system.\n\n';
     
     prompt += 'Continue from the existing structure:\n\n';
     prompt += existingText;
@@ -852,7 +971,6 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   }
 
   private cleanContinuation(existingText: string, continuation: string): string {
-    // Remove duplicate section headers that might appear in continuation
     const sectionHeaders = [
       '# ',
       '## Inner Circle',
@@ -866,8 +984,6 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     
     for (const line of lines) {
       const trimmed = line.trim();
-      
-      // Check if this is a duplicate section header
       let isDuplicateHeader = false;
       for (const header of sectionHeaders) {
         if (trimmed.startsWith(header) && existingText.includes(trimmed)) {
@@ -875,8 +991,6 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
           break;
         }
       }
-      
-      // Only add if not a duplicate header
       if (!isDuplicateHeader) {
         cleanedLines.push(line);
       }
@@ -886,21 +1000,11 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
   }
 
   private checkResponseComplete(responseText: string): boolean {
-    // Check if response has all required sections
-    const hasInnerCircle = responseText.includes('## Inner Circle');
-    const hasOuterCircle = responseText.includes('### Outer Circle');
-    const hasRelations = responseText.includes('#### Relations');
-    const hasThemes = responseText.includes('##### Themes');
-    
-    // Check if there are actual relations (at least 5)
-    const relationMatches = responseText.match(/\[[A-Z\d]+\]<->\[[A-Z\d]+\]/g);
-    const hasEnoughRelations = relationMatches ? relationMatches.length >= 5 : false;
-    
-    // Check if there are actual themes (at least 2)
-    const themeMatches = responseText.match(/\[[A-Z\d]+\]--\[[A-Z\d]+\]/g);
-    const hasEnoughThemes = themeMatches ? themeMatches.length >= 2 : false;
-    
-    return hasInnerCircle && hasOuterCircle && hasRelations && hasThemes && hasEnoughRelations && hasEnoughThemes;
+    const data = this.parseConceptMapResponse(responseText, 'Temp');
+    return data.innerCircle.length >= 2 &&
+           data.outerCircle.length >= 2 &&
+           data.relations.length >= 2 &&
+           data.themes.length >= 1;
   }
 
   async saveConceptMap(conceptMapData: ConceptMapData, name: string): Promise<string> {
