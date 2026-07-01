@@ -1,7 +1,7 @@
 import { App, Notice } from 'obsidian';
 import { requestUrl } from 'obsidian';
 import { AISettings, getProviderForModel, getModelTemperature, getModelTopP, getGeminiThinkingConfig, Provider } from '../settings';
-import { GoogleGenerativeAI, Part, GenerateContentCandidate, GroundingMetadata, StartChatParams } from '@google/generative-ai';
+import { GoogleGenerativeAI, Part, GenerateContentCandidate, GroundingMetadata, StartChatParams, Content } from '@google/generative-ai';
 import { WebSearchService, SearchResult as WebSearchResult } from './webSearch';
 import { MultimodalInput } from '../utils/multimodalUtils';
 import { GroqService, ChatMessage as GroqChatMessage, GroqApiError, convertChatHistoryForGroq, isGroqWebSearchCapable, isGroqGptOssModel, WebSource, GroqStreamEvent, GROQ_VISION_MODEL, GroqContentPart, GeminiHistoryMessage } from './groqService';
@@ -44,6 +44,7 @@ interface LocalToolResult {
     success: boolean;
     content: string;
     error?: string;
+    [key: string]: unknown;
 }
 
 interface OpenAIMessage {
@@ -264,8 +265,8 @@ Instructions:
                 const generationStep = 0; 
                 updateProcessingUI(generationStep, totalSteps, 'Generating response...', `Input query: ${enhancedQuery}`); 
 
-                const chatConfig: Record<string, unknown> = {
-                    history: isQuickSearchFollowUp ? [] : chatHistory,
+                const chatConfig: StartChatParams = {
+                    history: (isQuickSearchFollowUp ? [] : chatHistory) as unknown as Content[],
                     generationConfig: {
                         temperature: getModelTemperature(this.settings.model, this.settings),
                         topK: 40,
@@ -276,7 +277,7 @@ Instructions:
 
                 
                 if (webEnabled) {
-                    chatConfig.tools = [this.webSearchService.getGoogleSearchToolConfig()];
+                    chatConfig.tools = [this.webSearchService.getGoogleSearchToolConfig()] as unknown as import('@google/generative-ai').Tool[];
                 }
 
                 const geminiThinkingConfig = getGeminiThinkingConfig(this.settings.model, this.settings);
@@ -345,7 +346,7 @@ Instructions:
                     });
                 }
                 
-                            const streamResult = await model.startChat(chatConfig as StartChatParams).sendMessageStream(messageParts, { signal: abortSignal });
+                const streamResult = await model.startChat(chatConfig).sendMessageStream(messageParts, { signal: abortSignal });
 
                 for await (const chunk of streamResult.stream) {
                     if (abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -631,22 +632,22 @@ Instructions:
                             const genAI = new GoogleGenerativeAI(this.settings.geminiApiKey || this.settings.apiKey);
                             const model = genAI.getGenerativeModel({ model: geminiModel });
                             
-                            const chatConfig: Record<string, unknown> = {
-                                history: isQuickSearchFollowUp ? [] : chatHistory,
+                            const chatConfig: StartChatParams = {
+                                history: (isQuickSearchFollowUp ? [] : chatHistory) as unknown as Content[],
                                 generationConfig: {
                                     temperature: getModelTemperature(this.settings.model, this.settings),
                                     topK: 40,
                                     topP: getModelTopP(this.settings.model, this.settings),
                                     maxOutputTokens: 8192,
                                 },
-                                tools: [this.webSearchService.getGoogleSearchToolConfig()]
+                                tools: [this.webSearchService.getGoogleSearchToolConfig()] as unknown as import('@google/generative-ai').Tool[]
                             };
                             
                             const messageParts: Part[] = [{
                                 text: `${systemPrompt}\n\n${context.length > 0 ? context.join('\n\n') + '\n\n' : ''}Question: ${enhancedQuery}`
                             }];
                             
-                const streamResult = await model.startChat(chatConfig as StartChatParams).sendMessageStream(messageParts, { signal: abortSignal });
+                            const streamResult = await model.startChat(chatConfig).sendMessageStream(messageParts, { signal: abortSignal });
                             
                             for await (const chunk of streamResult.stream) {
                                 if (abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -1664,7 +1665,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                         } else if (planningProvider === 'openrouter') {
                             const ors = new OpenRouterService(this.settings.openRouterApiKey,
                                 (h: Headers) => this.rateLimitManager.updateFromHeaders('openrouter', this.settings.model, h));
-                            await ors.generateContentWithTools(this.settings.model, planningMessages as unknown as OpenRouterChatMessage[], planningTools, { ...planningOptions, toolChoice: 'required' }, planningExecCb as unknown as Parameters<typeof ors.generateContentWithTools>[4]);
+                            await ors.generateContentWithTools(this.settings.model, planningMessages as unknown as OpenRouterChatMessage[], planningTools, { ...planningOptions, toolChoice: 'required' }, planningExecCb);
                         } else if (planningProvider === 'ollama') {
                             const os = new OllamaService(this.settings.ollamaBaseUrl || 'http://localhost:11434', this.settings.ollamaApiKey,
                                 (h: Headers) => this.rateLimitManager.updateFromHeaders('ollama', this.settings.model, h));
@@ -1672,7 +1673,7 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                         } else if (UnifiedProviderManager.getInstance().hasProvider(planningProvider)) {
                             const unifiedProvider = UnifiedProviderManager.getInstance().getProvider(planningProvider)!;
                             if (unifiedProvider.generateContentWithTools) {
-                                await unifiedProvider.generateContentWithTools(this.settings.model, planningMessages as unknown as UnifiedMessage[], planningTools, planningOptions, planningExecCb as unknown as Parameters<NonNullable<typeof unifiedProvider.generateContentWithTools>>[4]);
+                                await unifiedProvider.generateContentWithTools(this.settings.model, planningMessages as unknown as UnifiedMessage[], planningTools, planningOptions, planningExecCb);
                             }
                         }
 
@@ -1915,7 +1916,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                             toolChoice: toolChoiceVal,
                                             abortSignal
                                         },
-                                        execCb as (toolCalls: any[]) => Promise<any[]>,
+                                        execCb,
                                         (thinking: string) => updateSnippetUI('Thinking...', thinking)
                                     );
                                 } else {
@@ -2288,7 +2289,7 @@ gs.generateContentWithTools(this.settings.model, messages as unknown as Array<{ 
                                         toolChoice,
                                         abortSignal
                                     },
-                                    execCb as (toolCalls: any[]) => Promise<any[]>,
+                                    execCb,
                                     (thinking: string) => updateSnippetUI('Thinking...', thinking)
                                 );
                             } else {
@@ -2767,15 +2768,15 @@ Be extremely selective and choose only the minimal set of tools needed. If no to
                         } else if (planningProvider === 'openrouter') {
                             const ors = new OpenRouterService(this.settings.openRouterApiKey,
                                 (h: Headers) => this.rateLimitManager.updateFromHeaders('openrouter', planningModelId, h));
-                            await ors.generateContentWithTools(planningModelId, planningMessages as unknown as OpenRouterChatMessage[], planningTools, { ...planningOptions, toolChoice: 'required' }, planningExecCb as (toolCalls: any[]) => Promise<any[]>);
+                            await ors.generateContentWithTools(planningModelId, planningMessages as unknown as OpenRouterChatMessage[], planningTools, { ...planningOptions, toolChoice: 'required' }, planningExecCb);
                         } else if (planningProvider === 'ollama') {
                             const os = new OllamaService(this.settings.ollamaBaseUrl || 'http://localhost:11434', this.settings.ollamaApiKey,
                                 (h: Headers) => this.rateLimitManager.updateFromHeaders('ollama', planningModelId, h));
-                            await os.generateContentWithTools(planningModelId, planningMessages as unknown as OllamaChatMessage[], planningTools as unknown as ProviderTool[], planningOptions, planningExecCb as unknown as Parameters<typeof os.generateContentWithTools>[4]);
+                            await os.generateContentWithTools(planningModelId, planningMessages as unknown as OllamaChatMessage[], planningTools, planningOptions, planningExecCb as unknown as Parameters<typeof os.generateContentWithTools>[4]);
                         } else if (UnifiedProviderManager.getInstance().hasProvider(planningProvider)) {
                             const unifiedProvider = UnifiedProviderManager.getInstance().getProvider(planningProvider)!;
                             if (unifiedProvider.generateContentWithTools) {
-                                await unifiedProvider.generateContentWithTools(planningModelId, planningMessages as unknown as UnifiedMessage[], planningTools, planningOptions, planningExecCb as (toolCalls: any[]) => Promise<any[]>);
+                                await unifiedProvider.generateContentWithTools(planningModelId, planningMessages as unknown as UnifiedMessage[], planningTools, planningOptions, planningExecCb);
                             }
                         }
 
@@ -3105,14 +3106,14 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                             thinkingConfig: getGeminiThinkingConfig(modelId, this.settings)?.thinkingConfig,
                             abortSignal: effectiveSignal
                         },
-                        execCb as (toolCalls: any[]) => Promise<any[]>);
+                        execCb);
                 } else if (provider === 'openrouter') {
                     const { OpenRouterService: ORS } = await import('./openRouterService');
                     const ors = new ORS(this.settings.openRouterApiKey,
                         (h) => this.rateLimitManager.updateFromHeaders('openrouter', modelId, h));
                     return ors.generateContentWithTools(modelId, passMessages as unknown as OpenRouterChatMessage[], passTools,
                         { temperature: getModelTemperature(modelId, this.settings), topP: getModelTopP(modelId, this.settings), toolChoice, abortSignal: effectiveSignal },
-                        execCb as (toolCalls: any[]) => Promise<any[]>);
+                        execCb);
                 } else if (provider === 'ollama') {
                     const { OllamaService: OS } = await import('./ollamaService');
                     const os = new OS(this.settings.ollamaBaseUrl || 'http://localhost:11434', this.settings.ollamaApiKey,
@@ -3175,7 +3176,7 @@ unknown as Array<{ role: string; content?: string; tool_calls?: Array<{ id?: str
                                 toolChoice,
                                 abortSignal: effectiveSignal
                             },
-                            execCb as (toolCalls: any[]) => Promise<any[]>,
+                            execCb,
                             (thinking: string) => updateSnippetUI('Thinking...', thinking)
                         );
                     } else {
