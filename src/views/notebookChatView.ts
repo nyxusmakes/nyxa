@@ -944,7 +944,7 @@ Rules:
       this.addClass('nl-height-auto');
       this.setCssProps({ '--chat-height': Math.min(this.scrollHeight, 200) + 'px' });
       if (parent) {
-        parent.addClass('nl-min-height-');
+        parent.removeClass('nl-min-height-auto');
       }
     });
 
@@ -1121,7 +1121,7 @@ Rules:
       this.addClass('nl-height-auto');
       this.setCssProps({ '--chat-height': Math.min(this.scrollHeight, 120) + 'px' });
       if (parent) {
-        parent.addClass('nl-min-height-');
+        parent.removeClass('nl-min-height-auto');
       }
     });
 
@@ -2243,7 +2243,7 @@ Rules:
       .onClick(() => {
         contentEl.empty();
         contentEl.createEl('p', { text: originalContent });
-        actionsContainer.addClass('nl-display-');
+        actionsContainer.removeClass('nl-display-none');
       });
 
     new ButtonComponent(buttonContainer)
@@ -2268,7 +2268,7 @@ Rules:
         } else {
           contentEl.empty();
           contentEl.createEl('p', { text: originalContent });
-          actionsContainer.addClass('nl-display-');
+          actionsContainer.removeClass('nl-display-none');
         }
       });
   }
@@ -2623,13 +2623,12 @@ Rules:
       query = `${query} ${urls}`.trim();
     }
     this.chatInput.setValue('');
-    this.chatInput.inputEl.addClass('nl-height-');
+    this.chatInput.inputEl.removeClass('nl-height-auto');
     
     
     
     const userMessageContainer = this.addMessage('user', originalQuery, false, [], false);
-    const spinner = userMessageContainer.createDiv({ cls: 'loading-spinner' });
-    spinner.addClass('nl-display-block');
+    const spinner = userMessageContainer.createDiv({ cls: 'loading-spinner visible' });
     try {
       let cachedContext = '';
       
@@ -3287,7 +3286,18 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
     
     
+    let extractedSessionContext = '';
+    const sessionMatch = cachedContext.match(/^(SESSION CONTEXT:\n[\s\S]*?\n---\n)([\s\S]*)$/);
+    if (sessionMatch) {
+      extractedSessionContext = sessionMatch[1];
+      cachedContext = sessionMatch[2];
+    }
+
     let notesSection = '\n\nPROCESSED KNOWLEDGE BASE:\n---\n';
+
+    if (extractedSessionContext) {
+      notesSection += extractedSessionContext;
+    }
 
     if (isRagMode) {
       
@@ -3455,7 +3465,18 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
     
     
+    let extractedSessionContext = '';
+    const sessionMatch = cachedContext.match(/^(SESSION CONTEXT:\n[\s\S]*?\n---\n)([\s\S]*)$/);
+    if (sessionMatch) {
+      extractedSessionContext = sessionMatch[1];
+      cachedContext = sessionMatch[2];
+    }
+
     let notesSection = '\n\nPROCESSED KNOWLEDGE BASE:\n---\n';
+
+    if (extractedSessionContext) {
+      notesSection += extractedSessionContext;
+    }
 
     if (isRagMode) {
       
@@ -3638,7 +3659,6 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
           
           targetEl.addClass('nl-background-color-var--text-accent');
-          targetEl.addClass('nl-opacity-03');
 
           
           const backArrow = targetEl.querySelector('.footnote-backref') as HTMLElement;
@@ -3649,11 +3669,10 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
 
           
           window.setTimeout(() => {
-            targetEl.addClass('nl-background-color-');
-            targetEl.addClass('nl-opacity-');
+            targetEl.removeClass('nl-background-color-var--text-accent');
             if (backArrow) {
-              backArrow.addClass('nl-color-');
-              backArrow.addClass('nl-font-weight-');
+              backArrow.removeClass('nl-color-var--text-accent');
+              backArrow.removeClass('nl-font-weight-bold');
             }
           }, 2000);
         }
@@ -3689,14 +3708,20 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
           tooltip.setCssProps({ '--tooltip-top':  `${rect.bottom + 5}px` });
 
           
+          let timeoutId: number | null = null;
           const removeTooltip = () => {
+            if (timeoutId) {
+              window.clearTimeout(timeoutId);
+              timeoutId = null;
+            }
             if (tooltip.parentNode) {
               tooltip.parentNode.removeChild(tooltip);
             }
             refLink.removeEventListener('mouseleave', removeTooltip);
           };
 
-          refLink.addEventListener('mouseleave', removeTooltip);
+          refLink.addEventListener('mouseleave', removeTooltip, { once: true });
+          timeoutId = window.setTimeout(removeTooltip, 2000);
         }
       });
     });
@@ -3725,17 +3750,15 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
           backArrow.addEventListener('click', (e: MouseEvent) => {
             e.preventDefault();
             
-            const refLink = container.querySelector(`a[href="#${id}"]`) as HTMLElement;
-            if (refLink) {
-              refLink.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            let refEl = container.querySelector(`a[href="#${id}"]`) as HTMLElement;
+            if (refEl) {
+              refEl = refEl.closest('sup') || refEl;
+              refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-              
-              refLink.addClass('nl-background-color-var--text-accent');
-              refLink.addClass('nl-opacity-03');
+              refEl.addClass('nl-background-color-var--text-accent');
               window.setTimeout(() => {
-                refLink.addClass('nl-background-color-');
-                refLink.addClass('nl-opacity-');
-              }, 1000);
+                refEl.removeClass('nl-background-color-var--text-accent');
+              }, 2000);
             }
           });
 
@@ -4024,7 +4047,7 @@ CRITICAL CITATION REQUIREMENTS (YOU MUST FOLLOW THESE):
       const splitPoint = docsRatio * 100;
       this.contextProgressBar.setCssProps({ '--progress-background':  `linear-gradient(to right, ${baseColor} ${splitPoint}%, var(--color-purple, #9b59b6) ${splitPoint}%)` });
     } else {
-      this.contextProgressBar.addClass('nl-background-');
+      this.contextProgressBar.removeClass('nl-background-color-var--text-accent');
     }
   }
 

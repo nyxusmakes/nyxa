@@ -4566,11 +4566,19 @@
 
 /*for restoring if fucked */
 
-.chat-message.user .loading-spinner {
+.notebook-chat-container .chat-message.user .loading-spinner.visible {
+  display: block;
+  position: absolute;
   bottom: 12px;
   left: 16px;
   top: unset;
   transform: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--text-muted);
+  border-top-color: var(--interactive-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 /* --- Notebook Chat Session Selector UI --- */
@@ -9431,6 +9439,70 @@
 .center-map-btn:hover {
   background: var(--interactive-accent-hover);
   transform: scale(1.05);
+}
+
+/* Theme Overlay Layout */
+.theme-overlay-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 2000;
+  overflow: hidden;
+  max-width: 80%;
+  max-height: 80%;
+  animation: themeOverlayFadeIn 0.3s ease;
+}
+
+.theme-overlay-box {
+  padding: 20px;
+  width: 300px;
+  border-right: 1px solid var(--background-modifier-border);
+  border-top: 4px solid var(--theme-glow);
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+.theme-overlay-nodes {
+  padding: 20px;
+  width: 250px;
+  background: var(--background-secondary);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.theme-overlay-node-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: themeNodesSlideIn 0.3s ease forwards;
+  animation-delay: var(--animation-delay, 0s);
+  opacity: 0;
+}
+
+.theme-overlay-node-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-overlay-bullet {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--theme-glow);
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 
 /* Theme Overlay Animations */
@@ -17636,8 +17708,12 @@ body .nl-background-rem-26 { background: var(--background-primary, #fff); }
   border-color: var(--folder-border-color);
 }
 
-.concept-map-svg-wrapper > svg {
+.concept-map-svg-wrapper svg {
   transform: var(--zoom-transform);
+}
+
+svg.theme-active-no-pointer {
+  pointer-events: none;
 }
 
 .concept-map-info-box {

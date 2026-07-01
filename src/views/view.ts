@@ -1094,7 +1094,7 @@ export class AITutorView extends ItemView {
 
       
       progressContainer.remove();
-      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+      startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
 
       this.renderQA();
       
@@ -1104,7 +1104,7 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
-      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+      startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
       
       
       const progressContainer = this.container.querySelector('.qna-inline-progress');
@@ -1290,7 +1290,7 @@ export class AITutorView extends ItemView {
 
 
       progressContainer.remove();
-      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+      startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
 
       this.renderMCQs();
 
@@ -1300,7 +1300,7 @@ export class AITutorView extends ItemView {
 
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
-      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+      startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
 
 
       const progressContainer = this.container.querySelector('.mcq-inline-progress');
@@ -1754,7 +1754,7 @@ export class AITutorView extends ItemView {
       
       
       progressContainer.remove();
-      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+      startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
       this.renderInitial();
 
     } catch (error: unknown) {
@@ -1763,7 +1763,7 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button');
-      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+      startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
       
       
       const progressContainer = this.container.querySelector('.concept-map-inline-progress');
@@ -1868,7 +1868,7 @@ export class AITutorView extends ItemView {
       
       window.setTimeout(() => {
         progressContainer.remove();
-        startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+        startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
         this.renderInitial();
       }, 1000);
 
@@ -1878,7 +1878,7 @@ export class AITutorView extends ItemView {
       
       
       const startButtons = this.container.querySelectorAll('.start-qa-button, .start-mcq-button, .start-conceptmap-button, .start-slides-button');
-      startButtons.forEach(btn => btn.addClass('nl-pointer-events-'));
+      startButtons.forEach(btn => btn.removeClass('nl-pointer-events-none'));
       
       
       const progressContainer = this.container.querySelector('.slideshow-inline-progress');

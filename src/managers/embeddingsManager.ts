@@ -1403,7 +1403,7 @@ export class EmbeddingsManager {
             // Find existing chunks for this file
             const existingChunks = this.index.documents.filter(doc => doc.path === file.path);
             const hasExistingChunks = existingChunks.length > 0;
-            const isUpToDate = hasExistingChunks && existingChunks[0].lastModified >= stats.mtime;
+            const isUpToDate = hasExistingChunks && (existingChunks[0].lastModified + 1000 >= stats.mtime);
 
             // Skip if file hasn't been modified since it was last indexed.
             // Model changes are caught upstream (model mismatch check resets the index).
@@ -1569,7 +1569,7 @@ export class EmbeddingsManager {
             // Find existing chunks for this file
             const existingChunks = this.index.documents.filter(doc => doc.path === file.path);
             const hasExistingChunks = existingChunks.length > 0;
-            const isUpToDate = hasExistingChunks && existingChunks[0].lastModified >= stats.mtime;
+            const isUpToDate = hasExistingChunks && (existingChunks[0].lastModified + 1000 >= stats.mtime);
 
             // Skip if file hasn't been modified since it was last indexed.
             // Model changes are caught upstream (model mismatch check resets the index).
@@ -1820,7 +1820,7 @@ export class EmbeddingsManager {
                 // Check if file is up-to-date for BM25 (skip if unchanged)
                 const existingChunks = this.index.documents.filter(doc => doc.path === file.path);
                 const hasExistingChunks = existingChunks.length > 0;
-                const isUpToDate = hasExistingChunks && existingChunks[0].lastModified >= stats.mtime;
+                const isUpToDate = hasExistingChunks && (existingChunks[0].lastModified + 1000 >= stats.mtime);
 
                 if (isUpToDate) {
                     processed++;
@@ -1978,7 +1978,13 @@ export class EmbeddingsManager {
                             indexedFilesMap.set(doc.path, doc.lastModified);
                         }
                     }
-                    this.loadedIndexId = previousLoadedId;
+                    // Restore original index state to avoid state corruption
+                    if (previousLoadedId) {
+                        await this.loadIndex(previousLoadedId);
+                    } else {
+                        this.index = { documents: [], lastUpdated: 0, version: INDEX_VERSION };
+                        this.loadedIndexId = null;
+                    }
                 } catch {
                     return { hasChanges: true, newFiles: 1, modifiedFiles: 0, deletedFiles: 0 };
                 }
@@ -2002,16 +2008,23 @@ export class EmbeddingsManager {
             let modifiedFiles = 0;
             let deletedFiles = 0;
 
+            const lastUpdatedFallback = Array.from(indexedFilesMap.values()).reduce((max, val) => Math.max(max, val), 0);
+            const lastUpdatedTime = this.index.lastUpdated || lastUpdatedFallback;
+
             for (const file of indexableFiles) {
                 // Use stat.mtime from the file object directly if available, or fetch it
                 const mtime = file.stat?.mtime || (await this.app.vault.adapter.stat(file.path))?.mtime || 0;
                 
+                // Skip empty files to avoid false pending changes/re-index requests
+                const size = file.stat?.size ?? 0;
+                if (size === 0) continue;
+
                 if (!indexedFilesMap.has(file.path)) {
                     // Check if it's actually new or just skipped (e.g., empty file)
-                    if (mtime > (this.index.lastUpdated || 0)) {
+                    if (mtime > lastUpdatedTime + 1000) {
                         newFiles++;
                     }
-                } else if (mtime > indexedFilesMap.get(file.path)!) {
+                } else if (mtime > indexedFilesMap.get(file.path)! + 1000) {
                     modifiedFiles++;
                 }
             }
@@ -2333,7 +2346,12 @@ export class EmbeddingsManager {
             }
 
             // Fetch current state from Orama worker
-            const response = await OramaWorkerManager.getInstance().save(targetId, true);
+            const metadataToSave = {
+                lastUpdated: this.index.lastUpdated,
+                version: this.index.version,
+                model: this.index.model
+            };
+            const response = await OramaWorkerManager.getInstance().save(targetId, true, metadataToSave);
             const compressed = response.data as Uint8Array;
 
             const indexPath = this.getIndexFilePath(targetId);

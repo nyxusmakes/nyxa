@@ -101,7 +101,7 @@ export class GeminiService {
     tools?: Record<string, unknown>[],
     abortSignal?: AbortSignal
   ): Promise<{ response: GeminiApiResponse; headers: Headers }> {
-    const apiKey = (this.genAI as unknown as { _apiKey: string })._apiKey;
+    const apiKey = (this.genAI as unknown as { apiKey: string }).apiKey;
     const baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
     
     const requestBody: Record<string, unknown> = {

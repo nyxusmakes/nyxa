@@ -61,12 +61,6 @@ export class CombinedFeedView extends ItemView {
              .onClick(() => this.toggleSortOrder());
 
         
-        this.loadingIndicator = container.createEl('p', {
-            text: 'Loading feeds...',
-            cls: 'loading-indicator'
-        });
-
-        
         this.entriesContainer = container.createDiv({ cls: 'combined-entries-list' });
 
         
@@ -75,10 +69,7 @@ export class CombinedFeedView extends ItemView {
 
     
     private async fetchAndRenderCombinedFeeds(): Promise<void> {
-        if (this.loadingIndicator) {
-            this.loadingIndicator.addClass('nl-display-block'); 
-            this.entriesContainer?.empty(); 
-        }
+        this.entriesContainer?.empty(); 
 
         const savedFeeds = this.plugin.settings.savedFeeds;
         this.allEntries = []; 
@@ -101,10 +92,6 @@ export class CombinedFeedView extends ItemView {
                     }
                 });
             }
-        }
-
-        if (this.loadingIndicator) {
-             this.loadingIndicator.addClass('nl-display-none'); 
         }
 
         

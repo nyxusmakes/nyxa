@@ -1196,6 +1196,7 @@ export class ResponseView extends ItemView {
 
         
         const headerSection = wrapper.createDiv({ cls: 'chat-header-section' });
+        wrapper.prepend(headerSection);
         this.headerSection = headerSection;
 
         
@@ -1762,9 +1763,9 @@ export class ResponseView extends ItemView {
         }
 
         brainBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                void this.openSessionHistoryModal();
-            });
+            e.stopPropagation();
+            void this.handleOllamaThinkingControlClick(brainBtn);
+        });
         }
 
 
@@ -2689,9 +2690,10 @@ export class ResponseView extends ItemView {
         });
 
         const btnRect = ellipsisBtn.getBoundingClientRect();
+        const containerRect = this.containerEl.getBoundingClientRect();
         menuEl.addClass('nl-position-absolute');
-        menuEl.setCssProps({ '--menu-top':  `${btnRect.bottom + 4}px` });
-        menuEl.addClass('nl-right-10px');
+        menuEl.style.top = `${btnRect.bottom - containerRect.top + 4}px`;
+        menuEl.style.right = `${containerRect.right - btnRect.right}px`;
 
         const closeHandler = (e: MouseEvent) => {
             if (!menuEl.contains(e.target as Node) &&
@@ -2946,6 +2948,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
         
         const headerSection = wrapper.createDiv({ cls: 'chat-header-section' });
+        wrapper.prepend(headerSection);
         this.headerSection = headerSection;
 
         
@@ -3016,6 +3019,10 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         const ellipsisBtn = headerRightControls.createDiv({ cls: 'header-ellipsis-btn' });
         setIcon(ellipsisBtn, 'more-vertical');
         ellipsisBtn.addClass('nl-cursor-pointer');
+        ellipsisBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showHeaderMenu(ellipsisBtn);
+        });
     }
 
     private renderFileCapsules(container: HTMLElement) {
@@ -3743,9 +3750,12 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             return null;
         })();
 
-        let cleanQuery = isVaultWideSearch ? query.slice(7).trim() :
-            isFlashSearch ? query.slice(7).trim() :
-                query.trim();
+        let cleanQuery = query.trim();
+        if (isVaultWideSearch) {
+            cleanQuery = cleanQuery.replace(/^@vault\s*/i, '').trim();
+        } else if (isFlashSearch) {
+            cleanQuery = cleanQuery.replace(/^@flash\s*/i, '').trim();
+        }
 
         
         if (this.settings.autoModeEnabled && (isVaultWideSearch || isFlashSearch)) {
@@ -4978,31 +4988,24 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                     
+                    // Highlight target footnote definition
                     targetEl.addClass('nl-background-color-var--text-accent');
-                    targetEl.addClass('nl-opacity-03');
 
-                    
+                    // If it has a backref link, highlight that too
                     const backArrow = targetEl.querySelector('.footnote-backref') as HTMLElement;
                     if (backArrow) {
                         backArrow.addClass('nl-color-var--text-accent');
                         backArrow.addClass('nl-font-weight-bold');
-                        backArrow.addClass('nl-transform-scale13');
-                        backArrow.addClass('nl-display-inline-block');
-                        backArrow.addClass('nl-transition-all03sease');
-                        backArrow.addClass('nl-text-shadow-008pxvar--text-accent');
 
                         window.setTimeout(() => {
-                            backArrow.addClass('nl-color-');
-                            backArrow.addClass('nl-font-weight-');
-                            backArrow.addClass('nl-transform-');
-                            backArrow.addClass('nl-text-shadow-');
-                        }, 5000);
+                            backArrow.removeClass('nl-color-var--text-accent');
+                            backArrow.removeClass('nl-font-weight-bold');
+                        }, 2000);
                     }
 
                     window.setTimeout(() => {
-                        targetEl.addClass('nl-background-color-');
-                        targetEl.addClass('nl-opacity-');
-                    }, 1000);
+                        targetEl.removeClass('nl-background-color-var--text-accent');
+                    }, 2000);
                 }
             });
 
@@ -5033,14 +5036,20 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
 
                     this.activeDocument.body.appendChild(tooltip);
 
+                    let timeoutId: number | null = null;
                     const removeTooltip = () => {
+                        if (timeoutId) {
+                            window.clearTimeout(timeoutId);
+                            timeoutId = null;
+                        }
                         if (tooltip.parentNode) {
                             tooltip.remove();
                         }
+                        refLink.removeEventListener('mouseleave', removeTooltip);
                     };
 
                     refLink.addEventListener('mouseleave', removeTooltip, { once: true });
-                    window.setTimeout(removeTooltip, 5000); 
+                    timeoutId = window.setTimeout(removeTooltip, 2000); 
                 }
             });
         });
@@ -5081,11 +5090,9 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
                         if (refEl) {
                             refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             refEl.addClass('nl-background-color-var--text-accent');
-                            refEl.addClass('nl-opacity-03');
                             window.setTimeout(() => {
-                                refEl.addClass('nl-background-color-');
-                                refEl.addClass('nl-opacity-');
-                            }, 500);
+                                refEl.removeClass('nl-background-color-var--text-accent');
+                            }, 2000);
                         }
                     });
 
@@ -6790,6 +6797,7 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
         
         
         const dotWrapper = container.createDiv({ cls: 'index-status-dot-wrapper' });
+        dotWrapper.style.display = 'none';
         const dot = dotWrapper.createDiv({ cls: 'index-status-dot' });
 
         
@@ -6837,26 +6845,19 @@ queryInput.setCssProps({ '--query-background':  `rgba(255, 255, 255, ${Math.min(
             const indexConfigs = this.settings.indexConfigurations || [];
             let targetIndexId: string | null = null;
             if (searchMode === 'flash') {
-                const bm25Config = indexConfigs.find((c) => c.type === 'bm25' && c.enabled)
-                    ?? indexConfigs.find((c) => c.type === 'bm25');
-                targetIndexId = bm25Config?.id ?? null;
+                targetIndexId = this.settings.selectedBM25IndexId || null;
             } else {
-                const embConfig = indexConfigs.find((c) => c.type === 'embedding' && c.enabled)
-                    ?? indexConfigs.find((c) => c.type === 'embedding');
-                targetIndexId = embConfig?.id ?? null;
+                targetIndexId = this.settings.selectedEmbeddingIndexId || null;
             }
 
             if (targetIndexId) {
                 embeddingsManager.detectChanges(targetIndexId).then((changes: { hasChanges: boolean }) => {
-                    if (!changes.hasChanges) {
-                        dotWrapper.remove();
+                    if (changes.hasChanges) {
+                        dotWrapper.style.display = '';
                     }
                 }).catch(() => {
-                    
+                    // on error keep hidden
                 });
-            } else {
-                
-                dotWrapper.remove();
             }
         }
 

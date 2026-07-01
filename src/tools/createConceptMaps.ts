@@ -1651,9 +1651,10 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
       // If overlay is showing (isHolding = true), keep the node fired until overlay closes
       const circle = group.querySelector('.concept-node-circle') as SVGElement;
       if (circle && !this.isHolding) {
-        circle.addClass('nl-transform-');
-        circle.addClass('nl-filter-');
-        circle.addClass('nl-transition-rem-1');
+        circle.removeClass('nl-transform-scale11');
+        circle.removeClass('nl-transform-scale12');
+        circle.removeClass('nl-transition-remaining-1');
+        circle.setCssProps({ '--glow-filter': 'none' });
       }
     });
     
@@ -1667,9 +1668,10 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
       // Reset scale and filter
       const circle = group.querySelector('.concept-node-circle') as SVGElement;
       if (circle && !this.isHolding) {
-        circle.addClass('nl-transform-');
-        circle.addClass('nl-filter-');
-        circle.addClass('nl-transition-rem-2');
+        circle.removeClass('nl-transform-scale11');
+        circle.removeClass('nl-transform-scale12');
+        circle.removeClass('nl-transition-remaining-1');
+        circle.setCssProps({ '--glow-filter': 'none' });
       }
       
       // Only clear if no node or theme is clicked
@@ -2252,6 +2254,7 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     svg.addClass('nl-opacity-01');
     svg.addClass('nl-filter-blur3px');
     svg.addClass('nl-transition-rem-5');
+    svg.addClass('theme-active-no-pointer');
   }
 
   // Public method to check if theme overlay is active
@@ -2279,15 +2282,17 @@ Generate a comprehensive concept map with DEEP, MEANINGFUL connections now:`;
     // Restore SVG visibility
     const svg = this.doc.querySelector('.concept-map-svg-wrapper svg') as SVGElement;
     if (svg) {
-      svg.addClass('nl-opacity-1');
-      svg.addClass('nl-filter-none');
+      svg.removeClass('nl-opacity-01');
+      svg.removeClass('nl-filter-blur3px');
+      svg.removeClass('theme-active-no-pointer');
     }
     
     // Reset the fired theme node back to its original state
     if (this.firedThemeNode) {
-      this.firedThemeNode.addClass('nl-transform-');
-      this.firedThemeNode.addClass('nl-filter-');
-      this.firedThemeNode.addClass('nl-transition-rem-6');
+      this.firedThemeNode.removeClass('nl-transform-scale11');
+      this.firedThemeNode.removeClass('nl-transform-scale12');
+      this.firedThemeNode.removeClass('nl-transition-remaining-1');
+      this.firedThemeNode.setCssProps({ '--glow-filter': 'none' });
       this.firedThemeNode = null;
     }
     
@@ -2923,11 +2928,13 @@ export class ConceptMapVisualizationModal extends Modal {
 
     wrapper.addEventListener('mouseup', () => {
       this.isPanning = false;
+      wrapper.removeClass('nl-cursor-grabbing');
       wrapper.addClass('nl-cursor-default');
     });
 
     wrapper.addEventListener('mouseleave', () => {
       this.isPanning = false;
+      wrapper.removeClass('nl-cursor-grabbing');
       wrapper.addClass('nl-cursor-default');
     });
 

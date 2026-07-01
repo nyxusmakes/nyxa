@@ -828,12 +828,6 @@ export default class AIPlugin extends Plugin {
 
                 this.settings.customModels = [...manualModels, ...dynamicModels];
 
-                
-                const dynamicProviders = new Set(['gemini', 'openrouter', 'nvidia']);
-                const nonDynamicEmbeddings = this.settings.customEmbeddingModels.filter(m =>
-                    !dynamicProviders.has(m.provider) && !customProviderIds.has(m.provider)
-                );
-
                 const existingEmbeddingMap = new Map(this.settings.customEmbeddingModels.map(m => [`${m.provider}:${m.id}`, m]));
 
                 const dynamicEmbeddingsRaw = [
@@ -842,6 +836,12 @@ export default class AIPlugin extends Plugin {
                     ...(cache.nvidiaEmbeddings || []),
                     ...Object.values(cache.customProviderEmbeddings || {}).flat()
                 ];
+                
+                const dynamicEmbeddingIds = new Set(dynamicEmbeddingsRaw.map(m => `${m.provider}:${m.id}`));
+
+                const manualEmbeddings = this.settings.customEmbeddingModels.filter(m =>
+                    !dynamicEmbeddingIds.has(`${m.provider}:${m.id}`)
+                );
 
                 const dynamicEmbeddings = dynamicEmbeddingsRaw.map(m => {
                     const existing = existingEmbeddingMap.get(`${m.provider}:${m.id}`);
@@ -858,7 +858,7 @@ export default class AIPlugin extends Plugin {
                     return m;
                 });
 
-                this.settings.customEmbeddingModels = [...nonDynamicEmbeddings, ...dynamicEmbeddings];
+                this.settings.customEmbeddingModels = [...manualEmbeddings, ...dynamicEmbeddings];
 
                 await this.saveSettings();
             }
@@ -940,7 +940,9 @@ export default class AIPlugin extends Plugin {
                         } else {
                             targetModel.verificationStatus = 'failed';
                             targetModel.verificationError = result.error;
-                            targetModel.enabled = false; 
+                            if (result.error !== 'Request timed out') {
+                                targetModel.enabled = false; 
+                            }
                         }
                     }
                     processedCount++;
@@ -1061,7 +1063,9 @@ export default class AIPlugin extends Plugin {
                         } else {
                             targetModel.verificationStatus = 'failed';
                             targetModel.verificationError = result.error;
-                            targetModel.enabled = false; 
+                            if (result.error !== 'Request timed out') {
+                                targetModel.enabled = false; 
+                            }
                         }
                     }
                     processedCount++;
